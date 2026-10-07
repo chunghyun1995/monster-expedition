@@ -6,23 +6,18 @@ let muted=false;
 function audioInit(){try{
   if(!AC){AC=new(window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.connect(AC.destination);
     bgmGain=AC.createGain();sfxGain=AC.createGain();
-    // 잔잔하게: 높은 음역을 깎는 필터 + 짧은 에코
-    const lpB=AC.createBiquadFilter();lpB.type='lowpass';lpB.frequency.value=2400;lpB.Q.value=.3;
-    const lpS=AC.createBiquadFilter();lpS.type='lowpass';lpS.frequency.value=3200;lpS.Q.value=.3;
-    const dl=AC.createDelay(1),fb=AC.createGain(),wet=AC.createGain(),dlp=AC.createBiquadFilter();
-    dl.delayTime.value=.27;fb.gain.value=.28;wet.gain.value=.22;dlp.type='lowpass';dlp.frequency.value=1500;
-    bgmGain.connect(lpB);lpB.connect(master);lpB.connect(dl);dl.connect(dlp);dlp.connect(fb);fb.connect(dl);dlp.connect(wet);wet.connect(master);
-    sfxGain.connect(lpS);lpS.connect(master);applyVolume();
+    // 필터/에코 없이 깨끗하게 바로 출력
+    bgmGain.connect(master);sfxGain.connect(master);applyVolume();
     const len=AC.sampleRate*1,buf=AC.createBuffer(1,len,AC.sampleRate),d=buf.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;NOISE=buf;
     for(const duty of[.125,.25,.5]){const n=32,re=new Float32Array(n),im=new Float32Array(n);
       for(let k=1;k<n;k++){re[k]=0;im[k]=2/(k*Math.PI)*Math.sin(k*Math.PI*duty);}PULSE[duty]=AC.createPeriodicWave(re,im);}
     // 부드러운 음색(플루트/오르골 느낌) — 사각파 대신 사용
     const mk=h=>{const re=new Float32Array(h.length+1),im=new Float32Array(h.length+1);h.forEach((v,i)=>im[i+1]=v);return AC.createPeriodicWave(re,im);};
-    SOFT.lead=mk([1,.32,.12,.05,.02]);SOFT.bell=mk([1,.0,.18,0,.06,0,.02]);SOFT.mid=mk([1,.45,.2,.1,.05,.03]);
+    SOFT.lead=mk([1,.12,.04]);SOFT.bell=mk([1,0,.08,0,.02]);SOFT.mid=mk([1,.25,.08,.03]);
     if(Music.want)Music.play(Music.want,true);}
   else if(AC.state==='suspended')AC.resume();}catch(e){}}
 function applyVolume(){if(!AC)return;const t=AC.currentTime;master.gain.setValueAtTime(muted?0:1,t);
-  bgmGain.gain.setValueAtTime([0,.04,.07,.1,.14,.19][SET.bgm]||0,t);sfxGain.gain.setValueAtTime(SET.sfx?.2:0,t);}
+  bgmGain.gain.setValueAtTime([0,.028,.045,.065,.09,.12][SET.bgm]||0,t);sfxGain.gain.setValueAtTime(SET.sfx?.17:0,t);}
 function toggleMute(){muted=!muted;applyVolume();if(typeof toast==='function')toast(muted?'소리 꺼짐':'소리 켜짐');}
 
 /* ---------- 효과음 ---------- */
@@ -120,7 +115,7 @@ function buildSong(S){const bars=S.bars.flatMap(b=>b.split(' ').length>1?[b]:[b]
       else if(A==='pad'){chord.forEach(n=>arp.push({t:t0,d:per,f:midiF(n),v:.22}));}
       else if(A==='trem'){for(let s=0;s<per;s+=1)arp.push({t:t0+s,d:1,f:midiF(chord[s%2?1:0]+12),v:.3});}
     });
-    const DR={fast:'beat',rock:'beat',march:'soft',beat:'soft'};const D={march:'k-h-s-h-k-k-s-h-',beat:'k-h-s-h-k-h-s-hh',rock:'k-hks-hkk-hks-hs',soft:'k---h---s---h---',none:'----------------',fast:'kh-hskh-khkhskhs',swing:'k--hs--hk--hs-hh'}[DR[S.drum||'beat']||S.drum||'beat'];
+    const DR={fast:'soft',rock:'soft',beat:'soft',march:'none',swing:'none',soft:'none'};const D={march:'k-h-s-h-k-k-s-h-',beat:'k-h-s-h-k-h-s-hh',rock:'k-hks-hkk-hks-hs',soft:'k---h---s---h---',none:'----------------',fast:'kh-hskh-khkhskhs',swing:'k--hs--hk--hs-hh'}[DR[S.drum||'beat']||S.drum||'beat'];
     for(let s=0;s<16;s++)if(D[s]!=='-')drum.push({t:bi*16+s,k:D[s]});});
   return{bpm:Math.round(S.bpm*(S.bpm>150?.78:.86)),steps,mel:mel.ev,melLen:Math.max(mel.len,1),bass,arp,drum,loop:S.loop!==false,lead:S.lead||.25};}
 const SONGS={
@@ -167,21 +162,22 @@ const Music={cur:null,want:null,song:null,pos:0,next:0,timer:null,nodes:[],jingl
   stop(keepWant){if(this.timer)clearInterval(this.timer);this.timer=null;this.nodes.forEach(n=>{try{n.stop();}catch(e){}});this.nodes=[];this.cur=null;if(!keepWant)this.want=null;},
   tick(){if(!AC||!this.song)return;const S=this.song,dt=60/S.bpm/4;
     while(this.next<AC.currentTime+.12){const p=this.pos;
-      const mp=p%S.melLen;for(const e of S.mel)if(e.t===mp)this.note(e.f,e.d*dt,{wave:SOFT.lead,v:.5,t:this.next});
-      const ap=p%S.steps;for(const e of S.arp)if(e.t===ap)this.note(e.f,e.d*dt*1.4,{wave:SOFT.bell,v:.42*(e.v||.5),t:this.next,pluck:1});
-      for(const e of S.bass)if(e.t===ap)this.note(e.f,e.d*dt*.9,{type:'triangle',v:.7,t:this.next});
+      const mp=p%S.melLen;for(const e of S.mel)if(e.t===mp)this.note(e.f,e.d*dt,{wave:SOFT.lead,v:.42,t:this.next,ep:1});
+      const ap=p%S.steps;for(const e of S.arp)if(e.t===ap)this.note(e.f,e.d*dt*1.6,{wave:SOFT.bell,v:.3*(e.v||.5),t:this.next,pluck:1});
+      for(const e of S.bass)if(e.t===ap)this.note(e.f,e.d*dt*.95,{type:'sine',v:.55,t:this.next,pluck:1});
       for(const e of S.drum)if(e.t===ap)this.drum(e.k,this.next);
       this.pos++;this.next+=dt;
       if(!S.loop&&this.pos>=S.steps){this.stop();return;}}
     this.nodes=this.nodes.filter(n=>n._end>AC.currentTime);},
-  note(f,d,{duty=0,wave=null,type='square',v=.5,t,pluck=0}){const o=AC.createOscillator(),g=AC.createGain();
+  note(f,d,{duty=0,wave=null,type='square',v=.5,t,pluck=0,ep=0}){const o=AC.createOscillator(),g=AC.createGain();
     if(wave)o.setPeriodicWave(wave);else if(duty||type==='square')o.setPeriodicWave(SOFT.lead);else o.type=type;
     o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(.0001,t);
-    if(pluck){g.gain.linearRampToValueAtTime(v,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+d);}
-    else{g.gain.linearRampToValueAtTime(v,t+.025);g.gain.linearRampToValueAtTime(v*.7,t+Math.min(.15,d*.5));g.gain.linearRampToValueAtTime(v*.5,t+d*.9);g.gain.linearRampToValueAtTime(.0001,t+d+.04);}o.connect(g).connect(bgmGain);o.start(t);o.stop(t+d+.02);o._end=t+d+.05;this.nodes.push(o);},
+    if(pluck){g.gain.linearRampToValueAtTime(v,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+d);}
+    else if(ep){const r=Math.max(d,.12);g.gain.linearRampToValueAtTime(v,t+.015);g.gain.exponentialRampToValueAtTime(v*.45,t+Math.min(.35,r*.6));g.gain.exponentialRampToValueAtTime(.0001,t+r+.12);o.connect(g).connect(bgmGain);o.start(t);o.stop(t+r+.15);o._end=t+r+.18;this.nodes.push(o);return;}
+    else{g.gain.linearRampToValueAtTime(v,t+.025);g.gain.linearRampToValueAtTime(v*.7,t+Math.min(.15,d*.5));g.gain.linearRampToValueAtTime(v*.5,t+d*.9);g.gain.linearRampToValueAtTime(.0001,t+d+.04);}o.connect(g).connect(bgmGain);o.start(t);o.stop(t+d+.06);o._end=t+d+.08;this.nodes.push(o);},
   drum(k,t){const s=AC.createBufferSource(),g=AC.createGain(),fl=AC.createBiquadFilter();s.buffer=NOISE;s._end=t+.3;
-    if(k==='k'){const o=AC.createOscillator(),gg=AC.createGain();o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(40,t+.12);gg.gain.setValueAtTime(.45,t);gg.gain.exponentialRampToValueAtTime(.0001,t+.14);o.connect(gg).connect(bgmGain);o.start(t);o.stop(t+.16);o._end=t+.2;this.nodes.push(o);return;}
-    fl.type=k==='s'?'bandpass':'highpass';fl.frequency.value=k==='s'?1400:6000;g.gain.setValueAtTime(k==='s'?.2:.07,t);g.gain.exponentialRampToValueAtTime(.0001,t+(k==='s'?.1:.035));
+    if(k==='k'){const o=AC.createOscillator(),gg=AC.createGain();o.type='sine';o.frequency.setValueAtTime(110,t);o.frequency.exponentialRampToValueAtTime(45,t+.12);gg.gain.setValueAtTime(.2,t);gg.gain.exponentialRampToValueAtTime(.0001,t+.14);o.connect(gg).connect(bgmGain);o.start(t);o.stop(t+.16);o._end=t+.2;this.nodes.push(o);return;}
+    fl.type=k==='s'?'bandpass':'highpass';fl.frequency.value=k==='s'?1400:6000;g.gain.setValueAtTime(k==='s'?.07:.025,t);g.gain.exponentialRampToValueAtTime(.0001,t+(k==='s'?.1:.035));
     s.connect(fl).connect(g).connect(bgmGain);s.start(t,Math.random()*.5);s.stop(t+.2);this.nodes.push(s);},
   /* 짧은 팡파르: BGM을 잠시 멈추고 연주 */
   async jingle(name){if(!AC){await sleep(400);return;}const J=JINGLES[name],resume=this.cur;this.stop(true);this.jingling=true;

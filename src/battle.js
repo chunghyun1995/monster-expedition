@@ -281,7 +281,7 @@ async function endBattle(res){const o=B.o;clearInterval(B.lowT);
       await bsay(B.wild?`${J(G.name,'은')} 허둥지둥 ${money(lost)}을 떨어뜨리고 말았다...`:`${J(G.name,'은')} 상금으로 ${money(lost)}을 건네주었다...`,true);await bsay('...... 눈앞이 캄캄해졌다!',true);}}
   await fadeTo(1);
   [hudE,hudP,$('#bre'),$('#brp')].forEach(e=>e&&e.remove());hudE=hudP=null;hideMsg();FX.list=[];
-  const lv=[...B.lvUp],noLose=o.noLose;B=null;state='world';Pad.show();
+  const lv=[...B.lvUp],noLose=o.noLose;B=null;state='world';clearDirs();Pad.show();
   if(res==='lose'&&!noLose){healParty();enterMap(G.heal.map,G.heal.x,G.heal.y,'up',{quiet:1});await fadeTo(0);
     if(G.heal.map==='home'){await say(`${G.name}! 무사했구나... 푹 쉬었으니 이제 괜찮을 거야.`,{name:'엄마'});}
     else{await say('기다리셨습니다! 맡겨 주신 몬스터는 모두 건강해졌어요.',{name:'간호사'});}

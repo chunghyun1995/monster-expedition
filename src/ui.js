@@ -9,9 +9,10 @@ function place(e,[x,y,w,h]){e.style.left=U(x);e.style.top=U(y);if(w!=null)e.styl
 /* ---------- 대화창 (위 화면) ---------- */
 const dlg=el(TOP,'hidden','<span class="tx"></span><i class="nx hidden"></i>');dlg.id='dlg';
 const dtx=dlg.querySelector('.tx'),dnx=dlg.querySelector('.nx');let dtag=null,dlgTm=null;
-function msg(text,o={}){clearTimeout(dlgTm);dlg.classList.remove('hidden');setTag(o.name);const pg=paginate(text);dtx.textContent=pg[pg.length-1];dnx.classList.add('hidden');setTag(o.name);}
+function msg(text,o={}){clearTimeout(dlgTm);dlgShow();setTag(o.name);const pg=paginate(text);dtx.textContent=pg[pg.length-1];dnx.classList.add('hidden');setTag(o.name);}
 function setTag(name){if(dtag){dtag.remove();dtag=null;}if(name){dtag=el(dlg,'tag',esc(name));}}
-function hideMsg(){dlg.classList.add('hidden');setTag(null);}
+function dlgShow(){dlg.classList.remove('hidden');TOP.classList.add('talking');}
+function hideMsg(){dlg.classList.add('hidden');TOP.classList.remove('talking');setTag(null);}
 /* 대화창 2줄 단위로 나누기 (넘치면 A로 다음 페이지) */
 function dlgLines(t){dtx.style.maxHeight='none';dtx.textContent=t||' ';const lh=parseFloat(getComputedStyle(dtx).lineHeight)||16;const n=Math.round(dtx.offsetHeight/lh);dtx.style.maxHeight='';return n;}
 function fitCut(rest,max=2){if(dlgLines(rest)<=max)return rest.length;
@@ -23,7 +24,7 @@ function fitCut(rest,max=2){if(dlgLines(rest)<=max)return rest.length;
 function splitPage(rest){rest=String(rest);if(!dlg.offsetWidth)return[rest,''];const c=fitCut(rest);const pg=rest.slice(0,c).replace(/\s+$/,''),r=rest.slice(c).replace(/^\s+/,'');dtx.textContent='';return[pg,r];}
 function paginate(text){const pages=[];let rest=String(text);do{const[a,b]=splitPage(rest);pages.push(a);rest=b;}while(rest.length);return pages;}
 const CPS=[45,22,6];
-function say(text,o={}){return new Promise(res=>{clearTimeout(dlgTm);dlg.classList.remove('hidden');setTag(o.name);dnx.classList.add('hidden');
+function say(text,o={}){return new Promise(res=>{clearTimeout(dlgTm);dlgShow();setTag(o.name);dnx.classList.add('hidden');
   let rest=String(text),cur='';dtx.textContent='';
   let i=0,done=false,closed=false,at=null,tm=null;const sp=CPS[SET.text]||22;
   const last=()=>!rest.length;
@@ -88,7 +89,7 @@ function list(items,o={}){return new Promise(res=>{const root=o.root||BOT,[x,y,w
   pushH(h);draw();if(o.onOpen)o.onOpen(h);});}
 
 /* ---------- 예 / 아니오 ---------- */
-async function ask(text,opts=['예','아니오'],o={}){dlg.classList.remove('hidden');setTag(o.name);const pg=paginate(text);for(let i=0;i<pg.length-1;i++)await say(pg[i],{...o,keep:1});msg(pg[pg.length-1],o);
+async function ask(text,opts=['예','아니오'],o={}){dlgShow();setTag(o.name);const pg=paginate(text);for(let i=0;i<pg.length-1;i++)await say(pg[i],{...o,keep:1});msg(pg[pg.length-1],o);
   const n=opts.length,bw=n>2?200:176,bh=n>2?38:52,gap=8,y0=(192-(bh+gap)*n+gap)/2;
   const i=await panel(opts.map((t,j)=>({html:`<span class="bigbtn">${esc(t)}</span>`,x:(256-bw)/2,y:y0+j*(bh+gap),w:bw,h:bh,cls:j===0?'blue':''})),
     {backdrop:true,bg:'rgba(20,24,40,.55)',cancel:o.cancel!=null?o.cancel:n-1,start:o.start||0});

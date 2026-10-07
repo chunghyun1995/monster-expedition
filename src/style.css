@@ -194,3 +194,6 @@ body.land #pad .mid{left:auto;right:8px;top:8px;transform:none}
 .badge-slot{position:absolute;width:calc(var(--u)*72);height:calc(var(--u)*72);border-radius:50%;background:radial-gradient(#3a3f55,#1d2030);display:flex;align-items:center;justify-content:center;box-shadow:inset 0 calc(var(--u)*2) calc(var(--u)*6) rgba(0,0,0,.6)}
 .badge-slot img{width:calc(var(--u)*48);height:calc(var(--u)*48);image-rendering:pixelated;filter:drop-shadow(0 0 calc(var(--u)*3) rgba(255,240,180,.8))}
 .lcdt{font-family:'Galmuri9','Galmuri11',monospace}
+
+/* 대화창이 떠 있는 동안 아래쪽 설명 상자는 숨겨 겹치지 않게 */
+#topUI.talking .page .desc{visibility:hidden}
