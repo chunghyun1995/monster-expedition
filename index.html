@@ -10,9 +10,10 @@
 <style>
 *{box-sizing:border-box}
 :root{--u:2px;--ink:#2b2f45;--line:#4b5574;--hi:#ffcf3a}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 html,body{margin:0;height:100%;background:#14161f;color:#eef0f7;font-family:'Galmuri11','Galmuri9',ui-monospace,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;-webkit-user-select:none;user-select:none;touch-action:manipulation;overscroll-behavior:none;-webkit-tap-highlight-color:transparent;overflow:hidden}
 body{background:radial-gradient(ellipse at 50% 0%,#2a2f45 0%,#14161f 70%)}
-#app{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:100dvh;padding:8px}
+#app{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:100dvh;padding:8px}
 #ds{display:flex;flex-direction:column;align-items:center;padding:calc(var(--u)*5);border-radius:calc(var(--u)*10);background:linear-gradient(#3a3f55,#262a3b);box-shadow:0 calc(var(--u)*4) calc(var(--u)*18) rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.12)}
 #ds.wide{flex-direction:row;align-items:center}
 .bezel{padding:calc(var(--u)*3);border-radius:calc(var(--u)*5);background:#11131b;box-shadow:inset 0 0 0 1px #000,0 1px 0 rgba(255,255,255,.08)}
@@ -32,6 +33,8 @@ body{background:radial-gradient(ellipse at 50% 0%,#2a2f45 0%,#14161f 70%)}
 
 /* ---------- 대화창 ---------- */
 #dlg{position:absolute;left:calc(var(--u)*3);right:calc(var(--u)*3);bottom:calc(var(--u)*3);height:calc(var(--u)*46);padding:calc(var(--u)*6) calc(var(--u)*10);font-size:calc(var(--u)*11);line-height:calc(var(--u)*16);white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;background:#fdfdf8;border-radius:calc(var(--u)*5);border:calc(var(--u)*2) solid #5a6488;box-shadow:inset 0 0 0 calc(var(--u)*1.5) #fff,inset 0 0 0 calc(var(--u)*2.5) #c8cde0,0 calc(var(--u)*1.5) 0 rgba(0,0,0,.35);z-index:30;cursor:pointer}
+#dlg{overflow:hidden}
+#dlg .tx{display:block;overflow:hidden;max-height:calc(var(--u)*32)}
 #dlg .nx{position:absolute;right:calc(var(--u)*8);bottom:calc(var(--u)*4);width:0;height:0;border-left:calc(var(--u)*4) solid transparent;border-right:calc(var(--u)*4) solid transparent;border-top:calc(var(--u)*5) solid #e2566f;animation:bob .45s infinite alternate}
 #dlg .tag{position:absolute;left:calc(var(--u)*8);top:calc(var(--u)*-13);padding:0 calc(var(--u)*7);height:calc(var(--u)*13);font-size:calc(var(--u)*9);line-height:calc(var(--u)*13);background:#5a6488;color:#fff;border-radius:calc(var(--u)*4) calc(var(--u)*4) 0 0}
 @keyframes bob{to{transform:translateY(calc(var(--u)*2))}}
@@ -145,16 +148,17 @@ body{background:radial-gradient(ellipse at 50% 0%,#2a2f45 0%,#14161f 70%)}
 .credits h3{margin:calc(var(--u)*14) 0 0;font-size:calc(var(--u)*9);color:#ffd84a;font-weight:normal;letter-spacing:calc(var(--u)*1)}
 
 /* ---------- 하단 조작 패드 (모바일) ---------- */
-#pad{display:none;width:min(100%,460px);justify-content:space-between;align-items:center;padding:0 4px}
+#pad{--pb:56px;position:relative;display:none;width:min(100%,calc(var(--pb)*6.6));justify-content:space-between;align-items:center;padding:0 4px}
 #pad button{border:none;font:inherit;color:#cfd3e6;background:#2b2f40;box-shadow:0 4px 0 #171a24;touch-action:none}
-.dpad{position:relative;width:138px;height:138px}
-.dpad button{position:absolute;width:46px;height:46px;border-radius:9px;font-size:16px}
-.dpad span{position:absolute;left:46px;top:46px;width:46px;height:46px;background:#2b2f40}
-.dpad [data-k=up]{left:46px;top:0}.dpad [data-k=down]{left:46px;top:92px}.dpad [data-k=left]{left:0;top:46px}.dpad [data-k=right]{left:92px;top:46px}
-.mid .pill{width:64px;height:24px;border-radius:12px;font-size:11px;letter-spacing:1px}
-.ab{position:relative;width:140px;height:116px}
-.ab button{position:absolute;width:60px;height:60px;border-radius:50%;font-size:20px}
-.ab [data-k=a]{right:0;top:8px;background:#e2566f;color:#fff}.ab [data-k=b]{left:6px;top:50px;background:#3d7ad6;color:#fff}
+.dpad{position:relative;width:calc(var(--pb)*3);height:calc(var(--pb)*3)}
+.dpad button{position:absolute;width:var(--pb);height:var(--pb);border-radius:calc(var(--pb)*.2);font-size:calc(var(--pb)*.36)}
+.dpad span{position:absolute;left:var(--pb);top:var(--pb);width:var(--pb);height:var(--pb);background:#2b2f40}
+.dpad [data-k=up]{left:var(--pb);top:0}.dpad [data-k=down]{left:var(--pb);top:calc(var(--pb)*2)}.dpad [data-k=left]{left:0;top:var(--pb)}.dpad [data-k=right]{left:calc(var(--pb)*2);top:var(--pb)}
+.mid{position:absolute;left:50%;top:0;transform:translateX(-50%)}
+.mid .pill{width:calc(var(--pb)*1.3);height:calc(var(--pb)*.5);border-radius:calc(var(--pb)*.25);font-size:calc(var(--pb)*.22);letter-spacing:1px}
+.ab{position:relative;width:calc(var(--pb)*2.25);height:calc(var(--pb)*2.6)}
+.ab button{position:absolute;width:calc(var(--pb)*1.38);height:calc(var(--pb)*1.38);border-radius:50%;font-size:calc(var(--pb)*.42)}
+#pad .ab [data-k=a]{right:0;top:calc(var(--pb)*.05);background:#e2566f;color:#fff}#pad .ab [data-k=b]{left:0;top:calc(var(--pb)*1.15);background:#3d7ad6;color:#fff}
 #pad button.down{transform:translateY(3px);box-shadow:0 1px 0 #171a24}
 #help{font-size:12px;color:#8f95ae;text-align:center;line-height:1.7}
 #help b{color:#e8e8f0;font-weight:normal;background:#262a3a;padding:1px 6px;border-radius:4px}
@@ -290,12 +294,19 @@ $('#scrTop').addEventListener('click',()=>{const h=topH();if(h&&h.tapA)press('a'
 $('#botUI').addEventListener('click',e=>{if(e.target!==$('#botUI')&&!e.target.classList.contains('backdrop'))return;const h=topH();if(h&&h.tapA)press('a');});
 
 /* ---------- 화면 크기 (DS 2화면) ---------- */
-function layout(){const coarse=matchMedia('(pointer:coarse)').matches,iw=innerWidth-16,ih=innerHeight-16-(coarse?160:34);
+function layout(){const coarse=matchMedia('(pointer:coarse)').matches,iw=innerWidth-16;
+  const pbMax=Math.min((innerWidth-20)/5.35,110);
+  let pb=Math.round(Math.max(48,Math.min(pbMax,innerHeight*.11)));
   const pad=26; // 본체 여백 (u 단위)
-  const vert=Math.min(iw/(256+pad),ih/(192*2+9+pad+6)),wide=Math.min(iw/(256*2+9+pad+6),ih/(192+pad));
-  let useWide=SET.layout===2||(SET.layout===0&&!coarse&&wide>vert*1.3);
-  const u=Math.max(1,Math.min(useWide?wide:vert,4));
-  document.documentElement.style.setProperty('--u',u.toFixed(3)+'px');$('#ds').classList.toggle('wide',useWide);}
+  const calcU=pb=>{const ih=innerHeight-16-(coarse?pb*3+14:34);
+    const vert=Math.min(iw/(256+pad),ih/(192*2+9+pad+6)),wide=Math.min(iw/(256*2+9+pad+6),ih/(192+pad));
+    const useWide=SET.layout===2||(SET.layout===0&&!coarse&&wide>vert*1.3);
+    return{u:Math.max(1,Math.min(useWide?wide:vert,4)),useWide,ih};};
+  let r=calcU(pb);
+  // 세로 화면에서 남는 높이는 패드를 키우는 데 쓴다
+  if(coarse&&!r.useWide){const left=r.ih-r.u*(192*2+9+pad+6);if(left>3)pb=Math.round(Math.max(48,Math.min(pbMax,pb+left/3)));r=calcU(pb);}
+  $('#pad').style.setProperty('--pb',pb+'px');
+  document.documentElement.style.setProperty('--u',r.u.toFixed(3)+'px');$('#ds').classList.toggle('wide',r.useWide);}
 addEventListener('resize',layout);layout();
 
 /* =========================================================
@@ -977,17 +988,34 @@ function place(e,[x,y,w,h]){e.style.left=U(x);e.style.top=U(y);if(w!=null)e.styl
 /* ---------- 대화창 (위 화면) ---------- */
 const dlg=el(TOP,'hidden','<span class="tx"></span><i class="nx hidden"></i>');dlg.id='dlg';
 const dtx=dlg.querySelector('.tx'),dnx=dlg.querySelector('.nx');let dtag=null,dlgTm=null;
-function msg(text,o={}){clearTimeout(dlgTm);dlg.classList.remove('hidden');dtx.textContent=text;dnx.classList.add('hidden');setTag(o.name);}
+function msg(text,o={}){clearTimeout(dlgTm);dlg.classList.remove('hidden');setTag(o.name);const pg=paginate(text);dtx.textContent=pg[pg.length-1];dnx.classList.add('hidden');setTag(o.name);}
 function setTag(name){if(dtag){dtag.remove();dtag=null;}if(name){dtag=el(dlg,'tag',esc(name));}}
 function hideMsg(){dlg.classList.add('hidden');setTag(null);}
+/* 대화창 2줄 단위로 나누기 (넘치면 A로 다음 페이지) */
+function dlgLines(t){dtx.style.maxHeight='none';dtx.textContent=t||' ';const lh=parseFloat(getComputedStyle(dtx).lineHeight)||16;const n=Math.round(dtx.offsetHeight/lh);dtx.style.maxHeight='';return n;}
+function fitCut(rest,max=2){if(dlgLines(rest)<=max)return rest.length;
+  let lo=1,hi=rest.length;while(lo<hi){const m=(lo+hi+1)>>1;if(dlgLines(rest.slice(0,m))<=max)lo=m;else hi=m-1;}
+  let cut=lo;const sp=Math.max(rest.lastIndexOf(' ',cut),rest.lastIndexOf('\n',cut));
+  if(sp>cut*.4&&!/[\s]/.test(rest[cut]||''))cut=sp; // 단어 중간에서 자르지 않기
+  return Math.max(1,cut);}
+/* 지금 글꼴 기준으로 첫 페이지와 나머지 */
+function splitPage(rest){rest=String(rest);if(!dlg.offsetWidth)return[rest,''];const c=fitCut(rest);const pg=rest.slice(0,c).replace(/\s+$/,''),r=rest.slice(c).replace(/^\s+/,'');dtx.textContent='';return[pg,r];}
+function paginate(text){const pages=[];let rest=String(text);do{const[a,b]=splitPage(rest);pages.push(a);rest=b;}while(rest.length);return pages;}
 const CPS=[45,22,6];
-function say(text,o={}){return new Promise(res=>{clearTimeout(dlgTm);dlg.classList.remove('hidden');setTag(o.name);dtx.textContent='';dnx.classList.add('hidden');
-  let i=0,done=false,closed=false,at=null;const sp=CPS[SET.text]||22;
-  const fin=()=>{clearInterval(tm);dtx.textContent=text;done=true;if(o.auto)at=setTimeout(close,o.auto*(SET.text===2?.6:SET.text===0?1.4:1));else dnx.classList.remove('hidden');};
-  const tm=setInterval(()=>{i+=sp<10?3:1;dtx.textContent=text.slice(0,i);if(i>=text.length)fin();},sp);
+function say(text,o={}){return new Promise(res=>{clearTimeout(dlgTm);dlg.classList.remove('hidden');setTag(o.name);dnx.classList.add('hidden');
+  let rest=String(text),cur='';dtx.textContent='';
+  let i=0,done=false,closed=false,at=null,tm=null;const sp=CPS[SET.text]||22;
+  const last=()=>!rest.length;
+  // 페이지마다 그 순간의 글꼴·화면 크기로 다시 잰다 (웹폰트 늦게 로드, 화면 회전 대응)
+  const start=()=>{[cur,rest]=splitPage(rest);i=0;done=false;dtx.textContent='';dnx.classList.add('hidden');tm=setInterval(()=>{i+=sp<10?3:1;dtx.textContent=cur.slice(0,i);if(i>=cur.length)fin();},sp);};
+  const fin=()=>{clearInterval(tm);
+    if(dlg.offsetWidth&&dlgLines(cur)>2){const c=fitCut(cur);rest=(cur.slice(c).replace(/^\s+/,'')+(rest?' '+rest:''));cur=cur.slice(0,c).replace(/\s+$/,'');}
+    dtx.textContent=cur;done=true;
+    if(o.auto)at=setTimeout(()=>last()?close():next(),o.auto*(SET.text===2?.6:SET.text===0?1.4:1));else dnx.classList.remove('hidden');};
+  const next=()=>{clearTimeout(at);start();};
   const close=()=>{if(closed)return;closed=true;clearTimeout(at);popH(h);dnx.classList.add('hidden');if(!o.keep)dlgTm=setTimeout(()=>{if(!ui.some(x=>x.isSay))hideMsg();},30);res();};
-  const h={isSay:1,tapA:1,key(k){if(k!=='a'&&k!=='b')return;if(!done){fin();return;}if(!o.auto)sfx('cur');close();}};
-  pushH(h);});}
+  const h={isSay:1,tapA:1,key(k){if(k!=='a'&&k!=='b')return;if(!done){fin();return;}if(!o.auto)sfx('cur');if(last())close();else next();}};
+  start();pushH(h);});}
 /* 여러 줄 연속 */
 async function talk(lines,o={}){for(const l of lines)await say(l,o);}
 
@@ -1039,7 +1067,7 @@ function list(items,o={}){return new Promise(res=>{const root=o.root||BOT,[x,y,w
   pushH(h);draw();if(o.onOpen)o.onOpen(h);});}
 
 /* ---------- 예 / 아니오 ---------- */
-async function ask(text,opts=['예','아니오'],o={}){msg(text,o);
+async function ask(text,opts=['예','아니오'],o={}){dlg.classList.remove('hidden');setTag(o.name);const pg=paginate(text);for(let i=0;i<pg.length-1;i++)await say(pg[i],{...o,keep:1});msg(pg[pg.length-1],o);
   const n=opts.length,bw=n>2?200:176,bh=n>2?38:52,gap=8,y0=(192-(bh+gap)*n+gap)/2;
   const i=await panel(opts.map((t,j)=>({html:`<span class="bigbtn">${esc(t)}</span>`,x:(256-bw)/2,y:y0+j*(bh+gap),w:bw,h:bh,cls:j===0?'blue':''})),
     {backdrop:true,bg:'rgba(20,24,40,.55)',cancel:o.cancel!=null?o.cancel:n-1,start:o.start||0});
@@ -1807,7 +1835,7 @@ async function chooseAction(){
       {html:`<img src="${menuIcon('party')}" style="width:${U(22)};height:${U(22)}"><span>몬스터</span>`,x:168,y:124,w:84,h:64,cls:'green'}],{cancel:false,start:0});
     if(i===0){const mi=await chooseMove();if(mi==='back')continue;return{type:'move',mi};}
     if(i===1){hideMsg();const r=await bagScreen('battle');if(!r)continue;return{type:'item',...r};}
-    if(i===2){hideMsg();const j=await partyScreen('battle');if(j<0)continue;return{type:'switch',idx:j};}
+    if(i===3){hideMsg();const j=await partyScreen('battle');if(j<0)continue;return{type:'switch',idx:j};}
     return{type:'run'};}}
 async function chooseMove(){const p=pm(),f=fm();
   if(p.moves.every(x=>x.pp<=0)){await bsay(`${J(N(p),'은')} 쓸 수 있는 기술이 없다!`,true);return'struggle';}

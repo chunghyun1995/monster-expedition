@@ -9,17 +9,34 @@ function place(e,[x,y,w,h]){e.style.left=U(x);e.style.top=U(y);if(w!=null)e.styl
 /* ---------- 대화창 (위 화면) ---------- */
 const dlg=el(TOP,'hidden','<span class="tx"></span><i class="nx hidden"></i>');dlg.id='dlg';
 const dtx=dlg.querySelector('.tx'),dnx=dlg.querySelector('.nx');let dtag=null,dlgTm=null;
-function msg(text,o={}){clearTimeout(dlgTm);dlg.classList.remove('hidden');dtx.textContent=text;dnx.classList.add('hidden');setTag(o.name);}
+function msg(text,o={}){clearTimeout(dlgTm);dlg.classList.remove('hidden');setTag(o.name);const pg=paginate(text);dtx.textContent=pg[pg.length-1];dnx.classList.add('hidden');setTag(o.name);}
 function setTag(name){if(dtag){dtag.remove();dtag=null;}if(name){dtag=el(dlg,'tag',esc(name));}}
 function hideMsg(){dlg.classList.add('hidden');setTag(null);}
+/* 대화창 2줄 단위로 나누기 (넘치면 A로 다음 페이지) */
+function dlgLines(t){dtx.style.maxHeight='none';dtx.textContent=t||' ';const lh=parseFloat(getComputedStyle(dtx).lineHeight)||16;const n=Math.round(dtx.offsetHeight/lh);dtx.style.maxHeight='';return n;}
+function fitCut(rest,max=2){if(dlgLines(rest)<=max)return rest.length;
+  let lo=1,hi=rest.length;while(lo<hi){const m=(lo+hi+1)>>1;if(dlgLines(rest.slice(0,m))<=max)lo=m;else hi=m-1;}
+  let cut=lo;const sp=Math.max(rest.lastIndexOf(' ',cut),rest.lastIndexOf('\n',cut));
+  if(sp>cut*.4&&!/[\s]/.test(rest[cut]||''))cut=sp; // 단어 중간에서 자르지 않기
+  return Math.max(1,cut);}
+/* 지금 글꼴 기준으로 첫 페이지와 나머지 */
+function splitPage(rest){rest=String(rest);if(!dlg.offsetWidth)return[rest,''];const c=fitCut(rest);const pg=rest.slice(0,c).replace(/\s+$/,''),r=rest.slice(c).replace(/^\s+/,'');dtx.textContent='';return[pg,r];}
+function paginate(text){const pages=[];let rest=String(text);do{const[a,b]=splitPage(rest);pages.push(a);rest=b;}while(rest.length);return pages;}
 const CPS=[45,22,6];
-function say(text,o={}){return new Promise(res=>{clearTimeout(dlgTm);dlg.classList.remove('hidden');setTag(o.name);dtx.textContent='';dnx.classList.add('hidden');
-  let i=0,done=false,closed=false,at=null;const sp=CPS[SET.text]||22;
-  const fin=()=>{clearInterval(tm);dtx.textContent=text;done=true;if(o.auto)at=setTimeout(close,o.auto*(SET.text===2?.6:SET.text===0?1.4:1));else dnx.classList.remove('hidden');};
-  const tm=setInterval(()=>{i+=sp<10?3:1;dtx.textContent=text.slice(0,i);if(i>=text.length)fin();},sp);
+function say(text,o={}){return new Promise(res=>{clearTimeout(dlgTm);dlg.classList.remove('hidden');setTag(o.name);dnx.classList.add('hidden');
+  let rest=String(text),cur='';dtx.textContent='';
+  let i=0,done=false,closed=false,at=null,tm=null;const sp=CPS[SET.text]||22;
+  const last=()=>!rest.length;
+  // 페이지마다 그 순간의 글꼴·화면 크기로 다시 잰다 (웹폰트 늦게 로드, 화면 회전 대응)
+  const start=()=>{[cur,rest]=splitPage(rest);i=0;done=false;dtx.textContent='';dnx.classList.add('hidden');tm=setInterval(()=>{i+=sp<10?3:1;dtx.textContent=cur.slice(0,i);if(i>=cur.length)fin();},sp);};
+  const fin=()=>{clearInterval(tm);
+    if(dlg.offsetWidth&&dlgLines(cur)>2){const c=fitCut(cur);rest=(cur.slice(c).replace(/^\s+/,'')+(rest?' '+rest:''));cur=cur.slice(0,c).replace(/\s+$/,'');}
+    dtx.textContent=cur;done=true;
+    if(o.auto)at=setTimeout(()=>last()?close():next(),o.auto*(SET.text===2?.6:SET.text===0?1.4:1));else dnx.classList.remove('hidden');};
+  const next=()=>{clearTimeout(at);start();};
   const close=()=>{if(closed)return;closed=true;clearTimeout(at);popH(h);dnx.classList.add('hidden');if(!o.keep)dlgTm=setTimeout(()=>{if(!ui.some(x=>x.isSay))hideMsg();},30);res();};
-  const h={isSay:1,tapA:1,key(k){if(k!=='a'&&k!=='b')return;if(!done){fin();return;}if(!o.auto)sfx('cur');close();}};
-  pushH(h);});}
+  const h={isSay:1,tapA:1,key(k){if(k!=='a'&&k!=='b')return;if(!done){fin();return;}if(!o.auto)sfx('cur');if(last())close();else next();}};
+  start();pushH(h);});}
 /* 여러 줄 연속 */
 async function talk(lines,o={}){for(const l of lines)await say(l,o);}
 
@@ -71,7 +88,7 @@ function list(items,o={}){return new Promise(res=>{const root=o.root||BOT,[x,y,w
   pushH(h);draw();if(o.onOpen)o.onOpen(h);});}
 
 /* ---------- 예 / 아니오 ---------- */
-async function ask(text,opts=['예','아니오'],o={}){msg(text,o);
+async function ask(text,opts=['예','아니오'],o={}){dlg.classList.remove('hidden');setTag(o.name);const pg=paginate(text);for(let i=0;i<pg.length-1;i++)await say(pg[i],{...o,keep:1});msg(pg[pg.length-1],o);
   const n=opts.length,bw=n>2?200:176,bh=n>2?38:52,gap=8,y0=(192-(bh+gap)*n+gap)/2;
   const i=await panel(opts.map((t,j)=>({html:`<span class="bigbtn">${esc(t)}</span>`,x:(256-bw)/2,y:y0+j*(bh+gap),w:bw,h:bh,cls:j===0?'blue':''})),
     {backdrop:true,bg:'rgba(20,24,40,.55)',cancel:o.cancel!=null?o.cancel:n-1,start:o.start||0});

@@ -73,10 +73,17 @@ $('#scrTop').addEventListener('click',()=>{const h=topH();if(h&&h.tapA)press('a'
 $('#botUI').addEventListener('click',e=>{if(e.target!==$('#botUI')&&!e.target.classList.contains('backdrop'))return;const h=topH();if(h&&h.tapA)press('a');});
 
 /* ---------- 화면 크기 (DS 2화면) ---------- */
-function layout(){const coarse=matchMedia('(pointer:coarse)').matches,iw=innerWidth-16,ih=innerHeight-16-(coarse?160:34);
+function layout(){const coarse=matchMedia('(pointer:coarse)').matches,iw=innerWidth-16;
+  const pbMax=Math.min((innerWidth-20)/5.35,110);
+  let pb=Math.round(Math.max(48,Math.min(pbMax,innerHeight*.11)));
   const pad=26; // 본체 여백 (u 단위)
-  const vert=Math.min(iw/(256+pad),ih/(192*2+9+pad+6)),wide=Math.min(iw/(256*2+9+pad+6),ih/(192+pad));
-  let useWide=SET.layout===2||(SET.layout===0&&!coarse&&wide>vert*1.3);
-  const u=Math.max(1,Math.min(useWide?wide:vert,4));
-  document.documentElement.style.setProperty('--u',u.toFixed(3)+'px');$('#ds').classList.toggle('wide',useWide);}
+  const calcU=pb=>{const ih=innerHeight-16-(coarse?pb*3+14:34);
+    const vert=Math.min(iw/(256+pad),ih/(192*2+9+pad+6)),wide=Math.min(iw/(256*2+9+pad+6),ih/(192+pad));
+    const useWide=SET.layout===2||(SET.layout===0&&!coarse&&wide>vert*1.3);
+    return{u:Math.max(1,Math.min(useWide?wide:vert,4)),useWide,ih};};
+  let r=calcU(pb);
+  // 세로 화면에서 남는 높이는 패드를 키우는 데 쓴다
+  if(coarse&&!r.useWide){const left=r.ih-r.u*(192*2+9+pad+6);if(left>3)pb=Math.round(Math.max(48,Math.min(pbMax,pb+left/3)));r=calcU(pb);}
+  $('#pad').style.setProperty('--pb',pb+'px');
+  document.documentElement.style.setProperty('--u',r.u.toFixed(3)+'px');$('#ds').classList.toggle('wide',r.useWide);}
 addEventListener('resize',layout);layout();

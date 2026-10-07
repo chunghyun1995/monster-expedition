@@ -79,7 +79,7 @@ async function chooseAction(){
       {html:`<img src="${menuIcon('party')}" style="width:${U(22)};height:${U(22)}"><span>몬스터</span>`,x:168,y:124,w:84,h:64,cls:'green'}],{cancel:false,start:0});
     if(i===0){const mi=await chooseMove();if(mi==='back')continue;return{type:'move',mi};}
     if(i===1){hideMsg();const r=await bagScreen('battle');if(!r)continue;return{type:'item',...r};}
-    if(i===2){hideMsg();const j=await partyScreen('battle');if(j<0)continue;return{type:'switch',idx:j};}
+    if(i===3){hideMsg();const j=await partyScreen('battle');if(j<0)continue;return{type:'switch',idx:j};}
     return{type:'run'};}}
 async function chooseMove(){const p=pm(),f=fm();
   if(p.moves.every(x=>x.pp<=0)){await bsay(`${J(N(p),'은')} 쓸 수 있는 기술이 없다!`,true);return'struggle';}
