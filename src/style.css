@@ -138,18 +138,33 @@ body{background:radial-gradient(ellipse at 50% 0%,#2a2f45 0%,#14161f 70%)}
 .credits h3{margin:calc(var(--u)*14) 0 0;font-size:calc(var(--u)*9);color:#ffd84a;font-weight:normal;letter-spacing:calc(var(--u)*1)}
 
 /* ---------- 하단 조작 패드 (모바일) ---------- */
-#pad{--pb:56px;position:relative;display:none;width:min(100%,calc(var(--pb)*6.6));justify-content:space-between;align-items:center;padding:0 4px}
-#pad button{border:none;font:inherit;color:#cfd3e6;background:#2b2f40;box-shadow:0 4px 0 #171a24;touch-action:none}
-.dpad{position:relative;width:calc(var(--pb)*3);height:calc(var(--pb)*3)}
-.dpad button{position:absolute;width:var(--pb);height:var(--pb);border-radius:calc(var(--pb)*.2);font-size:calc(var(--pb)*.36)}
-.dpad span{position:absolute;left:var(--pb);top:var(--pb);width:var(--pb);height:var(--pb);background:#2b2f40}
-.dpad [data-k=up]{left:var(--pb);top:0}.dpad [data-k=down]{left:var(--pb);top:calc(var(--pb)*2)}.dpad [data-k=left]{left:0;top:var(--pb)}.dpad [data-k=right]{left:calc(var(--pb)*2);top:var(--pb)}
+#pad{--pb:52px;position:relative;display:none;width:min(100%,calc(var(--pb)*6.4));justify-content:space-between;align-items:center;padding:0 2px}
+#pad button{border:none;font:inherit;color:#cfd3e6;background:#2b2f40;box-shadow:0 3px 0 #171a24;touch-action:none}
+/* 원형 방향 패드: 누른 위치의 각도로 방향 결정, 손가락을 밀면 방향 전환 */
+.cpad{position:relative;width:calc(var(--pb)*2.7);height:calc(var(--pb)*2.7);border-radius:50%;touch-action:none;
+  background:radial-gradient(circle at 50% 42%,#3a3f55 0%,#2b2f40 62%,#23263394 100%);box-shadow:0 4px 0 #171a24,inset 0 2px 0 rgba(255,255,255,.08),inset 0 0 0 2px #1d2030}
+.cpad::before{content:'';position:absolute;inset:18%;border-radius:50%;border:1px solid rgba(255,255,255,.06)}
+.cpad .ar{position:absolute;font-style:normal;color:#8d93ad;font-size:calc(var(--pb)*.3);line-height:1;transform:translate(-50%,-50%);pointer-events:none;transition:color .08s}
+.cpad .up{left:50%;top:15%}.cpad .down{left:50%;top:85%}.cpad .left{left:15%;top:50%}.cpad .right{left:85%;top:50%}
+.cpad .knob{position:absolute;left:50%;top:50%;width:38%;height:38%;margin:-19% 0 0 -19%;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle at 45% 35%,#575d78,#33374a);box-shadow:0 2px 0 #171a24,inset 0 1px 0 rgba(255,255,255,.15);transition:transform .06s}
+.cpad[data-d=up] .up,.cpad[data-d=down] .down,.cpad[data-d=left] .left,.cpad[data-d=right] .right{color:#ffcf3a}
+.cpad[data-d=up] .knob{transform:translateY(-28%)}.cpad[data-d=down] .knob{transform:translateY(28%)}.cpad[data-d=left] .knob{transform:translateX(-28%)}.cpad[data-d=right] .knob{transform:translateX(28%)}
 .mid{position:absolute;left:50%;top:0;transform:translateX(-50%)}
-.mid .pill{width:calc(var(--pb)*1.3);height:calc(var(--pb)*.5);border-radius:calc(var(--pb)*.25);font-size:calc(var(--pb)*.22);letter-spacing:1px}
-.ab{position:relative;width:calc(var(--pb)*2.25);height:calc(var(--pb)*2.6)}
-.ab button{position:absolute;width:calc(var(--pb)*1.38);height:calc(var(--pb)*1.38);border-radius:50%;font-size:calc(var(--pb)*.42)}
-#pad .ab [data-k=a]{right:0;top:calc(var(--pb)*.05);background:#e2566f;color:#fff}#pad .ab [data-k=b]{left:0;top:calc(var(--pb)*1.15);background:#3d7ad6;color:#fff}
-#pad button.down{transform:translateY(3px);box-shadow:0 1px 0 #171a24}
+.mid .pill{width:calc(var(--pb)*1.1);height:calc(var(--pb)*.42);border-radius:calc(var(--pb)*.21);font-size:calc(var(--pb)*.19);letter-spacing:1px}
+.ab{position:relative;width:calc(var(--pb)*2.05);height:calc(var(--pb)*2.4)}
+.ab button{position:absolute;width:calc(var(--pb)*1.15);height:calc(var(--pb)*1.15);border-radius:50%;font-size:calc(var(--pb)*.36)}
+#pad .ab [data-k=a]{right:0;top:calc(var(--pb)*.2);background:#e2566f;color:#fff}#pad .ab [data-k=b]{left:0;top:calc(var(--pb)*1.15);background:#3d7ad6;color:#fff}
+#pad button.down{transform:translateY(2px);box-shadow:0 1px 0 #171a24}
+/* 모바일: 본체 테두리를 얇게 해서 화면을 넓게 */
+#ds.slim{padding:calc(var(--u)*2);border-radius:calc(var(--u)*6)}
+#ds.slim .bezel{padding:calc(var(--u)*1.5);border-radius:calc(var(--u)*3)}
+#ds.slim #hinge{height:calc(var(--u)*5)}
+@media (pointer:coarse){#app{padding:4px;gap:6px}}
+/* 휴대폰 가로: 방향 패드는 왼쪽, A/B는 오른쪽 */
+body.land #pad{position:fixed;left:0;right:0;bottom:0;top:0;width:auto;padding:0 6px;pointer-events:none;z-index:50}
+body.land #pad>*{pointer-events:auto}
+body.land #pad .mid{left:auto;right:8px;top:8px;transform:none}
 #help{font-size:12px;color:#8f95ae;text-align:center;line-height:1.7}
 #help b{color:#e8e8f0;font-weight:normal;background:#262a3a;padding:1px 6px;border-radius:4px}
 @media (pointer:coarse){#pad{display:flex}#help{display:none}}

@@ -62,6 +62,18 @@ addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;
 addEventListener('keyup',e=>{const k=KEYMAP[e.key];if(!k)return;if(DIRS.has(k))dirUp(k);if(k==='b')held.b=false;});
 addEventListener('blur',()=>{dirStack=[];held.b=false;});
 document.addEventListener('visibilitychange',()=>{dirStack=[];held.b=false;});
+/* 원형 패드 */
+(()=>{const c=$('#cpad');if(!c)return;let cur=null,pid=null;
+  const set=d=>{if(d===cur)return;if(cur)dirUp(cur);cur=d;c.dataset.d=d||'';if(d){dirDown(d);if(ui.length)press(d);}};
+  const at=e=>{const r=c.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);
+    if(Math.hypot(dx,dy)<r.width*.12)return cur; // 가운데는 직전 방향 유지
+    return Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up');};
+  c.addEventListener('pointerdown',e=>{e.preventDefault();audioInit();pid=e.pointerId;try{c.setPointerCapture(pid);}catch(_){}
+    const d=at(e);set(d||null);});
+  c.addEventListener('pointermove',e=>{if(e.pointerId!==pid)return;e.preventDefault();set(at(e));});
+  const end=e=>{if(e.pointerId!==pid)return;pid=null;set(null);};
+  ['pointerup','pointercancel','lostpointercapture'].forEach(n=>c.addEventListener(n,end));
+  c.addEventListener('contextmenu',e=>e.preventDefault());})();
 document.querySelectorAll('#pad button').forEach(b=>{const k=b.dataset.k;
   const down=e=>{e.preventDefault();b.classList.add('down');if(k==='b')held.b=true;
     if(DIRS.has(k)){dirDown(k);if(ui.length)press(k);}else press(k);};
@@ -73,17 +85,19 @@ $('#scrTop').addEventListener('click',()=>{const h=topH();if(h&&h.tapA)press('a'
 $('#botUI').addEventListener('click',e=>{if(e.target!==$('#botUI')&&!e.target.classList.contains('backdrop'))return;const h=topH();if(h&&h.tapA)press('a');});
 
 /* ---------- 화면 크기 (DS 2화면) ---------- */
-function layout(){const coarse=matchMedia('(pointer:coarse)').matches,iw=innerWidth-16;
-  const pbMax=Math.min((innerWidth-20)/5.35,110);
-  let pb=Math.round(Math.max(48,Math.min(pbMax,innerHeight*.11)));
-  const pad=26; // 본체 여백 (u 단위)
-  const calcU=pb=>{const ih=innerHeight-16-(coarse?pb*3+14:34);
-    const vert=Math.min(iw/(256+pad),ih/(192*2+9+pad+6)),wide=Math.min(iw/(256*2+9+pad+6),ih/(192+pad));
-    const useWide=SET.layout===2||(SET.layout===0&&!coarse&&wide>vert*1.3);
-    return{u:Math.max(1,Math.min(useWide?wide:vert,4)),useWide,ih};};
+function layout(){const coarse=matchMedia('(pointer:coarse)').matches;
+  const land=coarse&&innerWidth>innerHeight*1.15; // 휴대폰 가로: 패드를 화면 양옆에
+  const pbMax=land?Math.min(innerHeight/4.2,58):Math.min((innerWidth-12)/5.4,62);
+  let pb=Math.round(Math.max(40,Math.min(pbMax,(land?innerHeight*.2:innerHeight*.075))));
+  const slim=coarse,BW=slim?264:282,BV=slim?397:425,BH=slim?204:224; // 본체 포함 크기 (u 단위)
+  const calcU=pb=>{const iw=land?innerWidth-2*Math.ceil(pb*2.7+14):innerWidth-(coarse?8:16);
+    const ih=land?innerHeight-8:innerHeight-(coarse?8+6+Math.ceil(pb*2.7)+4:16+34);
+    const vert=Math.min(iw/BW,ih/BV),wide=Math.min(iw/(256*2+(slim?20:41)),ih/BH);
+    const useWide=SET.layout===2||(SET.layout===0&&(land?wide>vert:!coarse&&wide>vert*1.3));
+    return{u:Math.max(.8,Math.min(useWide?wide:vert,4)),useWide,ih};};
   let r=calcU(pb);
-  // 세로 화면에서 남는 높이는 패드를 키우는 데 쓴다
-  if(coarse&&!r.useWide){const left=r.ih-r.u*(192*2+9+pad+6);if(left>3)pb=Math.round(Math.max(48,Math.min(pbMax,pb+left/3)));r=calcU(pb);}
-  $('#pad').style.setProperty('--pb',pb+'px');
+  // 세로 화면에서 남는 높이는 패드에 조금 나눠 준다
+  if(coarse&&!land&&!r.useWide){const left=r.ih-r.u*BV;if(left>3)pb=Math.round(Math.max(40,Math.min(pbMax,pb+left/2.7)));r=calcU(pb);}
+  $('#pad').style.setProperty('--pb',pb+'px');$('#ds').classList.toggle('slim',slim);document.body.classList.toggle('land',land);
   document.documentElement.style.setProperty('--u',r.u.toFixed(3)+'px');$('#ds').classList.toggle('wide',r.useWide);}
 addEventListener('resize',layout);layout();
