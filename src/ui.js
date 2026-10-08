@@ -22,8 +22,8 @@ function lookFor(name){if(!name)return null;if(typeof RIVAL!=='undefined'&&name=
 function setPortrait(name,look){look=look||lookFor(name);const L=look&&LOOK[look];
   if(!L){if(dpor){dpor.remove();dpor=null;dporKey='';}dlg.classList.remove('withpor');return;}
   if(dpor&&dporKey===look)return;if(dpor)dpor.remove();
-  dpor=el(dlg,'portrait','');const[c,g]=mkCanvas(40,48);g.setTransform(2,0,0,2,0,0);g.imageSmoothingEnabled=false;
-  person(g,2,2,'down',0,L);dpor.appendChild(c);dporKey=look;dlg.classList.add('withpor');}
+  dpor=el(dlg,'portrait',portraitSVG(look));dporKey=look;dlg.classList.add('withpor');}
+function porTalk(on){if(dpor)dpor.classList.toggle('talk',!!on);}
 function dlgShow(){dlg.classList.remove('hidden');const d=dlg.getBoundingClientRect();
   // 대화창과 실제로 겹치는 설명 상자만 잠시 숨긴다
   TOP.querySelectorAll('.page .desc').forEach(e=>{const r=e.getBoundingClientRect();e.classList.toggle('under-dlg',r.height>0&&r.bottom>d.top+2);});}
@@ -44,8 +44,8 @@ function say(text,o={}){return new Promise(res=>{clearTimeout(dlgTm);dlgShow();s
   let i=0,done=false,closed=false,at=null,tm=null;const sp=CPS[SET.text]||22;
   const last=()=>!rest.length;
   // 페이지마다 그 순간의 글꼴·화면 크기로 다시 잰다 (웹폰트 늦게 로드, 화면 회전 대응)
-  const start=()=>{[cur,rest]=splitPage(rest);i=0;done=false;dtx.textContent='';dnx.classList.add('hidden');tm=setInterval(()=>{i+=sp<10?3:1;dtx.textContent=cur.slice(0,i);if(i>=cur.length)fin();},sp);};
-  const fin=()=>{clearInterval(tm);
+  const start=()=>{[cur,rest]=splitPage(rest);i=0;done=false;dtx.textContent='';dnx.classList.add('hidden');porTalk(1);tm=setInterval(()=>{i+=sp<10?3:1;dtx.textContent=cur.slice(0,i);if(i>=cur.length)fin();},sp);};
+  const fin=()=>{clearInterval(tm);porTalk(0);
     if(dlg.offsetWidth&&dlgLines(cur)>2){const c=fitCut(cur);rest=(cur.slice(c).replace(/^\s+/,'')+(rest?' '+rest:''));cur=cur.slice(0,c).replace(/\s+$/,'');}
     dtx.textContent=cur;done=true;
     if(o.auto)at=setTimeout(()=>last()?close():next(),o.auto*(SET.text===2?.6:SET.text===0?1.4:1));else dnx.classList.remove('hidden');};
