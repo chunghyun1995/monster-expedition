@@ -137,6 +137,7 @@ const ITEMS={
  parheal:{n:'마비풀림약',p:'heal',price:200,cure:'par',d:'몬스터 1마리의 마비 상태를 치료한다.'},
  awake:{n:'잠깨는종',p:'heal',price:250,cure:'slp',d:'맑은 소리로 잠든 몬스터를 깨운다.'},
  fullheal:{n:'만능치료제',p:'heal',price:600,cure:'all',d:'몬스터 1마리의 모든 상태 이상을 치료한다.'},
+ lvup:{n:'레벨업 물약',p:'heal',price:100,lvup:1,d:'마시면 몬스터의 레벨이 1 올라간다. 새 기술을 배우거나 진화할 수도 있다.'},
  revive:{n:'부활의깃털',p:'heal',price:1500,revive:.5,d:'기절한 몬스터를 HP 절반으로 되살린다.'},
  dex:{n:'몬스터도감',p:'key',d:'만난 몬스터와 붙잡은 몬스터를 기록하는 도감.'},
  pad:{n:'원정패드',p:'key',d:'시계·파티·지도·만보기 앱이 들어 있는 휴대 단말기.'},

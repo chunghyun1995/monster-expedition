@@ -33,7 +33,6 @@ body{background:radial-gradient(ellipse at 50% 0%,#2a2f45 0%,#14161f 70%)}
 
 /* ---------- 대화창 ---------- */
 #dlg{position:absolute;left:calc(var(--u)*3);right:calc(var(--u)*3);bottom:calc(var(--u)*3);height:calc(var(--u)*46);padding:calc(var(--u)*6) calc(var(--u)*10);font-size:calc(var(--u)*11);line-height:calc(var(--u)*16);white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;background:#fdfdf8;border-radius:calc(var(--u)*5);border:calc(var(--u)*2) solid #5a6488;box-shadow:inset 0 0 0 calc(var(--u)*1.5) #fff,inset 0 0 0 calc(var(--u)*2.5) #c8cde0,0 calc(var(--u)*1.5) 0 rgba(0,0,0,.35);z-index:30;cursor:pointer}
-#dlg{overflow:hidden}
 #dlg .tx{display:block;overflow:hidden;max-height:calc(var(--u)*32)}
 #dlg .nx{position:absolute;right:calc(var(--u)*8);bottom:calc(var(--u)*4);width:0;height:0;border-left:calc(var(--u)*4) solid transparent;border-right:calc(var(--u)*4) solid transparent;border-top:calc(var(--u)*5) solid #e2566f;animation:bob .45s infinite alternate}
 #dlg .tag{position:absolute;left:calc(var(--u)*8);top:calc(var(--u)*-13);padding:0 calc(var(--u)*7);height:calc(var(--u)*13);font-size:calc(var(--u)*9);line-height:calc(var(--u)*13);background:#5a6488;color:#fff;border-radius:calc(var(--u)*4) calc(var(--u)*4) 0 0}
@@ -230,6 +229,11 @@ body.land #pad .mid{left:auto;right:8px;top:8px;transform:none}
 .qrbig{position:fixed;inset:0;z-index:999;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;cursor:zoom-out}
 .qrbig canvas{width:min(92vw,82vh);height:min(92vw,82vh);image-rendering:pixelated}
 .qrbig p{margin:0;color:#3d4562;font-size:14px}
+/* 대화창 초상화 */
+#dlg .portrait{position:absolute;left:calc(var(--u)*4);bottom:calc(100% - var(--u)*4);width:calc(var(--u)*40);height:calc(var(--u)*46);border-radius:calc(var(--u)*5);
+  background:radial-gradient(circle at 50% 35%,#ffffff,#d8e4f8 70%);border:calc(var(--u)*2) solid #5a6488;box-shadow:inset 0 0 0 calc(var(--u)*1.5) #fff,0 calc(var(--u)*1.5) 0 rgba(0,0,0,.3);overflow:hidden}
+#dlg .portrait canvas{position:absolute;left:0;top:calc(var(--u)*2);width:calc(var(--u)*40);height:calc(var(--u)*48);image-rendering:pixelated}
+#dlg.withpor .tag{left:calc(var(--u)*48)}
 
 </style>
 </head>
@@ -699,6 +703,7 @@ const ITEMS={
  parheal:{n:'마비풀림약',p:'heal',price:200,cure:'par',d:'몬스터 1마리의 마비 상태를 치료한다.'},
  awake:{n:'잠깨는종',p:'heal',price:250,cure:'slp',d:'맑은 소리로 잠든 몬스터를 깨운다.'},
  fullheal:{n:'만능치료제',p:'heal',price:600,cure:'all',d:'몬스터 1마리의 모든 상태 이상을 치료한다.'},
+ lvup:{n:'레벨업 물약',p:'heal',price:100,lvup:1,d:'마시면 몬스터의 레벨이 1 올라간다. 새 기술을 배우거나 진화할 수도 있다.'},
  revive:{n:'부활의깃털',p:'heal',price:1500,revive:.5,d:'기절한 몬스터를 HP 절반으로 되살린다.'},
  dex:{n:'몬스터도감',p:'key',d:'만난 몬스터와 붙잡은 몬스터를 기록하는 도감.'},
  pad:{n:'원정패드',p:'key',d:'시계·파티·지도·만보기 앱이 들어 있는 휴대 단말기.'},
@@ -1117,8 +1122,21 @@ function place(e,[x,y,w,h]){e.style.left=U(x);e.style.top=U(y);if(w!=null)e.styl
 /* ---------- 대화창 (위 화면) ---------- */
 const dlg=el(TOP,'hidden','<span class="tx"></span><i class="nx hidden"></i>');dlg.id='dlg';
 const dtx=dlg.querySelector('.tx'),dnx=dlg.querySelector('.nx');let dtag=null,dlgTm=null;
-function msg(text,o={}){clearTimeout(dlgTm);dlgShow();setTag(o.name);const pg=paginate(text);dtx.textContent=pg[pg.length-1];dnx.classList.add('hidden');setTag(o.name);}
-function setTag(name){if(dtag){dtag.remove();dtag=null;}if(name){dtag=el(dlg,'tag',esc(name));}}
+function msg(text,o={}){clearTimeout(dlgTm);dlgShow();setTag(o.name,o.look);const pg=paginate(text);dtx.textContent=pg[pg.length-1];dnx.classList.add('hidden');setTag(o.name,o.look);}
+function setTag(name,look){if(dtag){dtag.remove();dtag=null;}if(name){dtag=el(dlg,'tag',esc(name));}setPortrait(name,look);}
+/* 말하는 사람 얼굴: 이름으로 외형을 찾아 대화창 왼쪽 위에 표시 */
+const NAME_LOOK={'한결 박사':'prof','엄마':'mom','간호사':'nurse','점원':'clerk','합성 연구원':'aide','연구원':'aide','경비원':'guide','관장 단단':'leaderRock','관장 하라':'leaderWater','누나':'sister'};
+let dpor=null,dporKey='';
+function lookFor(name){if(!name)return null;if(typeof RIVAL!=='undefined'&&name===RIVAL)return'rival';
+  try{const n=npcsOf(curMap()).find(x=>x.name===name);if(n&&n.look)return n.look;}catch(e){}
+  if(NAME_LOOK[name])return NAME_LOOK[name];
+  if(typeof B!=='undefined'&&B&&B.o&&B.o.look&&(name===B.o.name||name.endsWith(' '+B.o.name)))return B.o.look;
+  return null;}
+function setPortrait(name,look){look=look||lookFor(name);const L=look&&LOOK[look];
+  if(!L){if(dpor){dpor.remove();dpor=null;dporKey='';}dlg.classList.remove('withpor');return;}
+  if(dpor&&dporKey===look)return;if(dpor)dpor.remove();
+  dpor=el(dlg,'portrait','');const[c,g]=mkCanvas(40,48);g.setTransform(2,0,0,2,0,0);g.imageSmoothingEnabled=false;
+  person(g,2,2,'down',0,L);dpor.appendChild(c);dporKey=look;dlg.classList.add('withpor');}
 function dlgShow(){dlg.classList.remove('hidden');const d=dlg.getBoundingClientRect();
   // 대화창과 실제로 겹치는 설명 상자만 잠시 숨긴다
   TOP.querySelectorAll('.page .desc').forEach(e=>{const r=e.getBoundingClientRect();e.classList.toggle('under-dlg',r.height>0&&r.bottom>d.top+2);});}
@@ -1134,7 +1152,7 @@ function fitCut(rest,max=2){if(dlgLines(rest)<=max)return rest.length;
 function splitPage(rest){rest=String(rest);if(!dlg.offsetWidth)return[rest,''];const c=fitCut(rest);const pg=rest.slice(0,c).replace(/\s+$/,''),r=rest.slice(c).replace(/^\s+/,'');dtx.textContent='';return[pg,r];}
 function paginate(text){const pages=[];let rest=String(text);do{const[a,b]=splitPage(rest);pages.push(a);rest=b;}while(rest.length);return pages;}
 const CPS=[45,22,6];
-function say(text,o={}){return new Promise(res=>{clearTimeout(dlgTm);dlgShow();setTag(o.name);dnx.classList.add('hidden');
+function say(text,o={}){return new Promise(res=>{clearTimeout(dlgTm);dlgShow();setTag(o.name,o.look);dnx.classList.add('hidden');
   let rest=String(text),cur='';dtx.textContent='';
   let i=0,done=false,closed=false,at=null,tm=null;const sp=CPS[SET.text]||22;
   const last=()=>!rest.length;
@@ -1199,7 +1217,7 @@ function list(items,o={}){return new Promise(res=>{const root=o.root||BOT,[x,y,w
   pushH(h);draw();if(o.onOpen)o.onOpen(h);});}
 
 /* ---------- 예 / 아니오 ---------- */
-async function ask(text,opts=['예','아니오'],o={}){dlgShow();setTag(o.name);const pg=paginate(text);for(let i=0;i<pg.length-1;i++)await say(pg[i],{...o,keep:1});msg(pg[pg.length-1],o);
+async function ask(text,opts=['예','아니오'],o={}){dlgShow();setTag(o.name,o.look);const pg=paginate(text);for(let i=0;i<pg.length-1;i++)await say(pg[i],{...o,keep:1});msg(pg[pg.length-1],o);
   const n=opts.length,bw=n>2?200:176,bh=n>2?38:52,gap=8,y0=(192-(bh+gap)*n+gap)/2;
   const i=await panel(opts.map((t,j)=>({html:`<span class="bigbtn">${esc(t)}</span>`,x:(256-bw)/2,y:y0+j*(bh+gap),w:bw,h:bh,cls:j===0?'blue':''})),
     {backdrop:true,bg:'rgba(20,24,40,.55)',cancel:o.cancel!=null?o.cancel:n-1,start:o.start||0});
@@ -1699,7 +1717,9 @@ async function openMenu(){if(busy)return;busy=true;sfx('menu');
     if(i<0||i===6)break;menuIdx=i;
     if(i===0)await dexScreen();else if(i===1)await partyScreen('field');else if(i===2)await bagScreen('field');
     else if(i===3)await trainerCard();else if(i===4){if(await saveMenu())break;}else if(i===5)await optionsMenu();}}
-  finally{hideMsg();clearPages(TOP);busy=false;Pad.render();}}
+  finally{hideMsg();clearPages(TOP);await runPendingEvo();busy=false;Pad.render();}}
+let pendingEvo=[];
+async function runPendingEvo(){while(pendingEvo.length){const m=pendingEvo.shift();if(G.party.includes(m)){const ev=SP[m.sid].ev;if(ev&&m.lv>=ev[0])await evolve(m);}}}
 
 /* ================= 파티 ================= */
 function partyCellHtml(m){const mx=maxHp(m);return`<img src="${monIcon(m.sid,m.shiny)}" alt=""><div class="inf"><div class="nm">${esc(N(m))}</div>
@@ -1811,7 +1831,7 @@ async function bagScreen(mode){const tp=page(TOP,''),prevBot=botMode;botMode='me
     if(r<0){if(r===-1)return null;continue;}
     const id=ids[r],it=ITEMS[id];
     if(it.p==='key'){await say(id==='pad'?'원정패드는 아래 화면에서 사용할 수 있다.':id==='dex'?'도감은 메뉴에서 볼 수 있다.':`${it.n}은 신고 있는 것만으로 효과가 있다.`);continue;}
-    if(mode==='battle'){if(it.ball)return{id};
+    if(mode==='battle'){if(it.ball)return{id};if(it.lvup){await say('전투 중에는 마실 틈이 없다!');continue;}
       const t=await partyScreen('item',{tip:`${it.n}을(를) 누구에게 사용할까요?`});if(t<0)continue;
       if(!canUse(id,G.party[t])){await say('사용해도 효과가 없을 것 같다.');continue;}return{id,target:t};}
     const c=await panel([{html:'사용하기',x:40,y:50,w:176,h:40,cls:'blue'},{html:'그만두기',x:40,y:100,w:176,h:34,cls:'dark'}],{backdrop:true,bg:'rgba(20,24,40,.55)'});
@@ -1821,9 +1841,11 @@ async function bagScreen(mode){const tp=page(TOP,''),prevBot=botMode;botMode='me
     const m=G.party[t];if(!canUse(id,m)){await say('사용해도 효과가 없을 것 같다.');continue;}
     await applyItem(id,m);}}
   finally{tp.remove();botMode=prevBot;}}
-function canUse(id,m){const it=ITEMS[id];if(it.revive)return m.hp<=0;if(m.hp<=0)return false;
+function canUse(id,m){const it=ITEMS[id];if(it.lvup)return m.lv<100;if(it.revive)return m.hp<=0;if(m.hp<=0)return false;
   if(it.heal)return m.hp<maxHp(m);if(it.cure)return it.cure==='all'?!!m.st:m.st===it.cure;return false;}
 async function applyItem(id,m,o={}){const it=ITEMS[id];G.bag[id]--;
+  if(it.lvup){sfx('heal');await say(`${J(N(m),'은')} ${J(it.n,'을')} 꿀꺽 마셨다!`,{keep:1});m.exp=expFor(m.lv+1);await levelUp(m,false);hideMsg();
+    const ev=SP[m.sid].ev;if(ev&&m.lv>=ev[0]&&m.hp>0&&!pendingEvo.includes(m)){pendingEvo.push(m);await say(`어라...? ${N(m)}의 몸이 빛나기 시작했다! (메뉴를 닫으면 진화가 시작된다)`);}return;}
   if(it.revive){m.hp=Math.max(1,Math.floor(maxHp(m)*it.revive));m.st='';sfx('heal');await say(`${J(N(m),'은')} 기운을 되찾았다!`);return;}
   if(it.heal){const b0=m.hp;m.hp=Math.min(maxHp(m),m.hp+it.heal);sfx('heal');if(o.anim)await o.anim(b0,m.hp);await say(`${N(m)}의 HP가 ${m.hp-b0} 회복되었다!`);return;}
   if(it.cure){m.st='';m.slp=0;sfx('heal');await say(`${N(m)}의 상태 이상이 나았다!`);}}
@@ -1966,7 +1988,84 @@ async function optionsMenu(){const rows=[['텍스트 속도',['느림','보통',
 let optH=null;
 
 /* ================= 상점 ================= */
-function shopStock(){const s=['ball','potion','antidote','burnheal','parheal','awake'];if(G.badges[0])s.splice(1,0,'great'),s.splice(3,0,'super'),s.push('fullheal');if(G.badges[1])s.push('revive');return s;}
+function shopStock(){const s=['ball','lvup','potion','antidote','burnheal','parheal','awake'];if(G.badges[0])s.splice(1,0,'great'),s.splice(3,0,'super'),s.push('fullheal');if(G.badges[1])s.push('revive');return s;}
+async function shop(){const o={name:'점원'};let first=1;
+  while(true){const c=await ask(first?'어서 오세요! 무엇을 도와드릴까요?':'그 밖에 필요하신 건 없으세요?',['사러 왔어요','팔러 왔어요','괜찮아요'],o);
+    first=0;if(c===0)await shopBuy();else if(c===1)await shopSell();else break;}
+  await say('감사합니다! 또 오세요!',o);}
+function shopTop(id,mode){const it=ITEMS[id];return`<div class="abs" style="inset:0;background:linear-gradient(#cfe0ff,#f2f6ff)"></div><div class="title-bar">몬스터 상점 · ${mode}<span class="r">${money(G.money)}</span></div>
+  ${it?`<img class="abs big" src="${itemIcon(id)}" style="left:${U(20)};top:${U(36)};width:${U(48)};height:${U(48)}"><div class="sheet" style="left:${U(84)};top:${U(30)};width:${U(164)};height:${U(60)}"><div style="font-size:${U(11)}">${it.n}</div><div style="font-size:${U(9)};color:#6a7190">가방에 ${G.bag[id]||0}개</div></div>
+  <div class="sheet desc" style="left:${U(8)};top:${U(98)};width:${U(240)};height:${U(50)}">${it.d}</div>`:''}`;}
+async function shopBuy(){const tp=page(TOP,'');let at=0;guideSoon('shop','bot','사고 싶은 물건을 고른 뒤 <b>▲ ▼</b>로 수량을 정해요. 배지를 모으면 파는 물건이 늘어나요.',{title:'상점'});
+  try{while(true){const st=shopStock();
+    const r=await list(st.map(k=>({html:`<img src="${itemIcon(k)}"><span>${ITEMS[k].n}</span><span class="r">${money(ITEMS[k].price)}</span>`})),
+      {rect:[4,4,248,150],rowH:20,start:at,backdrop:true,bg:'linear-gradient(#5a8ad8,#3d5aa8)',buttons:[{html:'그만두기',x:170,y:160,w:82,h:28,cls:'dark',val:-1}],onMove:i=>tp.innerHTML=shopTop(st[i],'사기')});
+    if(r<0)break;at=r;const id=st[r],it=ITEMS[id];const max=Math.min(99,Math.floor(G.money/it.price));
+    if(max<1){await say('돈이 부족하신 것 같아요.',{name:'점원'});continue;}
+    msg(`${J(it.n,'을')} 몇 개 사시겠어요?`,{name:'점원'});const n=await numberPick({max,price:it.price,title:it.n});hideMsg();if(!n)continue;
+    const ok=await ask(`${it.n} ${n}개, 총 ${money(n*it.price)}입니다. 괜찮으시겠어요?`,['예','아니오'],{name:'점원'});if(ok!==0)continue;
+    G.money-=n*it.price;G.bag[id]=(G.bag[id]||0)+n;sfx('save');tp.innerHTML=shopTop(id,'사기');await say('네, 여기 있습니다! 감사합니다!',{name:'점원'});
+    if(id==='ball'&&n>=10){G.bag.great=(G.bag.great||0)+1;await say('캡슐을 많이 사 주셔서 슈퍼캡슐을 하나 덤으로 드릴게요!',{name:'점원'});}}}
+  finally{tp.remove();}}
+async function shopSell(){const tp=page(TOP,'');
+  try{while(true){const ids=Object.keys(ITEMS).filter(k=>ITEMS[k].price&&G.bag[k]>0);
+    if(!ids.length){await say('팔 수 있는 물건이 없는 것 같네요.',{name:'점원'});break;}
+    const r=await list(ids.map(k=>({html:`<img src="${itemIcon(k)}"><span>${ITEMS[k].n}</span><span class="r">× ${G.bag[k]} · ${money(ITEMS[k].price/2)}</span>`})),
+      {rect:[4,4,248,150],rowH:20,backdrop:true,bg:'linear-gradient(#5aa86a,#3a7a4a)',buttons:[{html:'그만두기',x:170,y:160,w:82,h:28,cls:'dark',val:-1}],onMove:i=>tp.innerHTML=shopTop(ids[i],'팔기')});
+    if(r<0)break;const id=ids[r],it=ITEMS[id];const n=await numberPick({max:G.bag[id],price:it.price/2,title:it.n});if(!n)continue;
+    const ok=await ask(`${it.n} ${n}개를 ${money(n*it.price/2)}에 사겠습니다. 괜찮으세요?`,['예','아니오'],{name:'점원'});if(ok!==0)continue;
+    G.bag[id]-=n;G.money+=n*it.price/2;sfx('save');await say(`${money(n*it.price/2)}을 받았다!`);}}
+  finally{tp.remove();}}
+
+/* ================= 몬스터 센터 ================= */
+async function nurse(out,ox,oy){const o={name:'간호사'},n=npcById('nurse_'+G.map);
+  await say('어서 오세요! 몬스터 센터입니다.',o);
+  const r=await ask('몬스터의 체력을 회복시켜 드릴까요?',['예','아니오'],o);
+  if(r!==0){await say('또 들러 주세요!',o);return;}
+  await say('그럼 몬스터를 잠시 맡아 두겠습니다.',o);n.dir='left';const m=curMap();m.healAnim={n:G.party.length,f0:frame,on:true};
+  for(let i=0;i<G.party.length;i++){m.healAnim.n=i+1;sfx('click');await sleep(260);}
+  m.healAnim.blink=true;await Music.jingle('heal');m.healAnim=null;healParty();n.dir='down';
+  G.heal={map:out,x:ox,y:oy};
+  await say('기다리셨습니다! 맡겨 주신 몬스터는 모두 건강해졌어요.',o);n.bow=1;await sleep(400);n.bow=0;await say('또 들러 주세요!',o);}
+
+/* ================= PC 보관함 =================
+   맡긴 몬스터는 실제 시간이 흐른 만큼 자란다: BOX_MIN분마다 레벨 1 (파티 최고 레벨까지). */
+const BOX_MIN=10;
+function boxCap(){return Math.max(5,...G.party.map(m=>m.lv));}
+/* 보관함 몬스터를 지금 시각까지 키운다 → [{m,from,to,learned:[],full:[]}] */
+function boxGrow(){const now=Date.now(),cap=boxCap(),out=[];
+  for(const m of G.box){if(!m.boxAt){m.boxAt=now;continue;}
+    const steps=Math.floor((now-m.boxAt)/(BOX_MIN*60000));if(steps<=0)continue;
+    if(m.lv>=cap){m.boxAt=now;continue;}
+    const from=m.lv,to=Math.min(cap,100,m.lv+steps),r={m,from,to,learned:[],full:[]};
+    for(let l=from+1;l<=to;l++){const o=calc(m);m.lv=l;m.exp=expFor(l);const n=calc(m);m.hp=Math.min(n[0],m.hp+n[0]-o[0]);
+      for(const[ll,id]of SP[m.sid].ls)if(ll===l&&!m.moves.some(x=>x.id===id)){if(m.moves.length<4){m.moves.push({id,pp:MV[id].pp});r.learned.push(MV[id].n);}else r.full.push(MV[id].n);}}
+    m.boxAt=to>=cap?now:m.boxAt+(to-from)*BOX_MIN*60000;out.push(r);}
+  return out;}
+async function pcMenu(){sfx('menu');guideSoon('pc','top',`파티에는 6마리까지 데리고 다닐 수 있어요. 나머지는 <b>보관함</b>에 맡길 수 있고, 맡긴 동안 <b>${BOX_MIN}분마다 레벨이 1씩</b> 올라요(파티 최고 레벨까지).`,{title:'PC 보관함'});
+  await say(`${J(G.name,'은')} PC의 전원을 켰다!`);
+  const grown=boxGrow();
+  if(grown.length){sfx('save');await say('보관함에 맡겨 둔 몬스터들이 그동안 훈련을 했다!');
+    for(const r of grown){Music.jingle('level');await say(`${J(N(r.m),'은')} Lv${r.from} → ${J('Lv'+r.to,'로')} 자랐다!${r.learned.length?` 새로 ${r.learned.join(', ')}${J(r.learned[r.learned.length-1],'을').slice(-1)} 배웠다!`:''}`);
+      if(r.full.length)await say(`(${r.full.join(', ')}도 배울 수 있었지만 기술 칸이 가득 차 있었다.)`);}}
+  while(true){const c=await ask('무엇을 할까?',['몬스터 맡기기','몬스터 데려오기','그만두기']);
+    if(c===0){if(G.party.length<=1){await say('마지막 한 마리는 맡길 수 없습니다!');continue;}
+      const i=await partyScreen('deposit');if(i<0)continue;const m=G.party[i];
+      const ok=await ask(`${J(N(m),'을')} 보관함에 맡기겠습니까?`);if(ok!==0)continue;
+      G.party.splice(i,1);healMon(m);m.boxAt=Date.now();G.box.push(m);sfx('save');await say(`${J(N(m),'을')} 보관함에 맡겼다.`);
+      if(m.lv<boxCap())await say(`보관함에서 ${BOX_MIN}분마다 레벨이 1씩 오른다. (지금은 Lv${boxCap()}까지)`);else await say(`${J(N(m),'은')} 이미 파티 최고 레벨이라 보관함에서는 더 자라지 않는다.`);}
+    else if(c===1){if(!G.box.length){await say('보관함에 몬스터가 없습니다.');continue;}
+      const tp=page(TOP,'');
+      const r=await list(G.box.map(m=>({html:`<img src="${monIcon(m.sid,m.shiny)}"><span>${esc(N(m))}</span><span class="r">Lv${m.lv}</span>`})),
+        {rect:[4,4,248,150],rowH:20,backdrop:true,bg:'linear-gradient(#6a7290,#3d4562)',buttons:[{html:'그만두기',x:170,y:160,w:82,h:28,cls:'dark',val:-1}],onMove:i=>tp.innerHTML=monTopPage(G.box[i],'보관함')});
+      tp.remove();if(r<0)continue;if(G.party.length>=6){await say('파티가 가득 찼습니다! 먼저 몬스터를 맡겨 주세요.');continue;}
+      const m=G.box.splice(r,1)[0];delete m.boxAt;G.party.push(m);sfx('save');await say(`${J(N(m),'을')} 데려왔다!`);
+      const ev=SP[m.sid].ev;if(ev&&m.lv>=ev[0]&&!pendingEvo.includes(m))pendingEvo.push(m);}
+    else break;}
+  sfx('back');await say('PC의 전원을 껐다.');await runPendingEvo();}
+
+/* ================= 상점 ================= */
+function shopStock(){const s=['ball','lvup','potion','antidote','burnheal','parheal','awake'];if(G.badges[0])s.splice(1,0,'great'),s.splice(3,0,'super'),s.push('fullheal');if(G.badges[1])s.push('revive');return s;}
 async function shop(){const o={name:'점원'};let first=1;
   while(true){const c=await ask(first?'어서 오세요! 무엇을 도와드릴까요?':'그 밖에 필요하신 건 없으세요?',['사러 왔어요','팔러 왔어요','괜찮아요'],o);
     first=0;if(c===0)await shopBuy();else if(c===1)await shopSell();else break;}
@@ -2007,20 +2106,7 @@ async function nurse(out,ox,oy){const o={name:'간호사'},n=npcById('nurse_'+G.
   await say('기다리셨습니다! 맡겨 주신 몬스터는 모두 건강해졌어요.',o);n.bow=1;await sleep(400);n.bow=0;await say('또 들러 주세요!',o);}
 
 /* ================= PC 보관함 ================= */
-async function pcMenu(){sfx('menu');guideSoon('pc','top','파티에는 6마리까지 데리고 다닐 수 있어요. 나머지는 <b>보관함</b>에 맡기고 언제든 데려올 수 있어요.',{title:'PC 보관함'});await say(`${J(G.name,'은')} PC의 전원을 켰다!`);
-  while(true){const c=await ask('무엇을 할까?',['몬스터 맡기기','몬스터 데려오기','그만두기']);
-    if(c===0){if(G.party.length<=1){await say('마지막 한 마리는 맡길 수 없습니다!');continue;}
-      const i=await partyScreen('deposit');if(i<0)continue;const m=G.party[i];
-      const ok=await ask(`${J(N(m),'을')} 보관함에 맡기겠습니까?`);if(ok!==0)continue;
-      G.party.splice(i,1);healMon(m);G.box.push(m);sfx('save');await say(`${J(N(m),'을')} 보관함에 맡겼다.`);}
-    else if(c===1){if(!G.box.length){await say('보관함에 몬스터가 없습니다.');continue;}
-      const tp=page(TOP,'');
-      const r=await list(G.box.map(m=>({html:`<img src="${monIcon(m.sid,m.shiny)}"><span>${esc(N(m))}</span><span class="r">Lv${m.lv}</span>`})),
-        {rect:[4,4,248,150],rowH:20,backdrop:true,bg:'linear-gradient(#6a7290,#3d4562)',buttons:[{html:'그만두기',x:170,y:160,w:82,h:28,cls:'dark',val:-1}],onMove:i=>tp.innerHTML=monTopPage(G.box[i],'보관함')});
-      tp.remove();if(r<0)continue;if(G.party.length>=6){await say('파티가 가득 찼습니다! 먼저 몬스터를 맡겨 주세요.');continue;}
-      const m=G.box.splice(r,1)[0];G.party.push(m);sfx('save');await say(`${J(N(m),'을')} 데려왔다!`);}
-    else break;}
-  sfx('back');await say('PC의 전원을 껐다.');}
+
 
 /* ================= 몬스터 합성 =================
    아무 몬스터 두 마리 → 한 단계 위 등급(진화 단계)의 무작위 타입 몬스터 1마리.
@@ -2127,7 +2213,7 @@ async function battle(o){const wild=o.kind==='wild';
   else{ballRow('e',false);ballRow('p',false);await sleep(30);ballRow('e',true);ballRow('p',true);await bsay(`${J(tn(),'이')} 승부를 걸어왔다!`,true);ballRow('e',false);ballRow('p',false);await sendFoe();}
   await sendPlayer();
   let res=null;
-  while(!res){res=await doTurn(await chooseAction());}
+  while(!res){res=B.hero?await heroTurn():await doTurn(await chooseAction());}
   return await endBattle(res);}
 
 async function sendFoe(){const f=fm();G.seen[f.sid]=1;B.st.e=[0,0,0,0,0,0];B.part=new Set(B.p.show&&pm().hp>0?[pm()]:[]);B.e=blank();
@@ -2199,7 +2285,8 @@ async function doTurn(act){B.flinch={};B.moved={};
 function tryRun(){B.runs++;const a=speedOf('p'),b=speedOf('e');if(a>=b)return true;const f=Math.floor(a*128/b)+30*B.runs;return rnd(256)<f;}
 async function checkFaints(){let cut=false;
   if(fm().hp<=0){cut=true;if(!B.wild&&B.fi<B.foe.length-1){B.fi++;await nextFoe();}else{B.result='win';return'done';}}
-  if(pm().hp<=0){cut=true;if(!G.party.some(m=>m.hp>0)){B.result='lose';return'done';}
+  if(B.hero)return cut?'cut':false;
+  if(pm().hp<=0){cut=true;if(!G.party.some(m=>m.hp>0)){if(!B.heroUsed&&await heroStart())return'cut';B.result='lose';return'done';}
     if(B.wild){const r=await ask('다음 몬스터를 사용하겠습니까?',['다음 몬스터','도망친다']);
       if(r===1){if(tryRun()){sfx('run');await bsay('무사히 도망쳤다!',true);B.result='run';return'done';}await bsay('도망칠 수 없었다!',true);}}
     B.pi=await partyScreen('forced');await sendPlayer();}
@@ -2401,6 +2488,57 @@ function drawBattle(g){const b=B;if(!b)return;g.save();if(b.shake)g.translate(Ma
   if(b.ball){g.save();g.translate(b.ball.x,b.ball.y);g.scale(1.6,1.6);capsule(g,0,0,b.ball.r,{kind:b.ball.kind,open:b.ball.open});if(b.ball.dim){g.fillStyle='rgba(0,0,0,.25)';g.fillRect(-5,-5,10,10);}g.restore();}
   FX.draw(g);g.restore();if(b.flash>0){g.globalAlpha=b.flash;g.fillStyle=b.flashCol;g.fillRect(0,0,W,H);g.globalAlpha=1;}}
 
+/* ---------- 최후의 수단: 트레이너가 직접 싸운다 ----------
+   몬스터가 모두 쓰러지면 한 번, 트레이너가 직접 나설 수 있다. 쓰러지면 평소처럼 패배. */
+const HERO_ACT=[{n:'돌 던지기',acc:92,lo:.16,hi:.24,d:'안정적'},{n:'몸통 박치기',acc:72,lo:.28,hi:.4,d:'위력 높음'}];
+async function heroStart(){B.heroUsed=1;
+  const r=await ask(`${G.name}의 몬스터가 모두 쓰러졌다!\n마지막으로 ${J(G.name,'이')} 직접 맞서 볼까?`,['직접 맞선다!','포기한다'],{keep:1});
+  if(r!==0)return false;
+  const lv=Math.max(...G.party.map(m=>m.lv)),max=20+lv*3;B.hero={lv,max,hp:max};
+  hudP.querySelector('.exp').style.visibility='hidden';heroHud();
+  B.ptr.show=true;B.ptr.x=-130;sfx('run');await tween(420,k=>B.ptr.x=-130*(1-k),EASE.out);hudP.classList.remove('out');
+  await bsay(`${J(G.name,'은')} 쓰러진 몬스터들 앞을 막아섰다!`,true);
+  await bsay(`${tnOrWild()} 앞에 ${J(G.name,'이')} 직접 맞선다!`);
+  return true;}
+const tnOrWild=()=>B.wild?`야생 ${N(fm())}`:N(fm());
+function heroHud(hp){const h=B.hero,v=hp==null?h.hp:hp,p=clamp(v/h.max*100,0,100);
+  hudP.querySelector('.nm').textContent=G.name;hudP.querySelector('.lv').innerHTML=`<span class="stb" style="background:#e2566f">트레이너</span>`;
+  const bar=hudP.querySelector('.hpb i');bar.style.width=p+'%';bar.style.background=hpColor(p);hudP.querySelector('.hpt').textContent=`${Math.max(0,Math.ceil(v))} / ${h.max}`;}
+async function heroHP(to){const h=B.hero,from=h.hp;to=clamp(Math.round(to),0,h.max);h.hp=to;await tween(Math.min(900,300+Math.abs(from-to)/h.max*700),k=>heroHud(from+(to-from)*k));heroHud();}
+async function heroTurn(){const f=fm(),h=B.hero;
+  msg(`${J(G.name,'은')}\n어떻게 맞설까?`);
+  const heal=['super','potion'].find(k=>G.bag[k]>0);
+  const btns=[...HERO_ACT.map((a,i)=>({html:`<span class="mn">${a.n}</span><span class="mi"><span>${a.d}</span><span>명중 ${a.acc}</span></span>`,x:4+i*126,y:6,w:122,h:62,cls:'mvbtn hero'})),
+    {html:heal?`<span>${ITEMS[heal].n} 마시기</span><small>남은 ${G.bag[heal]}개</small>`:'<span>회복약 없음</span>',x:4,y:74,w:122,h:56,cls:'yellow',disabled:!heal},
+    {html:B.wild?'<span>도망치다</span>':'<span>버티기</span><small>방어 자세</small>',x:130,y:74,w:122,h:56,cls:'blue'}];
+  guideSoon('hero','#botUI .mvbtn','몬스터가 모두 쓰러져서 <b>트레이너가 직접</b> 싸우고 있어요! 트레이너가 쓰러지면 패배예요.',{title:'최후의 수단'});
+  const i=await panel(btns,{cancel:false,onOpen:hh=>hh.els.slice(0,2).forEach(e=>{e.style.background='linear-gradient(#ffb08a,#d8603a)';e.style.borderColor='#7a2a10';})});
+  hideMsg();let guard=false;
+  if(i<2){const a=HERO_ACT[i];await bsay(`${J(G.name,'은')} ${J(a.n,'을')} 했다!`);
+    // 연출: 돌 던지기 = 포물선, 몸통 박치기 = 돌진
+    const c=center('e');
+    if(i===0){sfx('throw');await tween(380,k=>{FX.add({x:40+(c.x-40)*k,y:150-(150-c.y)*k-Math.sin(k*Math.PI)*40,shape:'circ',c:'#8a7a6a',s:3,life:3});});}
+    else{sfx('run');await tween(240,k=>B.ptr.x=k*60);await tween(160,k=>B.ptr.x=60*(1-k));}
+    if(rnd(100)<a.acc){const mx=maxHp(f),dmg=Math.max(1,Math.round(mx*(a.lo+Math.random()*(a.hi-a.lo))));sfx('hit');await hitReact('e',1);await animHP('e',f,f.hp-dmg);
+      if(i===1&&Math.random()<.35){await bsay(`반동으로 ${G.name}도 조금 다쳤다!`);await heroHP(h.hp-Math.round(h.max*.06));}}
+    else{sfx('miss');await bsay(`하지만 ${tnOrWild()}에게 빗나갔다!`);}}
+  else if(i===2&&heal){G.bag[heal]--;await bsay(`${J(G.name,'은')} ${J(ITEMS[heal].n,'을')} 꿀꺽 마셨다!`);sfx('heal');await heroHP(h.hp+Math.round(h.max*(heal==='super'?.6:.35)));}
+  else{if(B.wild){if(Math.random()<.6){sfx('run');await bsay('몬스터들을 안고 무사히 도망쳤다!',true);return'run';}await bsay('도망칠 수 없었다!');}
+    else{guard=true;await bsay(`${J(G.name,'은')} 몸을 웅크리고 버틴다!`);}}
+  // 상대가 쓰러졌는지
+  if(f.hp<=0){await faint('e');
+    if(!B.wild&&B.fi<B.foe.length-1){B.fi++;await bsay(`${J(G.name,'은')} 숨을 고른다...`);await sendFoe();return null;}
+    await bsay(`${J(G.name,'이')} 직접 승리를 거머쥐었다!`,true);return'win';}
+  // 상대의 반격
+  const id=aiHeroMove(f),mv=MV[id];await bsay(`${tnOrWild()}의 ${mv.n}!`);
+  if(SET.anim)await animMove('e',mv,false);
+  const pw=mv.p||40,raw=h.max*(.1+pw/650)*(.85+Math.random()*.3)*(f.lv/Math.max(1,h.lv))**.5*(guard?.4:1);
+  if(rnd(100)<(mv.a||100)){sfx('hit');B.shake=5;setTimeout(()=>B.shake=0,260);await heroHP(h.hp-Math.max(1,Math.round(raw)));}
+  else{sfx('miss');await bsay(`${J(G.name,'은')} 몸을 날려 피했다!`);}
+  if(h.hp<=0){sfx('faint');await tween(400,k=>B.ptr.x=-k*130);B.ptr.show=false;hudP.classList.add('out');await bsay(`${J(G.name,'은')} 힘이 다해 쓰러졌다...`,true);return'lose';}
+  return null;}
+function aiHeroMove(e){const av=e.moves.filter(x=>x.pp>0&&MV[x.id].p);return av.length?av[rnd(av.length)].id:e.moves[0].id;}
+
 /* =========================================================
    world.js — 필드 이동, 이벤트 도우미, 타이틀·오프닝·엔딩, 메인 루프
    ========================================================= */
@@ -2423,7 +2561,7 @@ async function walkPlayer(dirs,ms=230){for(const d of dirs){P.dir=d;const[dx,dy]
     await tween(ms,k=>P.t=k);P.x=P.tx;P.y=P.ty;P.t=0;P.moving=false;P.scripted=false;P.step^=1;}G.x=P.x;G.y=P.y;}
 async function emoteOn(n,kind='!',ms=650){(n==='player'?P:n).emote=kind;if(kind==='!')sfx('sel');await sleep(ms);(n==='player'?P:n).emote=null;}
 function healParty(){G.party.forEach(healMon);}
-function addMon(m){if(G.party.length<6){G.party.push(m);return'party';}G.box.push(m);return'box';}
+function addMon(m){if(G.party.length<6){G.party.push(m);return'party';}m.boxAt=Date.now();G.box.push(m);return'box';}
 async function giveItem(id,n=1,o={}){const it=ITEMS[id];G.bag[id]=(G.bag[id]||0)+n;await Music.jingle(it.p==='key'?'key':'item');
   await say(`${J(G.name,'은')} ${n>1?`${it.n} ${n}개를`:J(it.n,'을')} 손에 넣었다!`);
   if(it.p!=='key')await say(`${J(G.name,'은')} ${J(it.n,'을')} 가방의 ${POCKETS.find(p=>p[0]===it.p)[1]} 주머니에 넣었다.`);}
@@ -2487,7 +2625,7 @@ async function interact(){const m=curMap(),[dx,dy]=DV[P.dir];let x=P.x+dx,y=P.y+
   if(n){if(n.mv)return;await runScript(async()=>{const d0=n.dir;n.dir=OPP[P.dir];
       if(n.trainer&&!G.flags[n.id])await trainerTalk(n);
       else if(n.trainer)await talk(n.trainer.after,{name:tname(n)});
-      else if(n.talk)await n.talk(n);else await talk(n.text,{name:n.name});
+      else if(n.talk)await n.talk(n);else await talk(n.text,{name:n.name,look:n.look});
       if(n.wander)n.dir=d0;});return;}
   const it=itemAt(m,x,y);if(it){await runScript(async()=>{G.flags[it.flag]=1;await giveItem(it.item,it.n);});return;}
   const key=x+','+y,ob=m.obj[key];

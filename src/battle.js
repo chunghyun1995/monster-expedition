@@ -50,7 +50,7 @@ async function battle(o){const wild=o.kind==='wild';
   else{ballRow('e',false);ballRow('p',false);await sleep(30);ballRow('e',true);ballRow('p',true);await bsay(`${J(tn(),'이')} 승부를 걸어왔다!`,true);ballRow('e',false);ballRow('p',false);await sendFoe();}
   await sendPlayer();
   let res=null;
-  while(!res){res=await doTurn(await chooseAction());}
+  while(!res){res=B.hero?await heroTurn():await doTurn(await chooseAction());}
   return await endBattle(res);}
 
 async function sendFoe(){const f=fm();G.seen[f.sid]=1;B.st.e=[0,0,0,0,0,0];B.part=new Set(B.p.show&&pm().hp>0?[pm()]:[]);B.e=blank();
@@ -122,7 +122,8 @@ async function doTurn(act){B.flinch={};B.moved={};
 function tryRun(){B.runs++;const a=speedOf('p'),b=speedOf('e');if(a>=b)return true;const f=Math.floor(a*128/b)+30*B.runs;return rnd(256)<f;}
 async function checkFaints(){let cut=false;
   if(fm().hp<=0){cut=true;if(!B.wild&&B.fi<B.foe.length-1){B.fi++;await nextFoe();}else{B.result='win';return'done';}}
-  if(pm().hp<=0){cut=true;if(!G.party.some(m=>m.hp>0)){B.result='lose';return'done';}
+  if(B.hero)return cut?'cut':false;
+  if(pm().hp<=0){cut=true;if(!G.party.some(m=>m.hp>0)){if(!B.heroUsed&&await heroStart())return'cut';B.result='lose';return'done';}
     if(B.wild){const r=await ask('다음 몬스터를 사용하겠습니까?',['다음 몬스터','도망친다']);
       if(r===1){if(tryRun()){sfx('run');await bsay('무사히 도망쳤다!',true);B.result='run';return'done';}await bsay('도망칠 수 없었다!',true);}}
     B.pi=await partyScreen('forced');await sendPlayer();}
@@ -323,3 +324,54 @@ function drawBattle(g){const b=B;if(!b)return;g.save();if(b.shake)g.translate(Ma
   const p=b.p;if(p.show&&!p.blink&&pm())drawMon(g,pm().sid,PPOS.x+po+p.x,PPOS.y+p.y,4,{back:true,shiny:pm().shiny,white:p.white,whiteCol:p.tint||'#ffffff',sx:p.sx,sy:p.sy,clipY:PPOS.y+1});
   if(b.ball){g.save();g.translate(b.ball.x,b.ball.y);g.scale(1.6,1.6);capsule(g,0,0,b.ball.r,{kind:b.ball.kind,open:b.ball.open});if(b.ball.dim){g.fillStyle='rgba(0,0,0,.25)';g.fillRect(-5,-5,10,10);}g.restore();}
   FX.draw(g);g.restore();if(b.flash>0){g.globalAlpha=b.flash;g.fillStyle=b.flashCol;g.fillRect(0,0,W,H);g.globalAlpha=1;}}
+
+/* ---------- 최후의 수단: 트레이너가 직접 싸운다 ----------
+   몬스터가 모두 쓰러지면 한 번, 트레이너가 직접 나설 수 있다. 쓰러지면 평소처럼 패배. */
+const HERO_ACT=[{n:'돌 던지기',acc:92,lo:.16,hi:.24,d:'안정적'},{n:'몸통 박치기',acc:72,lo:.28,hi:.4,d:'위력 높음'}];
+async function heroStart(){B.heroUsed=1;
+  const r=await ask(`${G.name}의 몬스터가 모두 쓰러졌다!\n마지막으로 ${J(G.name,'이')} 직접 맞서 볼까?`,['직접 맞선다!','포기한다'],{keep:1});
+  if(r!==0)return false;
+  const lv=Math.max(...G.party.map(m=>m.lv)),max=20+lv*3;B.hero={lv,max,hp:max};
+  hudP.querySelector('.exp').style.visibility='hidden';heroHud();
+  B.ptr.show=true;B.ptr.x=-130;sfx('run');await tween(420,k=>B.ptr.x=-130*(1-k),EASE.out);hudP.classList.remove('out');
+  await bsay(`${J(G.name,'은')} 쓰러진 몬스터들 앞을 막아섰다!`,true);
+  await bsay(`${tnOrWild()} 앞에 ${J(G.name,'이')} 직접 맞선다!`);
+  return true;}
+const tnOrWild=()=>B.wild?`야생 ${N(fm())}`:N(fm());
+function heroHud(hp){const h=B.hero,v=hp==null?h.hp:hp,p=clamp(v/h.max*100,0,100);
+  hudP.querySelector('.nm').textContent=G.name;hudP.querySelector('.lv').innerHTML=`<span class="stb" style="background:#e2566f">트레이너</span>`;
+  const bar=hudP.querySelector('.hpb i');bar.style.width=p+'%';bar.style.background=hpColor(p);hudP.querySelector('.hpt').textContent=`${Math.max(0,Math.ceil(v))} / ${h.max}`;}
+async function heroHP(to){const h=B.hero,from=h.hp;to=clamp(Math.round(to),0,h.max);h.hp=to;await tween(Math.min(900,300+Math.abs(from-to)/h.max*700),k=>heroHud(from+(to-from)*k));heroHud();}
+async function heroTurn(){const f=fm(),h=B.hero;
+  msg(`${J(G.name,'은')}\n어떻게 맞설까?`);
+  const heal=['super','potion'].find(k=>G.bag[k]>0);
+  const btns=[...HERO_ACT.map((a,i)=>({html:`<span class="mn">${a.n}</span><span class="mi"><span>${a.d}</span><span>명중 ${a.acc}</span></span>`,x:4+i*126,y:6,w:122,h:62,cls:'mvbtn hero'})),
+    {html:heal?`<span>${ITEMS[heal].n} 마시기</span><small>남은 ${G.bag[heal]}개</small>`:'<span>회복약 없음</span>',x:4,y:74,w:122,h:56,cls:'yellow',disabled:!heal},
+    {html:B.wild?'<span>도망치다</span>':'<span>버티기</span><small>방어 자세</small>',x:130,y:74,w:122,h:56,cls:'blue'}];
+  guideSoon('hero','#botUI .mvbtn','몬스터가 모두 쓰러져서 <b>트레이너가 직접</b> 싸우고 있어요! 트레이너가 쓰러지면 패배예요.',{title:'최후의 수단'});
+  const i=await panel(btns,{cancel:false,onOpen:hh=>hh.els.slice(0,2).forEach(e=>{e.style.background='linear-gradient(#ffb08a,#d8603a)';e.style.borderColor='#7a2a10';})});
+  hideMsg();let guard=false;
+  if(i<2){const a=HERO_ACT[i];await bsay(`${J(G.name,'은')} ${J(a.n,'을')} 했다!`);
+    // 연출: 돌 던지기 = 포물선, 몸통 박치기 = 돌진
+    const c=center('e');
+    if(i===0){sfx('throw');await tween(380,k=>{FX.add({x:40+(c.x-40)*k,y:150-(150-c.y)*k-Math.sin(k*Math.PI)*40,shape:'circ',c:'#8a7a6a',s:3,life:3});});}
+    else{sfx('run');await tween(240,k=>B.ptr.x=k*60);await tween(160,k=>B.ptr.x=60*(1-k));}
+    if(rnd(100)<a.acc){const mx=maxHp(f),dmg=Math.max(1,Math.round(mx*(a.lo+Math.random()*(a.hi-a.lo))));sfx('hit');await hitReact('e',1);await animHP('e',f,f.hp-dmg);
+      if(i===1&&Math.random()<.35){await bsay(`반동으로 ${G.name}도 조금 다쳤다!`);await heroHP(h.hp-Math.round(h.max*.06));}}
+    else{sfx('miss');await bsay(`하지만 ${tnOrWild()}에게 빗나갔다!`);}}
+  else if(i===2&&heal){G.bag[heal]--;await bsay(`${J(G.name,'은')} ${J(ITEMS[heal].n,'을')} 꿀꺽 마셨다!`);sfx('heal');await heroHP(h.hp+Math.round(h.max*(heal==='super'?.6:.35)));}
+  else{if(B.wild){if(Math.random()<.6){sfx('run');await bsay('몬스터들을 안고 무사히 도망쳤다!',true);return'run';}await bsay('도망칠 수 없었다!');}
+    else{guard=true;await bsay(`${J(G.name,'은')} 몸을 웅크리고 버틴다!`);}}
+  // 상대가 쓰러졌는지
+  if(f.hp<=0){await faint('e');
+    if(!B.wild&&B.fi<B.foe.length-1){B.fi++;await bsay(`${J(G.name,'은')} 숨을 고른다...`);await sendFoe();return null;}
+    await bsay(`${J(G.name,'이')} 직접 승리를 거머쥐었다!`,true);return'win';}
+  // 상대의 반격
+  const id=aiHeroMove(f),mv=MV[id];await bsay(`${tnOrWild()}의 ${mv.n}!`);
+  if(SET.anim)await animMove('e',mv,false);
+  const pw=mv.p||40,raw=h.max*(.1+pw/650)*(.85+Math.random()*.3)*(f.lv/Math.max(1,h.lv))**.5*(guard?.4:1);
+  if(rnd(100)<(mv.a||100)){sfx('hit');B.shake=5;setTimeout(()=>B.shake=0,260);await heroHP(h.hp-Math.max(1,Math.round(raw)));}
+  else{sfx('miss');await bsay(`${J(G.name,'은')} 몸을 날려 피했다!`);}
+  if(h.hp<=0){sfx('faint');await tween(400,k=>B.ptr.x=-k*130);B.ptr.show=false;hudP.classList.add('out');await bsay(`${J(G.name,'은')} 힘이 다해 쓰러졌다...`,true);return'lose';}
+  return null;}
+function aiHeroMove(e){const av=e.moves.filter(x=>x.pp>0&&MV[x.id].p);return av.length?av[rnd(av.length)].id:e.moves[0].id;}

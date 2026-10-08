@@ -20,7 +20,7 @@ async function walkPlayer(dirs,ms=230){for(const d of dirs){P.dir=d;const[dx,dy]
     await tween(ms,k=>P.t=k);P.x=P.tx;P.y=P.ty;P.t=0;P.moving=false;P.scripted=false;P.step^=1;}G.x=P.x;G.y=P.y;}
 async function emoteOn(n,kind='!',ms=650){(n==='player'?P:n).emote=kind;if(kind==='!')sfx('sel');await sleep(ms);(n==='player'?P:n).emote=null;}
 function healParty(){G.party.forEach(healMon);}
-function addMon(m){if(G.party.length<6){G.party.push(m);return'party';}G.box.push(m);return'box';}
+function addMon(m){if(G.party.length<6){G.party.push(m);return'party';}m.boxAt=Date.now();G.box.push(m);return'box';}
 async function giveItem(id,n=1,o={}){const it=ITEMS[id];G.bag[id]=(G.bag[id]||0)+n;await Music.jingle(it.p==='key'?'key':'item');
   await say(`${J(G.name,'은')} ${n>1?`${it.n} ${n}개를`:J(it.n,'을')} 손에 넣었다!`);
   if(it.p!=='key')await say(`${J(G.name,'은')} ${J(it.n,'을')} 가방의 ${POCKETS.find(p=>p[0]===it.p)[1]} 주머니에 넣었다.`);}
@@ -84,7 +84,7 @@ async function interact(){const m=curMap(),[dx,dy]=DV[P.dir];let x=P.x+dx,y=P.y+
   if(n){if(n.mv)return;await runScript(async()=>{const d0=n.dir;n.dir=OPP[P.dir];
       if(n.trainer&&!G.flags[n.id])await trainerTalk(n);
       else if(n.trainer)await talk(n.trainer.after,{name:tname(n)});
-      else if(n.talk)await n.talk(n);else await talk(n.text,{name:n.name});
+      else if(n.talk)await n.talk(n);else await talk(n.text,{name:n.name,look:n.look});
       if(n.wander)n.dir=d0;});return;}
   const it=itemAt(m,x,y);if(it){await runScript(async()=>{G.flags[it.flag]=1;await giveItem(it.item,it.n);});return;}
   const key=x+','+y,ob=m.obj[key];

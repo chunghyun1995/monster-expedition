@@ -9,8 +9,21 @@ function place(e,[x,y,w,h]){e.style.left=U(x);e.style.top=U(y);if(w!=null)e.styl
 /* ---------- 대화창 (위 화면) ---------- */
 const dlg=el(TOP,'hidden','<span class="tx"></span><i class="nx hidden"></i>');dlg.id='dlg';
 const dtx=dlg.querySelector('.tx'),dnx=dlg.querySelector('.nx');let dtag=null,dlgTm=null;
-function msg(text,o={}){clearTimeout(dlgTm);dlgShow();setTag(o.name);const pg=paginate(text);dtx.textContent=pg[pg.length-1];dnx.classList.add('hidden');setTag(o.name);}
-function setTag(name){if(dtag){dtag.remove();dtag=null;}if(name){dtag=el(dlg,'tag',esc(name));}}
+function msg(text,o={}){clearTimeout(dlgTm);dlgShow();setTag(o.name,o.look);const pg=paginate(text);dtx.textContent=pg[pg.length-1];dnx.classList.add('hidden');setTag(o.name,o.look);}
+function setTag(name,look){if(dtag){dtag.remove();dtag=null;}if(name){dtag=el(dlg,'tag',esc(name));}setPortrait(name,look);}
+/* 말하는 사람 얼굴: 이름으로 외형을 찾아 대화창 왼쪽 위에 표시 */
+const NAME_LOOK={'한결 박사':'prof','엄마':'mom','간호사':'nurse','점원':'clerk','합성 연구원':'aide','연구원':'aide','경비원':'guide','관장 단단':'leaderRock','관장 하라':'leaderWater','누나':'sister'};
+let dpor=null,dporKey='';
+function lookFor(name){if(!name)return null;if(typeof RIVAL!=='undefined'&&name===RIVAL)return'rival';
+  try{const n=npcsOf(curMap()).find(x=>x.name===name);if(n&&n.look)return n.look;}catch(e){}
+  if(NAME_LOOK[name])return NAME_LOOK[name];
+  if(typeof B!=='undefined'&&B&&B.o&&B.o.look&&(name===B.o.name||name.endsWith(' '+B.o.name)))return B.o.look;
+  return null;}
+function setPortrait(name,look){look=look||lookFor(name);const L=look&&LOOK[look];
+  if(!L){if(dpor){dpor.remove();dpor=null;dporKey='';}dlg.classList.remove('withpor');return;}
+  if(dpor&&dporKey===look)return;if(dpor)dpor.remove();
+  dpor=el(dlg,'portrait','');const[c,g]=mkCanvas(40,48);g.setTransform(2,0,0,2,0,0);g.imageSmoothingEnabled=false;
+  person(g,2,2,'down',0,L);dpor.appendChild(c);dporKey=look;dlg.classList.add('withpor');}
 function dlgShow(){dlg.classList.remove('hidden');const d=dlg.getBoundingClientRect();
   // 대화창과 실제로 겹치는 설명 상자만 잠시 숨긴다
   TOP.querySelectorAll('.page .desc').forEach(e=>{const r=e.getBoundingClientRect();e.classList.toggle('under-dlg',r.height>0&&r.bottom>d.top+2);});}
@@ -26,7 +39,7 @@ function fitCut(rest,max=2){if(dlgLines(rest)<=max)return rest.length;
 function splitPage(rest){rest=String(rest);if(!dlg.offsetWidth)return[rest,''];const c=fitCut(rest);const pg=rest.slice(0,c).replace(/\s+$/,''),r=rest.slice(c).replace(/^\s+/,'');dtx.textContent='';return[pg,r];}
 function paginate(text){const pages=[];let rest=String(text);do{const[a,b]=splitPage(rest);pages.push(a);rest=b;}while(rest.length);return pages;}
 const CPS=[45,22,6];
-function say(text,o={}){return new Promise(res=>{clearTimeout(dlgTm);dlgShow();setTag(o.name);dnx.classList.add('hidden');
+function say(text,o={}){return new Promise(res=>{clearTimeout(dlgTm);dlgShow();setTag(o.name,o.look);dnx.classList.add('hidden');
   let rest=String(text),cur='';dtx.textContent='';
   let i=0,done=false,closed=false,at=null,tm=null;const sp=CPS[SET.text]||22;
   const last=()=>!rest.length;
@@ -91,7 +104,7 @@ function list(items,o={}){return new Promise(res=>{const root=o.root||BOT,[x,y,w
   pushH(h);draw();if(o.onOpen)o.onOpen(h);});}
 
 /* ---------- 예 / 아니오 ---------- */
-async function ask(text,opts=['예','아니오'],o={}){dlgShow();setTag(o.name);const pg=paginate(text);for(let i=0;i<pg.length-1;i++)await say(pg[i],{...o,keep:1});msg(pg[pg.length-1],o);
+async function ask(text,opts=['예','아니오'],o={}){dlgShow();setTag(o.name,o.look);const pg=paginate(text);for(let i=0;i<pg.length-1;i++)await say(pg[i],{...o,keep:1});msg(pg[pg.length-1],o);
   const n=opts.length,bw=n>2?200:176,bh=n>2?38:52,gap=8,y0=(192-(bh+gap)*n+gap)/2;
   const i=await panel(opts.map((t,j)=>({html:`<span class="bigbtn">${esc(t)}</span>`,x:(256-bw)/2,y:y0+j*(bh+gap),w:bw,h:bh,cls:j===0?'blue':''})),
     {backdrop:true,bg:'rgba(20,24,40,.55)',cancel:o.cancel!=null?o.cancel:n-1,start:o.start||0});

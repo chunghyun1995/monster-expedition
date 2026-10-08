@@ -60,7 +60,9 @@ async function openMenu(){if(busy)return;busy=true;sfx('menu');
     if(i<0||i===6)break;menuIdx=i;
     if(i===0)await dexScreen();else if(i===1)await partyScreen('field');else if(i===2)await bagScreen('field');
     else if(i===3)await trainerCard();else if(i===4){if(await saveMenu())break;}else if(i===5)await optionsMenu();}}
-  finally{hideMsg();clearPages(TOP);busy=false;Pad.render();}}
+  finally{hideMsg();clearPages(TOP);await runPendingEvo();busy=false;Pad.render();}}
+let pendingEvo=[];
+async function runPendingEvo(){while(pendingEvo.length){const m=pendingEvo.shift();if(G.party.includes(m)){const ev=SP[m.sid].ev;if(ev&&m.lv>=ev[0])await evolve(m);}}}
 
 /* ================= 파티 ================= */
 function partyCellHtml(m){const mx=maxHp(m);return`<img src="${monIcon(m.sid,m.shiny)}" alt=""><div class="inf"><div class="nm">${esc(N(m))}</div>
@@ -172,7 +174,7 @@ async function bagScreen(mode){const tp=page(TOP,''),prevBot=botMode;botMode='me
     if(r<0){if(r===-1)return null;continue;}
     const id=ids[r],it=ITEMS[id];
     if(it.p==='key'){await say(id==='pad'?'원정패드는 아래 화면에서 사용할 수 있다.':id==='dex'?'도감은 메뉴에서 볼 수 있다.':`${it.n}은 신고 있는 것만으로 효과가 있다.`);continue;}
-    if(mode==='battle'){if(it.ball)return{id};
+    if(mode==='battle'){if(it.ball)return{id};if(it.lvup){await say('전투 중에는 마실 틈이 없다!');continue;}
       const t=await partyScreen('item',{tip:`${it.n}을(를) 누구에게 사용할까요?`});if(t<0)continue;
       if(!canUse(id,G.party[t])){await say('사용해도 효과가 없을 것 같다.');continue;}return{id,target:t};}
     const c=await panel([{html:'사용하기',x:40,y:50,w:176,h:40,cls:'blue'},{html:'그만두기',x:40,y:100,w:176,h:34,cls:'dark'}],{backdrop:true,bg:'rgba(20,24,40,.55)'});
@@ -182,9 +184,11 @@ async function bagScreen(mode){const tp=page(TOP,''),prevBot=botMode;botMode='me
     const m=G.party[t];if(!canUse(id,m)){await say('사용해도 효과가 없을 것 같다.');continue;}
     await applyItem(id,m);}}
   finally{tp.remove();botMode=prevBot;}}
-function canUse(id,m){const it=ITEMS[id];if(it.revive)return m.hp<=0;if(m.hp<=0)return false;
+function canUse(id,m){const it=ITEMS[id];if(it.lvup)return m.lv<100;if(it.revive)return m.hp<=0;if(m.hp<=0)return false;
   if(it.heal)return m.hp<maxHp(m);if(it.cure)return it.cure==='all'?!!m.st:m.st===it.cure;return false;}
 async function applyItem(id,m,o={}){const it=ITEMS[id];G.bag[id]--;
+  if(it.lvup){sfx('heal');await say(`${J(N(m),'은')} ${J(it.n,'을')} 꿀꺽 마셨다!`,{keep:1});m.exp=expFor(m.lv+1);await levelUp(m,false);hideMsg();
+    const ev=SP[m.sid].ev;if(ev&&m.lv>=ev[0]&&m.hp>0&&!pendingEvo.includes(m)){pendingEvo.push(m);await say(`어라...? ${N(m)}의 몸이 빛나기 시작했다! (메뉴를 닫으면 진화가 시작된다)`);}return;}
   if(it.revive){m.hp=Math.max(1,Math.floor(maxHp(m)*it.revive));m.st='';sfx('heal');await say(`${J(N(m),'은')} 기운을 되찾았다!`);return;}
   if(it.heal){const b0=m.hp;m.hp=Math.min(maxHp(m),m.hp+it.heal);sfx('heal');if(o.anim)await o.anim(b0,m.hp);await say(`${N(m)}의 HP가 ${m.hp-b0} 회복되었다!`);return;}
   if(it.cure){m.st='';m.slp=0;sfx('heal');await say(`${N(m)}의 상태 이상이 나았다!`);}}
@@ -327,7 +331,84 @@ async function optionsMenu(){const rows=[['텍스트 속도',['느림','보통',
 let optH=null;
 
 /* ================= 상점 ================= */
-function shopStock(){const s=['ball','potion','antidote','burnheal','parheal','awake'];if(G.badges[0])s.splice(1,0,'great'),s.splice(3,0,'super'),s.push('fullheal');if(G.badges[1])s.push('revive');return s;}
+function shopStock(){const s=['ball','lvup','potion','antidote','burnheal','parheal','awake'];if(G.badges[0])s.splice(1,0,'great'),s.splice(3,0,'super'),s.push('fullheal');if(G.badges[1])s.push('revive');return s;}
+async function shop(){const o={name:'점원'};let first=1;
+  while(true){const c=await ask(first?'어서 오세요! 무엇을 도와드릴까요?':'그 밖에 필요하신 건 없으세요?',['사러 왔어요','팔러 왔어요','괜찮아요'],o);
+    first=0;if(c===0)await shopBuy();else if(c===1)await shopSell();else break;}
+  await say('감사합니다! 또 오세요!',o);}
+function shopTop(id,mode){const it=ITEMS[id];return`<div class="abs" style="inset:0;background:linear-gradient(#cfe0ff,#f2f6ff)"></div><div class="title-bar">몬스터 상점 · ${mode}<span class="r">${money(G.money)}</span></div>
+  ${it?`<img class="abs big" src="${itemIcon(id)}" style="left:${U(20)};top:${U(36)};width:${U(48)};height:${U(48)}"><div class="sheet" style="left:${U(84)};top:${U(30)};width:${U(164)};height:${U(60)}"><div style="font-size:${U(11)}">${it.n}</div><div style="font-size:${U(9)};color:#6a7190">가방에 ${G.bag[id]||0}개</div></div>
+  <div class="sheet desc" style="left:${U(8)};top:${U(98)};width:${U(240)};height:${U(50)}">${it.d}</div>`:''}`;}
+async function shopBuy(){const tp=page(TOP,'');let at=0;guideSoon('shop','bot','사고 싶은 물건을 고른 뒤 <b>▲ ▼</b>로 수량을 정해요. 배지를 모으면 파는 물건이 늘어나요.',{title:'상점'});
+  try{while(true){const st=shopStock();
+    const r=await list(st.map(k=>({html:`<img src="${itemIcon(k)}"><span>${ITEMS[k].n}</span><span class="r">${money(ITEMS[k].price)}</span>`})),
+      {rect:[4,4,248,150],rowH:20,start:at,backdrop:true,bg:'linear-gradient(#5a8ad8,#3d5aa8)',buttons:[{html:'그만두기',x:170,y:160,w:82,h:28,cls:'dark',val:-1}],onMove:i=>tp.innerHTML=shopTop(st[i],'사기')});
+    if(r<0)break;at=r;const id=st[r],it=ITEMS[id];const max=Math.min(99,Math.floor(G.money/it.price));
+    if(max<1){await say('돈이 부족하신 것 같아요.',{name:'점원'});continue;}
+    msg(`${J(it.n,'을')} 몇 개 사시겠어요?`,{name:'점원'});const n=await numberPick({max,price:it.price,title:it.n});hideMsg();if(!n)continue;
+    const ok=await ask(`${it.n} ${n}개, 총 ${money(n*it.price)}입니다. 괜찮으시겠어요?`,['예','아니오'],{name:'점원'});if(ok!==0)continue;
+    G.money-=n*it.price;G.bag[id]=(G.bag[id]||0)+n;sfx('save');tp.innerHTML=shopTop(id,'사기');await say('네, 여기 있습니다! 감사합니다!',{name:'점원'});
+    if(id==='ball'&&n>=10){G.bag.great=(G.bag.great||0)+1;await say('캡슐을 많이 사 주셔서 슈퍼캡슐을 하나 덤으로 드릴게요!',{name:'점원'});}}}
+  finally{tp.remove();}}
+async function shopSell(){const tp=page(TOP,'');
+  try{while(true){const ids=Object.keys(ITEMS).filter(k=>ITEMS[k].price&&G.bag[k]>0);
+    if(!ids.length){await say('팔 수 있는 물건이 없는 것 같네요.',{name:'점원'});break;}
+    const r=await list(ids.map(k=>({html:`<img src="${itemIcon(k)}"><span>${ITEMS[k].n}</span><span class="r">× ${G.bag[k]} · ${money(ITEMS[k].price/2)}</span>`})),
+      {rect:[4,4,248,150],rowH:20,backdrop:true,bg:'linear-gradient(#5aa86a,#3a7a4a)',buttons:[{html:'그만두기',x:170,y:160,w:82,h:28,cls:'dark',val:-1}],onMove:i=>tp.innerHTML=shopTop(ids[i],'팔기')});
+    if(r<0)break;const id=ids[r],it=ITEMS[id];const n=await numberPick({max:G.bag[id],price:it.price/2,title:it.n});if(!n)continue;
+    const ok=await ask(`${it.n} ${n}개를 ${money(n*it.price/2)}에 사겠습니다. 괜찮으세요?`,['예','아니오'],{name:'점원'});if(ok!==0)continue;
+    G.bag[id]-=n;G.money+=n*it.price/2;sfx('save');await say(`${money(n*it.price/2)}을 받았다!`);}}
+  finally{tp.remove();}}
+
+/* ================= 몬스터 센터 ================= */
+async function nurse(out,ox,oy){const o={name:'간호사'},n=npcById('nurse_'+G.map);
+  await say('어서 오세요! 몬스터 센터입니다.',o);
+  const r=await ask('몬스터의 체력을 회복시켜 드릴까요?',['예','아니오'],o);
+  if(r!==0){await say('또 들러 주세요!',o);return;}
+  await say('그럼 몬스터를 잠시 맡아 두겠습니다.',o);n.dir='left';const m=curMap();m.healAnim={n:G.party.length,f0:frame,on:true};
+  for(let i=0;i<G.party.length;i++){m.healAnim.n=i+1;sfx('click');await sleep(260);}
+  m.healAnim.blink=true;await Music.jingle('heal');m.healAnim=null;healParty();n.dir='down';
+  G.heal={map:out,x:ox,y:oy};
+  await say('기다리셨습니다! 맡겨 주신 몬스터는 모두 건강해졌어요.',o);n.bow=1;await sleep(400);n.bow=0;await say('또 들러 주세요!',o);}
+
+/* ================= PC 보관함 =================
+   맡긴 몬스터는 실제 시간이 흐른 만큼 자란다: BOX_MIN분마다 레벨 1 (파티 최고 레벨까지). */
+const BOX_MIN=10;
+function boxCap(){return Math.max(5,...G.party.map(m=>m.lv));}
+/* 보관함 몬스터를 지금 시각까지 키운다 → [{m,from,to,learned:[],full:[]}] */
+function boxGrow(){const now=Date.now(),cap=boxCap(),out=[];
+  for(const m of G.box){if(!m.boxAt){m.boxAt=now;continue;}
+    const steps=Math.floor((now-m.boxAt)/(BOX_MIN*60000));if(steps<=0)continue;
+    if(m.lv>=cap){m.boxAt=now;continue;}
+    const from=m.lv,to=Math.min(cap,100,m.lv+steps),r={m,from,to,learned:[],full:[]};
+    for(let l=from+1;l<=to;l++){const o=calc(m);m.lv=l;m.exp=expFor(l);const n=calc(m);m.hp=Math.min(n[0],m.hp+n[0]-o[0]);
+      for(const[ll,id]of SP[m.sid].ls)if(ll===l&&!m.moves.some(x=>x.id===id)){if(m.moves.length<4){m.moves.push({id,pp:MV[id].pp});r.learned.push(MV[id].n);}else r.full.push(MV[id].n);}}
+    m.boxAt=to>=cap?now:m.boxAt+(to-from)*BOX_MIN*60000;out.push(r);}
+  return out;}
+async function pcMenu(){sfx('menu');guideSoon('pc','top',`파티에는 6마리까지 데리고 다닐 수 있어요. 나머지는 <b>보관함</b>에 맡길 수 있고, 맡긴 동안 <b>${BOX_MIN}분마다 레벨이 1씩</b> 올라요(파티 최고 레벨까지).`,{title:'PC 보관함'});
+  await say(`${J(G.name,'은')} PC의 전원을 켰다!`);
+  const grown=boxGrow();
+  if(grown.length){sfx('save');await say('보관함에 맡겨 둔 몬스터들이 그동안 훈련을 했다!');
+    for(const r of grown){Music.jingle('level');await say(`${J(N(r.m),'은')} Lv${r.from} → ${J('Lv'+r.to,'로')} 자랐다!${r.learned.length?` 새로 ${r.learned.join(', ')}${J(r.learned[r.learned.length-1],'을').slice(-1)} 배웠다!`:''}`);
+      if(r.full.length)await say(`(${r.full.join(', ')}도 배울 수 있었지만 기술 칸이 가득 차 있었다.)`);}}
+  while(true){const c=await ask('무엇을 할까?',['몬스터 맡기기','몬스터 데려오기','그만두기']);
+    if(c===0){if(G.party.length<=1){await say('마지막 한 마리는 맡길 수 없습니다!');continue;}
+      const i=await partyScreen('deposit');if(i<0)continue;const m=G.party[i];
+      const ok=await ask(`${J(N(m),'을')} 보관함에 맡기겠습니까?`);if(ok!==0)continue;
+      G.party.splice(i,1);healMon(m);m.boxAt=Date.now();G.box.push(m);sfx('save');await say(`${J(N(m),'을')} 보관함에 맡겼다.`);
+      if(m.lv<boxCap())await say(`보관함에서 ${BOX_MIN}분마다 레벨이 1씩 오른다. (지금은 Lv${boxCap()}까지)`);else await say(`${J(N(m),'은')} 이미 파티 최고 레벨이라 보관함에서는 더 자라지 않는다.`);}
+    else if(c===1){if(!G.box.length){await say('보관함에 몬스터가 없습니다.');continue;}
+      const tp=page(TOP,'');
+      const r=await list(G.box.map(m=>({html:`<img src="${monIcon(m.sid,m.shiny)}"><span>${esc(N(m))}</span><span class="r">Lv${m.lv}</span>`})),
+        {rect:[4,4,248,150],rowH:20,backdrop:true,bg:'linear-gradient(#6a7290,#3d4562)',buttons:[{html:'그만두기',x:170,y:160,w:82,h:28,cls:'dark',val:-1}],onMove:i=>tp.innerHTML=monTopPage(G.box[i],'보관함')});
+      tp.remove();if(r<0)continue;if(G.party.length>=6){await say('파티가 가득 찼습니다! 먼저 몬스터를 맡겨 주세요.');continue;}
+      const m=G.box.splice(r,1)[0];delete m.boxAt;G.party.push(m);sfx('save');await say(`${J(N(m),'을')} 데려왔다!`);
+      const ev=SP[m.sid].ev;if(ev&&m.lv>=ev[0]&&!pendingEvo.includes(m))pendingEvo.push(m);}
+    else break;}
+  sfx('back');await say('PC의 전원을 껐다.');await runPendingEvo();}
+
+/* ================= 상점 ================= */
+function shopStock(){const s=['ball','lvup','potion','antidote','burnheal','parheal','awake'];if(G.badges[0])s.splice(1,0,'great'),s.splice(3,0,'super'),s.push('fullheal');if(G.badges[1])s.push('revive');return s;}
 async function shop(){const o={name:'점원'};let first=1;
   while(true){const c=await ask(first?'어서 오세요! 무엇을 도와드릴까요?':'그 밖에 필요하신 건 없으세요?',['사러 왔어요','팔러 왔어요','괜찮아요'],o);
     first=0;if(c===0)await shopBuy();else if(c===1)await shopSell();else break;}
@@ -368,20 +449,7 @@ async function nurse(out,ox,oy){const o={name:'간호사'},n=npcById('nurse_'+G.
   await say('기다리셨습니다! 맡겨 주신 몬스터는 모두 건강해졌어요.',o);n.bow=1;await sleep(400);n.bow=0;await say('또 들러 주세요!',o);}
 
 /* ================= PC 보관함 ================= */
-async function pcMenu(){sfx('menu');guideSoon('pc','top','파티에는 6마리까지 데리고 다닐 수 있어요. 나머지는 <b>보관함</b>에 맡기고 언제든 데려올 수 있어요.',{title:'PC 보관함'});await say(`${J(G.name,'은')} PC의 전원을 켰다!`);
-  while(true){const c=await ask('무엇을 할까?',['몬스터 맡기기','몬스터 데려오기','그만두기']);
-    if(c===0){if(G.party.length<=1){await say('마지막 한 마리는 맡길 수 없습니다!');continue;}
-      const i=await partyScreen('deposit');if(i<0)continue;const m=G.party[i];
-      const ok=await ask(`${J(N(m),'을')} 보관함에 맡기겠습니까?`);if(ok!==0)continue;
-      G.party.splice(i,1);healMon(m);G.box.push(m);sfx('save');await say(`${J(N(m),'을')} 보관함에 맡겼다.`);}
-    else if(c===1){if(!G.box.length){await say('보관함에 몬스터가 없습니다.');continue;}
-      const tp=page(TOP,'');
-      const r=await list(G.box.map(m=>({html:`<img src="${monIcon(m.sid,m.shiny)}"><span>${esc(N(m))}</span><span class="r">Lv${m.lv}</span>`})),
-        {rect:[4,4,248,150],rowH:20,backdrop:true,bg:'linear-gradient(#6a7290,#3d4562)',buttons:[{html:'그만두기',x:170,y:160,w:82,h:28,cls:'dark',val:-1}],onMove:i=>tp.innerHTML=monTopPage(G.box[i],'보관함')});
-      tp.remove();if(r<0)continue;if(G.party.length>=6){await say('파티가 가득 찼습니다! 먼저 몬스터를 맡겨 주세요.');continue;}
-      const m=G.box.splice(r,1)[0];G.party.push(m);sfx('save');await say(`${J(N(m),'을')} 데려왔다!`);}
-    else break;}
-  sfx('back');await say('PC의 전원을 껐다.');}
+
 
 /* ================= 몬스터 합성 =================
    아무 몬스터 두 마리 → 한 단계 위 등급(진화 단계)의 무작위 타입 몬스터 1마리.
