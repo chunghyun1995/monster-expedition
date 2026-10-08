@@ -238,7 +238,7 @@ defMap('gym1',{name:'바위시티 체육관',music:'gym',bg:'rock',floor:'stone'
    {id:'tr_cheolsu',x:2,y:9,dir:'right',look:'hiker',trainer:{cls:'hiker',name:'철수',team:[[23,10]],intro:['관장님께 도전하려면 나부터 넘어서라!'],lose:'으음, 단단하지 못했군...',after:['관장님의 바위거북은 방어가 엄청나다고.']}},
    {id:'tr_yeongho',x:10,y:5,dir:'left',look:'hiker',trainer:{cls:'hiker',name:'영호',team:[[27,9],[23,10]],intro:['산에서 단련한 내 몬스터들을 보아라!'],lose:'산사태 같은 공격이었다...',after:['특수 기술로 공격하면 바위 타입의 단단한 방어를 피할 수 있지.']}},
    {id:'leader1',x:6,y:2,dir:'down',look:'leaderRock',name:'관장 단단',talk:leaderRock}]});
-async function statue(i){const L=[['바위시티 체육관','관장: 단단'],['물결마을 체육관','관장: 하라']][i];await say(`${L[0]} · ${L[1]}`);
+async function statue(i){const L=[['바위시티 체육관','관장: 단단'],['물결마을 체육관','관장: 하라'],['붉은재마을 체육관','관장: 화련'],['번개도시 체육관','관장: 찌나'],['하늘봉마을 체육관','관장: 하늬']][i];await say(`${L[0]} · ${L[1]}`);
   if(G.badges[i])await say(`인증 트레이너: ${G.name}`);else await say('인증 트레이너: 아직 없음');}
 async function leaderRock(){const o={name:'관장 단단'};
   if(G.badges[0]){await say('다시 왔나. 너의 단단한 의지는 이미 증명되었다.',o);await say('동쪽 물결마을의 관장 하라는 물 타입의 고수다. 방심하지 마라.',o);return;}
@@ -311,14 +311,15 @@ defMap('town2',{name:'물결마을',out:1,music:'city',bg:'water',region:'town2'
   '#.HHHH.......ff........#',
   '#.HDHH.................#',
   '#......................#',
-  '########################'],
- links:{w:'route2'},
+  '###########.############'],
+ links:{w:'route2',s:'route3'},
  warps:{'9,4':['center2',6,8,'up'],'4,11':['mart2',5,7,'up'],'19,12':['gym2',6,14,'up'],'3,17':['thouse',4,6,'up']},
  signs:{'10,15':['물결마을','잔잔한 물결이 반겨 주는 호숫가 마을']},
  npcs:[{id:'w_fisher',x:17,y:5,dir:'right',look:'fisher',name:'낚시꾼',text:['이 호수에는 물파리가 많아. 독에 조심하라고.','언젠가 해일왕이라는 몬스터를 보고 싶구먼.']},
    {id:'w_lady',x:13,y:16,dir:'up',look:'lady',name:'아가씨',wander:1,text:['관장 하라 님의 몬스터는 정말 아름다워요!']},
    {id:'w_kid',x:8,y:9,dir:'down',look:'kid',name:'꼬마',wander:1,text:['물 타입에는 전기랑 풀 기술이 잘 통해!','근데 물파리는 독 타입이기도 해서 풀 기술은 별로래.']},
-   {id:'rival3',x:21,y:13,dir:'left',look:'rival',name:RIVAL,cond:()=>G.flags.rival2&&!G.flags.rival3,talk:rival3,sight:rival3}]});
+   {id:'rival3',x:21,y:13,dir:'left',look:'rival',name:RIVAL,cond:()=>G.flags.rival2&&!G.flags.rival3,talk:rival3,sight:rival3},
+   {id:'t2_gate',x:11,y:18,dir:'down',look:'guide',name:'경비원',cond:()=>!G.flags.badge1,text:['이 앞 3번 도로는 용암이 흐르는 험한 화산길이야.','물결마을 체육관의 물결 배지를 얻은 트레이너만 지나갈 수 있어.']}]});
 async function rival3(){if(G.flags.rival3)return;G.flags.rival3=1;const rv=npcById('rival3');Music.play('rival');
   await say(`${nm()}! 체육관에 도전하러 왔구나. 하지만 그 전에 나랑 마지막으로 한 판 하자!`,{name:RIVAL});
   await say('이번엔 진심으로 간다! 내 파트너도 진화했다고!',{name:RIVAL});
@@ -354,4 +355,5 @@ async function leaderWater(){const o={name:'관장 하라'};
   await say('정말 훌륭한 승부였어. 이 배지를 받아 줘.',o);
   G.badges[1]=1;G.flags.badge1=1;await Music.jingle('badge');await say(`${J(G.name,'은')} 관장 하라에게서 물결 배지를 받았다!`);
   await say('두 개의 배지를 모은 너는 이제 어엿한 원정대원이야. 축하해!',o);
-  if(!G.flags.clear){G.flags.clear=1;await credits();}}
+  await say('그런데... 요즘 남쪽에서 검은 옷을 입은 무리가 몬스터를 빼앗는다는 소문이 돌고 있어. 스스로를 검은안개단이라고 부른대.',o);
+  await say('마을 남쪽 3번 도로는 이제 지나갈 수 있을 거야. 붉은재마을 관장 화련에게도 소식을 전해 주겠니?',o);}

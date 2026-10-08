@@ -11,7 +11,7 @@ const npcsOf=m=>m.npcs.filter(npcOn);
 const npcById=id=>curMap().npcs.find(n=>n.id===id);
 function npcAt(m,x,y){return npcsOf(m).find(n=>(n.x===x&&n.y===y)||(n.mv&&n.mx===x&&n.my===y));}
 const itemAt=(m,x,y)=>m.items.find(i=>i.x===x&&i.y===y&&!G.flags[i.flag]);
-function passable(m,x,y,dir){const c=tileAt(m,x,y);if(c==null)return false;if(m.out){if(c==='L')return dir==='down';return'.,=fQD'.includes(c);}return'.cm'.includes(c);}
+function passable(m,x,y,dir){const c=tileAt(m,x,y);if(c==null)return false;if(m.out){if(c==='L')return dir==='down';return'.,=fQD:'.includes(c);}return'.cm'.includes(c);}
 
 /* ---------- 이벤트 도우미 ---------- */
 async function walkNpc(n,dirs,ms=240){for(const d of dirs){n.dir=d;const[dx,dy]=DV[d];n.mv=1;n.mx=n.x+dx;n.my=n.y+dy;n.walk=1;
@@ -160,7 +160,7 @@ async function intro(){state='intro';Music.play('intro');introFx={prof:1,mon:0,p
     await say('연구소는 마을 위쪽에 있는 큰 건물이야. 메뉴는 Enter 키나 아래 화면의 메뉴 버튼으로 열 수 있단다.',{name:'엄마'});
     await say('조심해서 다녀오렴!',{name:'엄마'});mom.dir='left';}finally{busy=false;hideMsg();}}
 function newGameData(name){G={v:2,name,id:String(rnd(65536)).padStart(5,'0'),money:3000,party:[],box:[],bag:{},map:'home',x:7,y:3,dir:'down',flags:{},seen:{},caught:{},
-  badges:[0,0],heal:{map:'home',x:4,y:6},steps:0,playMs:0,start:Date.now(),starter:0,rivalStarter:4};}
+  badges:[0,0,0,0,0],heal:{map:'home',x:4,y:6},steps:0,playMs:0,start:Date.now(),starter:0,rivalStarter:4};}
 
 /* ---------- 엔딩 크레딧 ---------- */
 let CR=null;
@@ -170,15 +170,16 @@ function drawCredits(g){const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop
   const list=CR.list,sp=1.2;list.forEach((sid,i)=>{const x=W+40+i*70-(frame-CR.f0)*sp;if(x<-40||x>W+40)return;const b=Math.abs(Math.sin((frame+i*13)/8))*4;
     g.fillStyle='rgba(0,0,0,.2)';g.beginPath();g.ellipse(x,160,18,4,0,0,7);g.fill();drawMon(g,sid,x,160-b,2);});
   const px=W+40+list.length*70-(frame-CR.f0)*sp+40;g.save();g.translate(Math.max(px,110),120);g.scale(2,2);person(g,0,0,'right',((frame>>3)&1)+1,LOOK.player);g.restore();}
-async function credits(){state='credits';Music.play('title');CR={f0:frame,list:Object.keys(G.caught).map(Number).sort((a,b)=>a-b)};if(!CR.list.length)CR.list=[G.starter];
+async function credits(final){state='credits';Music.play('title');CR={f0:frame,list:Object.keys(G.caught).map(Number).sort((a,b)=>a-b)};if(!CR.list.length)CR.list=[G.starter];
   Pad.hide();botMode='credits';const roll=el(BOT,'abs','',[0,0,256,192]);roll.style.overflow='hidden';
   const L=[['몬스터 원정대',''],['제작','chunghyun1995'],['프로그래밍 · 도트 · 음악','Claude'],['도와준 몬스터들',CR.list.map(s=>SP[s].n).join(' · ')],
-    ['그리고 플레이해 준',`${G.name} 님`],['',''],['THE END','…그리고 원정은 계속된다!']];
+    ['관장들','단단 · 하라 · 화련 · 찌나 · 하늬'],['라이벌',RIVAL],['그리고 플레이해 준',`${G.name} 님`],['',''],['THE END','…그리고 원정은 계속된다!']];
   const box=el(roll,'credits',L.map(([h,t])=>`<h3>${esc(h)}</h3><div>${esc(t)}</div>`).join(''));
   const total=Math.max(14000,CR.list.length*70/1.2*16.7+3000);
   await tween(total,k=>box.style.transform=`translateY(${U(-k*(192+box.offsetHeight/parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--u'))))})`);
-  roll.remove();await fadeTo(1);state='world';enterMap('town2',19,13,'down',{quiet:1});Pad.show();await fadeTo(0);
-  await say('축하합니다! 두 번째 배지를 얻어 데모 이야기를 클리어했습니다!');
+  roll.remove();await fadeTo(1);state='world';
+  if(final)enterMap('town5',12,4,'down',{quiet:1});else enterMap('town2',19,13,'down',{quiet:1});Pad.show();await fadeTo(0);
+  await say(final?'축하합니다! 다섯 개의 배지를 모으고 라이벌과의 마지막 승부까지 마쳐 몬스터 원정대를 클리어했습니다!':'축하합니다! 두 번째 배지를 얻었습니다!');
   await say('도감을 모두 채우거나, 몬스터를 더 강하게 키워 보세요. 원정은 계속됩니다!');}
 
 /* ---------- 전투 화면 전환 ---------- */

@@ -147,7 +147,12 @@ const LOOK={
  guide:{hair:'#2a1a0a',skin:'#e0b080',shirt:'#e8e8e8',pants:'#3a3a4a',beard:1},
  leaderRock:{hair:'#5a4a3a',skin:'#d9a070',shirt:'#8a7a5a',pants:'#3b3b4b',hat:'#6e5a3c',beard:1},
  leaderWater:{hair:'#2a6ad8',skin:'#f6d2ac',shirt:'#1fb6c8',pants:'#ffffff',long:1},
- sister:{hair:'#d98b2b',skin:'#f6d2ac',shirt:'#f2c230',pants:'#a85a2a',long:1}};
+ sister:{hair:'#d98b2b',skin:'#f6d2ac',shirt:'#f2c230',pants:'#a85a2a',long:1},
+ leaderFire:{hair:'#c8401a',skin:'#f0c8a0',shirt:'#e8602a',shirt2:'#ffd84a',pants:'#3a2a2a'},
+ leaderElec:{hair:'#f0c030',skin:'#f6d2ac',shirt:'#3a3a4a',pants:'#f2c230',long:1},
+ leaderSky:{hair:'#c8d8f0',skin:'#f6d2ac',shirt:'#6ab0ff',pants:'#ffffff',long:1,coat:'#e8f2ff'},
+ villain:{hair:'#2a2a2a',skin:'#e8c0a0',shirt:'#3a3a4a',shirt2:'#8a1a2a',pants:'#2a2a34',hat:'#2a2a34',hat2:'#8a1a2a'},
+ boss:{hair:'#d8d8d8',skin:'#e8c0a0',shirt:'#2a2030',pants:'#2a2030',coat:'#4a3a5a',beard:1}};
 /* 인물: 2배 해상도로 한 번 그려서 외곽선·명암을 다듬고 캐시 */
 const PERC={};let perId=0;
 function person(g,sx,sy,dir,fr,L){if(!L.__id)L.__id=++perId;const k=L.__id+dir+fr;
@@ -208,7 +213,8 @@ function capsule(g,x,y,r=0,o={}){g.save();g.translate(Math.round(x),Math.round(y
 
 /* ================= 필드 타일 ================= */
 const GR='#8fd36f',GR2='#77be58',TG='#4ea443',TG2='#2f7d34',TG3='#9be07a';
-function ground(sx,sy,h){R(GR,sx,sy,16,16);
+let PAL=null;
+function ground(sx,sy,h){if(PAL&&PAL.ash){ash(sx,sy,h);return;}R(PAL&&PAL.g||GR,sx,sy,16,16);
   for(let i=0;i<3;i++){const q=(h>>(i*4))&255,x=sx+1+q%13,y=sy+1+(q>>3)%13;R(GR2,x,y+.5,.5,1);R(GR2,x+1,y,.5,1.5);R('#a8e48a',x+.5,y-.5,.5,.5);}
   if(h%3===0){R(GR2,sx+2+h%9,sy+3+(h>>3)%9,2,1);R(GR2,sx+3+h%9,sy+2+(h>>3)%9,1,1);R('#b4ec96',sx+2.5+h%9,sy+2.5+(h>>3)%9,.5,.5);}
   if(h%7===1){R('#a6e086',sx+(h>>2)%12,sy+(h>>5)%12,1,1);R('#d8f6c0',sx+(h>>2)%12,sy+(h>>5)%12,.5,.5);}
@@ -218,10 +224,24 @@ function tree(sx,sy,h){R('#2f7d34',sx,sy,16,16);R('#5a3a1e',sx+6,sy+11,4,5);R('#
   for(const[x,y]of[[2.5,6],[5,5.5],[7.5,3.5],[10,3],[12,5.5],[4,8.5],[11.5,8.5],[8.5,6.5]]){R('#3f9e45',sx+x,sy+y,1,.5);R('#1f5f2a',sx+x+.5,sy+y+.5,.5,.5);}
   R('#8be080',sx+5,sy+2,.5,.5);R('#8be080',sx+3.5,sy+4,.5,.5);R('#8be080',sx+7,sy+2.5,.5,.5);
   R('#7a5230',sx+6.5,sy+11.5,.5,4);R('#3e2612',sx+8.5,sy+12,.5,4);R('#3e2612',sx+7.5,sy+13.5,.5,1);R('#1b4f26',sx+5,sy+15.5,6,.5);}
-function drawTileOut(m,tx,ty,sx,sy){const c=tileAt(m,tx,ty),h=hash(tx,ty);
+function ash(sx,sy,h){R('#8a7a6e',sx,sy,16,16);for(let i=0;i<3;i++){const q=(h>>(i*4))&255;R('#74665a',sx+1+q%13,sy+1+(q>>3)%13,1.5,.5);R('#a8988a',sx+(q>>2)%14,sy+(q>>5)%14,.5,.5);}
+  if(h%5===0){R('#5e5248',sx+3+h%8,sy+6+(h>>4)%6,2,1);R('#b8a898',sx+3+h%8,sy+5.5+(h>>4)%6,1,.5);}}
+function cliff(m,tx,ty,sx,sy,h){const up=tileAt(m,tx,ty-1),dn=tileAt(m,tx,ty+1);const top=up!=='^',bot=dn!=='^';
+  R('#7a5a3e',sx,sy,16,16);for(let y=2;y<16;y+=5){R('#664a32',sx,sy+y,16,1);for(let x=((y+tx)&3)*3;x<16;x+=9)R('#8e6c4c',sx+x,sy+y+1,4,2);}
+  R('#96745a',sx+(h%10),sy+(h>>3)%12,2,1);R('#a88a6e',sx+(h%10)+.5,sy+(h>>3)%12,1,.5);
+  if(top){R('#6a8a4a',sx,sy,16,2);R('#8aac5a',sx,sy,16,.5);R('#4a6a3a',sx,sy+2,16,.5);}if(bot){R('#4a3424',sx,sy+14,16,2);}}
+function lava(sx,sy,h){R('#c8381a',sx,sy,16,16);const o=((frame>>3)+h)&15;R('#ff7a2a',sx+o%14,sy+3,3,2);R('#ffb84a',sx+(o+7)%14,sy+10,2,1.5);R('#ff9a3a',sx+(h%9)+2,sy+(o>>1)+2,2,1);
+  if(((frame>>4)+h)%11===0)R('#fff0a0',sx+(h%12)+2,sy+(h>>4)%12+2,1,1);}
+function pole(sx,sy,h){ground(sx,sy,h);R('rgba(0,0,0,.2)',sx+5,sy+14,8,2);R('#6a6a78',sx+7,sy+2,2,14);R('#8a8a98',sx+7,sy+2,.5,14);R('#4a4a58',sx+2,sy+3,12,2);R('#2a2a34',sx+3,sy+2,1,1);R('#2a2a34',sx+12,sy+2,1,1);
+  R('#f2c94c',sx+3,sy+5,1.5,1.5);R('#f2c94c',sx+11.5,sy+5,1.5,1.5);if(((frame>>5)+h)&1)R('#fff6b0',sx+7.5,sy+1,1,1);}
+function drawTileOut(m,tx,ty,sx,sy){const c=tileAt(m,tx,ty),h=hash(tx,ty);PAL=m.pal||null;
   switch(c){
+  case ':':ash(sx,sy,h);break;
+  case '^':cliff(m,tx,ty,sx,sy,h);break;
+  case '%':lava(sx,sy,h);break;
+  case 'E':pole(sx,sy,h);break;
   case '.':ground(sx,sy,h);break;
-  case ',':{R(TG,sx,sy,16,16);const sw=(m.rustle&&m.rustle.x===tx&&m.rustle.y===ty&&frame-m.rustle.f<12)?1:0;
+  case ',':{R(PAL&&PAL.tg||TG,sx,sy,16,16);const sw=(m.rustle&&m.rustle.x===tx&&m.rustle.y===ty&&frame-m.rustle.f<12)?1:0;
     for(const[bx,by]of[[1,2],[8,1],[4,8],[11,9]]){R(TG2,sx+bx,sy+by+1,1,5);R(TG2,sx+bx+3,sy+by+1,1,5);R(TG2,sx+bx+1,sy+by+4,2,2);R(TG3,sx+bx+1+sw,sy+by,1,3);R(TG3,sx+bx+2-sw,sy+by+1,1,2);
       R('#c8f4a8',sx+bx+1+sw,sy+by,.5,.5);R('#c8f4a8',sx+bx+2.5-sw,sy+by+1,.5,.5);R('#5fb853',sx+bx+.5,sy+by+1,.5,2);R('#5fb853',sx+bx+3.5,sy+by+1.5,.5,2);R('#225e28',sx+bx+1,sy+by+5.5,2,.5);}
     R('#3d8c38',sx,sy+15.5,16,.5);break;}
@@ -284,6 +304,7 @@ function drawTileIn(m,tx,ty,sx,sy){const c=tileAt(m,tx,ty),h=hash(tx,ty),fl=m.fl
   case 'w':{const below=tileAt(m,tx,ty+1);const wc=m.wall||'#e8d8b8';R(wc,sx,sy,16,16);R(shade(wc,-.08),sx,sy+((tx&1)?0:8),16,8);
     if(below!=='w'){R(shade(wc,-.3),sx,sy+12,16,4);R(shade(wc,-.45),sx,sy+15,16,1);}else R(shade(wc,.15),sx,sy,16,1);break;}
   case 'x':R('#000',sx,sy,16,16);break;
+  case '%':lava(sx,sy,h);break;
   case 'm':floor();R('#c84a3a',sx+1,sy+3,14,11);R('#e86a5a',sx+2,sy+4,12,9);R('#f2c94c',sx+2,sy+8,12,1);break;
   case 'c':R('#c84a5a',sx,sy,16,16);R('#e8a040',sx,sy,16,1);R('#a83a4a',sx,sy+15,16,1);if(h%2)R('#d85a6a',sx+4,sy+4,8,8);break;
   case 'T':floor();R('#7a4a2a',sx+1,sy+3,14,11);R('#b07a4a',sx+1,sy+2,14,9);R('#c8925a',sx+2,sy+3,12,2);R('#5a3418',sx+2,sy+13,2,3);R('#5a3418',sx+12,sy+13,2,3);break;
@@ -391,5 +412,8 @@ function menuIcon(k){if(UIIC['m'+k])return UIIC['m'+k];const u=pix(24,24,(r)=>{
   return UIIC['m'+k]=u;}
 function badgeIcon(i,big){const k='b'+i+(big?'B':'');if(UIIC[k])return UIIC[k];const u=pix(16,16,(r)=>{
   if(i===0){r('#5a4a2a',3,2,10,12);r('#5a4a2a',1,5,14,6);r('#c8a060',4,3,8,10);r('#c8a060',2,6,12,4);r('#f2dca0',5,4,3,3);r('#8a6a3a',7,8,4,3);}
+  else if(i===2){r('#8a1a0a',6,1,4,2);r('#8a1a0a',4,3,8,4);r('#8a1a0a',3,7,10,6);r('#8a1a0a',5,13,6,2);r('#ff6a2a',5,4,6,4);r('#ff6a2a',4,8,8,4);r('#ffb84a',6,7,4,5);r('#fff2a0',7,9,2,2);}
+  else if(i===3){r('#5a4a0a',8,1,4,2);r('#5a4a0a',6,3,4,3);r('#5a4a0a',3,6,9,3);r('#5a4a0a',6,9,4,3);r('#5a4a0a',4,12,4,3);r('#f2c230',8,2,3,1);r('#f2c230',7,4,2,2);r('#f2c230',4,7,7,1);r('#f2c230',7,8,2,2);r('#f2c230',5,10,3,2);r('#5a4a0a',4,13,2,1);r('#fff6b0',8,7,2,1);}
+  else if(i===4){r('#2a4a8a',1,6,6,4);r('#2a4a8a',9,6,6,4);r('#2a4a8a',6,4,4,8);r('#9fd0ff',2,7,4,2);r('#9fd0ff',10,7,4,2);r('#e8f6ff',7,5,2,6);r('#ffffff',3,7,2,1);r('#ffffff',11,7,2,1);r('#2a4a8a',7,12,2,3);}
   else{r('#1f4f9a',7,1,2,2);r('#1f4f9a',5,3,6,2);r('#1f4f9a',3,5,10,7);r('#1f4f9a',5,12,6,2);r('#6ab8ff',6,4,4,2);r('#6ab8ff',4,6,8,5);r('#e8f6ff',5,6,3,2);r('#3d8ad6',7,11,4,1);}});
   return UIIC[k]=u;}

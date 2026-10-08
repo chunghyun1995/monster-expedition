@@ -5,7 +5,9 @@ let botMode='title';
 const fmtTime=ms=>{const m=Math.floor(ms/60000);return`${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}`;};
 const money=n=>`${Number(n).toLocaleString()}원`;
 const DOW='일월화수목금토';
-const REGION={town:{n:'새싹마을',x:44,y:92},route1:{n:'1번 도로',x:44,y:62},city:{n:'바위시티',x:44,y:28},route2:{n:'2번 도로',x:98,y:28},town2:{n:'물결마을',x:150,y:28}};
+const REGION={town:{n:'새싹마을',x:18,y:94,s:'새싹'},route1:{n:'1번 도로',x:18,y:62},city:{n:'바위시티',x:18,y:28,s:'바위'},route2:{n:'2번 도로',x:52,y:28},town2:{n:'물결마을',x:84,y:28,s:'물결'},
+  route3:{n:'3번 도로',x:84,y:62},town3:{n:'붉은재마을',x:84,y:94,s:'붉은재'},route4:{n:'4번 도로',x:116,y:94},town4:{n:'번개도시',x:148,y:94,s:'번개'},route5:{n:'5번 도로',x:148,y:60},town5:{n:'하늘봉마을',x:148,y:26,s:'하늘봉'}};
+const REGION_PATH=['town','city','town2','town3','town4','town5'];
 
 /* ================= 원정패드 (필드의 아래 화면) ================= */
 const Pad={el:null,app:0,tm:null,
@@ -33,13 +35,13 @@ const Pad={el:null,app:0,tm:null,
     return`<div style="height:${U(46)};text-align:center;font-size:${U(7)}"><img src="${monIcon(m.sid,m.shiny)}" style="width:${U(24)};height:${U(24)};image-rendering:pixelated;${m.hp<=0?'filter:grayscale(1) brightness(.6)':''}"><div>Lv${m.lv}</div>${hpBar(m.hp,mx)}</div>`;}).join('')}</div>`;},
   map(){return`<canvas width="168" height="116"></canvas>`;},
   drawMap(c){if(!c)return;const g=c.getContext('2d');g.fillStyle='#cfe8c1';g.fillRect(0,0,168,116);g.fillStyle='#b5d8a4';for(let i=0;i<8;i++)g.fillRect((i*37)%160,(i*23)%110,14,8);
-    g.fillStyle='#8ab8e8';g.fillRect(140,8,26,40);g.fillStyle='#24391f';
-    const P0=REGION;g.lineWidth=4;g.strokeStyle='#6a8a5a';g.beginPath();g.moveTo(P0.town.x,P0.town.y);g.lineTo(P0.city.x,P0.city.y);g.lineTo(P0.town2.x,P0.town2.y);g.stroke();
+    g.fillStyle='#8ab8e8';g.fillRect(100,8,26,30);g.fillStyle='#c8a890';g.fillRect(64,70,40,14);g.fillStyle='#a8b8a0';g.fillRect(128,36,36,18);g.fillStyle='#24391f';
+    const P0=REGION;g.lineWidth=4;g.strokeStyle='#6a8a5a';g.beginPath();REGION_PATH.forEach((k,i)=>i?g.lineTo(P0[k].x,P0[k].y):g.moveTo(P0[k].x,P0[k].y));g.stroke();
     const cur=curMap().region;
     for(const[k,r]of Object.entries(P0)){const isTown=!k.startsWith('route');if(!isTown)continue;g.fillStyle='#2f4a2a';g.fillRect(r.x-6,r.y-6,12,12);g.fillStyle='#e8f4e0';g.fillRect(r.x-4,r.y-4,8,8);}
     const r=P0[cur]||P0.town;if((frame>>4)&1||true){g.fillStyle='#e2566f';g.beginPath();g.arc(r.x,r.y,4,0,7);g.fill();}
     g.fillStyle='#24391f';g.font='9px Galmuri9, monospace';g.fillText((P0[cur]||P0.town).n,8,110);
-    g.font='7px Galmuri9, monospace';g.fillText('새싹',P0.town.x+9,P0.town.y+3);g.fillText('바위',P0.city.x-8,P0.city.y-9);g.fillText('물결',P0.town2.x-8,P0.town2.y+16);},
+    g.font='7px Galmuri9, monospace';for(const k of REGION_PATH){const r=P0[k];g.fillText(r.s,r.x+8,r.y-7);}},
   steps(){return`<div class="lcdt" style="padding:${U(10)} ${U(12)};font-size:${U(9.5)};line-height:1.75">
     <div style="display:flex;justify-content:space-between"><span>걸음 수</span><b>${(G.steps||0).toLocaleString()}보</b></div>
     <div style="display:flex;justify-content:space-between"><span>플레이 시간</span><b>${fmtTime(G.playMs)}</b></div>
@@ -222,9 +224,9 @@ async function trainerCard(){const tp=page(TOP,''),bp=el(BOT,'abs','',[0,0,256,1
     <canvas class="abs big" width="16" height="20" style="left:${U(178)};top:${U(56)};width:${U(56)};height:${U(70)}"></canvas>`;
   person(tp.querySelector('canvas').getContext('2d'),0,0,'down',0,LOOK.player);
   bp.innerHTML=`<div class="backdrop" style="background:linear-gradient(#5a4a3a,#2a2018)"></div><div class="abs" style="left:${U(8)};top:${U(6)};color:#f2dca0;font-size:${U(10)}">배지 케이스</div>`;
-  const B2=[['반석 배지','바위시티 관장 단단'],['물결 배지','물결마을 관장 하라']];
-  B2.forEach(([n,w],i)=>{const s=el(bp,'badge-slot','',[30+i*124,30,72,72]);if(G.badges[i])s.innerHTML=`<img src="${badgeIcon(i)}">`;
-    el(bp,'abs',`<div style="text-align:center;color:#f2dca0;font-size:${U(9)}">${G.badges[i]?n:'???'}<br><span style="font-size:${U(7.5)};color:#c8b080">${G.badges[i]?w:''}</span></div>`,[i*124+6,108,120,30]);
+  const B2=[['반석 배지','단단'],['물결 배지','하라'],['불꽃 배지','화련'],['번개 배지','찌나'],['창공 배지','하늬']];
+  B2.forEach(([n,w],i)=>{const cx=i<3?24+i*72:60+(i-3)*72,cy=i<3?24:104,s=el(bp,'badge-slot','',[cx,cy,48,48]);if(G.badges[i])s.innerHTML=`<img src="${badgeIcon(i)}">`;
+    el(bp,'abs',`<div style="text-align:center;color:#f2dca0;font-size:${U(8)}">${G.badges[i]?n:'???'}<br><span style="font-size:${U(7)};color:#c8b080">${G.badges[i]?'관장 '+w:''}</span></div>`,[cx-14,cy+50,76,26]);
     s.addEventListener('click',e=>{e.stopPropagation();if(G.badges[i])sfx('sparkle');});});
   const cb=el(bp,'btn dark','돌아가기',[166,158,84,28]);
   return new Promise(res=>{const close=()=>{popH(h);tp.remove();bp.remove();botMode=prevBot;res();};const h={key(k){if(k==='b'||k==='a'||k==='menu'){sfx('back');close();}}};
@@ -331,7 +333,7 @@ async function optionsMenu(){const rows=[['텍스트 속도',['느림','보통',
 let optH=null;
 
 /* ================= 상점 ================= */
-function shopStock(){const s=['ball','lvup','potion','antidote','burnheal','parheal','awake'];if(G.badges[0])s.splice(1,0,'great'),s.splice(3,0,'super'),s.push('fullheal');if(G.badges[1])s.push('revive');return s;}
+function shopStock(){const s=['ball','lvup','potion','antidote','burnheal','parheal','awake'];if(G.badges[0])s.splice(1,0,'great'),s.splice(3,0,'super'),s.push('fullheal');if(G.badges[1])s.push('revive');if(G.badges[2])s.push('super','fullheal');return [...new Set(s)];}
 async function shop(){const o={name:'점원'};let first=1;
   while(true){const c=await ask(first?'어서 오세요! 무엇을 도와드릴까요?':'그 밖에 필요하신 건 없으세요?',['사러 왔어요','팔러 왔어요','괜찮아요'],o);
     first=0;if(c===0)await shopBuy();else if(c===1)await shopSell();else break;}

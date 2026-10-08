@@ -147,10 +147,14 @@ const POCKETS=[['heal','회복'],['ball','캡슐'],['key','중요한 물건']];
 /* 트레이너 클래스: 상금 배율, 외형 */
 const TCLASS={kid:{n:'꼬마',m:16,look:'kid'},girl:{n:'소녀',m:20,look:'girl'},camper:{n:'캠퍼',m:20,look:'camper'},bugboy:{n:'곤충소년',m:16,look:'bug'},
   hiker:{n:'등산가',m:32,look:'hiker'},swimmer:{n:'수영선수',m:20,look:'swim'},fisher:{n:'낚시꾼',m:28,look:'fisher'},lass:{n:'아가씨',m:24,look:'lady'},
-  leader:{n:'관장',m:100},rival:{n:'라이벌',m:35,look:'rival'}};
+  leader:{n:'관장',m:100},rival:{n:'라이벌',m:35,look:'rival'},grunt:{n:'검은안개단원',m:26,look:'villain'},boss:{n:'검은안개단 두목',m:60,look:'boss'},
+  birdkeeper:{n:'새조련사',m:24,look:'camper'},engineer:{n:'정비공',m:28,look:'man'},ranger:{n:'산악구조대',m:32,look:'hiker'}};
 /* 라이벌 파티: 라이벌은 주인공의 스타터에 유리한 몬스터를 고른다 */
 const COUNTER={1:4,4:7,7:1,17:27}; // 17 찌릿쥐(이스터에그) → 라이벌은 흙두더
 function rivalTeam(stage){const r=G.rivalStarter;
   if(stage===1)return[[r,5]];
   if(stage===2)return[[10,9],[15,9],[r,12]];
-  return[[11,16],[17,15],[21,16],[r+1,19]];}
+  if(stage===3)return[[11,16],[17,15],[21,16],[r+1,19]];
+  const fin=s=>{while(SP[s].ev)s=SP[s].ev[1];return s;},mid=SP[r].ev?SP[r].ev[1]:r;
+  if(stage===4)return[[11,25],[18,24],[22,25],[mid,28]];
+  return[[11,39],[18,38],[22,39],[24,38],[fin(r),42]];}
