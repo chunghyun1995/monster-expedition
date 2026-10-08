@@ -11,8 +11,10 @@ const dlg=el(TOP,'hidden','<span class="tx"></span><i class="nx hidden"></i>');d
 const dtx=dlg.querySelector('.tx'),dnx=dlg.querySelector('.nx');let dtag=null,dlgTm=null;
 function msg(text,o={}){clearTimeout(dlgTm);dlgShow();setTag(o.name);const pg=paginate(text);dtx.textContent=pg[pg.length-1];dnx.classList.add('hidden');setTag(o.name);}
 function setTag(name){if(dtag){dtag.remove();dtag=null;}if(name){dtag=el(dlg,'tag',esc(name));}}
-function dlgShow(){dlg.classList.remove('hidden');TOP.classList.add('talking');}
-function hideMsg(){dlg.classList.add('hidden');TOP.classList.remove('talking');setTag(null);}
+function dlgShow(){dlg.classList.remove('hidden');const d=dlg.getBoundingClientRect();
+  // 대화창과 실제로 겹치는 설명 상자만 잠시 숨긴다
+  TOP.querySelectorAll('.page .desc').forEach(e=>{const r=e.getBoundingClientRect();e.classList.toggle('under-dlg',r.height>0&&r.bottom>d.top+2);});}
+function hideMsg(){dlg.classList.add('hidden');TOP.querySelectorAll('.under-dlg').forEach(e=>e.classList.remove('under-dlg'));setTag(null);}
 /* 대화창 2줄 단위로 나누기 (넘치면 A로 다음 페이지) */
 function dlgLines(t){dtx.style.maxHeight='none';dtx.textContent=t||' ';const lh=parseFloat(getComputedStyle(dtx).lineHeight)||16;const n=Math.round(dtx.offsetHeight/lh);dtx.style.maxHeight='';return n;}
 function fitCut(rest,max=2){if(dlgLines(rest)<=max)return rest.length;

@@ -63,10 +63,10 @@ defMap('lab',{name:'한결 연구소',music:'town',bg:'lab',floor:'lab',wall:'#d
  warps:{'5,11':['town',5,6,'down'],'6,11':['town',5,6,'down']},
  obj:{'0,2':['몬스터의 진화에 관한 논문이 꽂혀 있다.'],'1,2':['몬스터의 진화에 관한 논문이 꽂혀 있다.'],'2,2':['"타입 상성 대백과"','불꽃은 풀에, 풀은 물에, 물은 불꽃에 강하다.'],'3,2':['"타입 상성 대백과"','전기는 땅에 전혀 통하지 않는다.'],
    '8,2':['연구 일지가 빼곡히 꽂혀 있다.'],'9,2':['연구 일지가 빼곡히 꽂혀 있다.'],'10,2':['"캡슐 공학 입문"'],'11,2':['"캡슐 공학 입문"'],
-   '0,7':['현미경과 실험 도구가 놓여 있다.'],'1,7':['현미경과 실험 도구가 놓여 있다.'],'10,7':['컴퓨터 화면에 몬스터 데이터가 떠 있다.'],'11,7':['컴퓨터 화면에 몬스터 데이터가 떠 있다.'],
+   '0,7':['현미경과 실험 도구가 놓여 있다.'],'1,7':['현미경과 실험 도구가 놓여 있다.'],'10,7':['컴퓨터 화면에 몬스터 데이터가 떠 있다.','"관찰 대상 No.017 — 고집 셈. 캡슐 셋을 다 거절할 만큼 까다로운 트레이너에게?"'],'11,7':['컴퓨터 화면에 몬스터 데이터가 떠 있다.'],
    '4,4':()=>pickStarter(0),'5,4':()=>pickStarter(1),'6,4':()=>pickStarter(2)},
  npcs:[{id:'prof',x:5,y:3,dir:'down',look:'prof',name:'한결 박사',talk:async()=>{const o={name:'한결 박사'};
-     if(!G.flags.starter){await say('테이블 위의 캡슐 세 개 중에서 마음에 드는 아이를 골라 보렴.',o);return;}
+     if(!G.flags.starter){if((G.flags.dec||0)===7){await secretStarter();return;}await say('테이블 위의 캡슐 세 개 중에서 마음에 드는 아이를 골라 보렴.',o);return;}
      const s=Object.keys(G.seen).length,c=Object.keys(G.caught).length;await say(`도감은 잘 채우고 있니? 발견 ${s}종, 포획 ${c}종이로구나.`,o);
      await say(c>=20?'정말 대단하구나! 너는 진정한 몬스터 박사가 될 수 있겠어!':c>=10?'좋아, 그 기세로 계속 가 보렴!':'아직 갈 길이 멀구나. 풀숲 곳곳을 찾아보렴!',o);}},
    {id:'rival_lab',x:8,y:5,dir:'left',look:'rival',name:RIVAL,cond:()=>!G.flags.rival1,talk:async()=>{await say(`늦었잖아, ${nm()}! 나는 네가 먼저 고르게 해 줄게. 대인배니까!`,{name:RIVAL});}},
@@ -85,14 +85,35 @@ async function pickStarter(i){const[x,y,sid]=STARTERS[i];
     <div class="sheet" style="left:${U(8)};top:${U(104)};width:${U(240)};height:${U(36)};padding:${U(3)} ${U(8)}"><b>${s.n}</b> ${typesHtml(sid)} <span style="font-size:${U(8)};color:#6a7190">${s.cat} 몬스터</span><div class="desc" style="font-size:${U(8.5)}">${s.d}</div></div>`);
   pg.querySelector('canvas').getContext('2d').drawImage(monCanvas(sid),0,0);cry(sid);
   const r=await ask(`${TYPES[s.t[0]].n} 타입 몬스터 ${J(s.n,'을')} 고르겠니?`,['이 아이로 할래!','다시 고를래'],{name:'한결 박사'});pg.remove();
-  if(r!==0)return;
-  G.starter=sid;G.rivalStarter=COUNTER[sid];G.flags.starter=1;
+  if(r!==0){G.flags.dec=(G.flags.dec||0)|(1<<i);
+    if(G.flags.dec===7&&!G.flags.decHint){G.flags.decHint=1;const prof=npcById('prof');await emoteOn(prof,'?');await say('흐음… 셋 다 마음에 안 드는 눈치로구나. 잠깐 나한테 와 보겠니?',{name:'한결 박사'});}
+    return;}
+  await giveStarter(sid);}
+/* 이스터에그: 세 캡슐을 모두 거절하면 박사의 비밀 몬스터(찌릿쥐) */
+async function secretStarter(){const o={name:'한결 박사'},sid=17,s=SP[sid],prof=npcById('prof');
+  await say('허허, 고집 센 녀석이로구나. 사실 오늘 아침 연구소 뒷마당에서 이 녀석이 전선 줄을 갉아 먹고 있었단다.',o);
+  await say('캡슐에 들어가는 걸 질색해서 아직 아무에게도 맡기지 못했는데… 어쩐지 너랑은 잘 맞을 것 같구나.',o);
+  sfx('para');const pg=page(TOP,`<div class="abs" style="inset:0;background:radial-gradient(circle at 50% 40%,#fff6b0,#f8d860)"></div>
+    <canvas class="abs big" width="24" height="24" style="left:${U(80)};top:${U(6)};width:${U(96)};height:${U(96)}"></canvas>
+    <div class="sheet" style="left:${U(8)};top:${U(104)};width:${U(240)};height:${U(36)};padding:${U(3)} ${U(8)}"><b>${s.n}</b> ${typesHtml(sid)} <span style="font-size:${U(8)};color:#6a7190">${s.cat} 몬스터</span><div class="desc" style="font-size:${U(8.5)}">${s.d}</div></div>`);
+  pg.querySelector('canvas').getContext('2d').drawImage(monCanvas(sid),0,0);cry(sid);
+  const r=await ask(`${TYPES[s.t[0]].n} 타입 몬스터 ${J(s.n,'을')} 데려가겠니?`,['이 아이로 할래!','역시 캡슐에서 고를래'],o);pg.remove();
+  if(r!==0){G.flags.dec=0;await say('그래, 천천히 다시 골라 보렴.',o);return;}
+  await giveStarter(sid,{secret:1});
+  await say('아, 그리고 하나만 말해 두마. 전기 기술은 땅 타입에게 전혀 통하지 않는단다.',o);
+  await say('바위시티 체육관은 꽤 고생할 거야. 풀숲에서 동료를 모으거나, 몬스터 센터의 합성 연구원을 찾아가 보렴.',o);}
+async function giveStarter(sid,opt={}){const s=SP[sid];
+  G.starter=sid;G.rivalStarter=COUNTER[sid];G.flags.starter=1;if(opt.secret)G.flags.secretStarter=1;
   const m=makeMon(sid,5,{met:{map:'한결 연구소',lv:5},ot:G.name,shiny:false});addMon(m);G.seen[sid]=G.caught[sid]=1;
   await Music.jingle('key');await say(`${J(G.name,'은')} 한결 박사에게서 ${J(s.n,'을')} 받았다!`);
   await nicknamePrompt(m);
-  const rv=npcById('rival_lab');await say(`그럼 나는 이 녀석으로 할게!`,{name:RIVAL});
+  const rv=npcById('rival_lab');
+  if(opt.secret){await emoteOn(rv,'!');await say('뭐야, 숨겨 둔 몬스터가 있었어?! 치사해요, 박사님! 저도 특별한 걸로 주세요!',{name:RIVAL});
+    await say('허허, 그럼 도윤이는 이 녀석을 데려가렴. 전기를 꼼짝 못 하게 하는 땅 타입이란다.',{name:'한결 박사'});
+    await say(`${J(RIVAL,'은')} ${J(SP[G.rivalStarter].n,'을')} 받았다!`);rv.dir='left';}
+  else{await say(`그럼 나는 이 녀석으로 할게!`,{name:RIVAL});
   await walkNpc(rv,['up']);rv.dir='left';await sleep(300);
-  await say(`${J(RIVAL,'은')} ${J(SP[G.rivalStarter].n,'을')} 골랐다!`);await walkNpc(rv,['down']);rv.dir='left';
+  await say(`${J(RIVAL,'은')} ${J(SP[G.rivalStarter].n,'을')} 골랐다!`);await walkNpc(rv,['down']);rv.dir='left';}
   Music.play('rival');await say(`${nm()}! 모처럼 몬스터를 받았으니까 한 판 붙자!`,{name:RIVAL});
   const res=await battle({kind:'trainer',cls:'rival',name:RIVAL,team:rivalTeam(1),noLose:1,look:'rival',music:'rival',bg:'lab',
     lose:'뭐야! 처음인데 너무 잘하잖아!',winMsg:'헤헷, 역시 내가 고른 몬스터가 최고야!'});
@@ -141,7 +162,7 @@ defMap('route1',{name:'1번 도로',out:1,music:'route',bg:'grass',region:'route
   '#.........==.........#',
   '##########==##########'],
  links:{s:'town',n:'city'},
- enc:[[15,2,4,40],[10,2,4,35],[12,2,3,20],[27,3,4,5]],
+ enc:[[15,2,4,24],[10,2,4,18],[12,2,3,12],[27,3,4,8],[19,2,4,11],[25,2,4,11],[21,2,4,8],[17,3,4,8]],
  signs:{'7,4':['1번 도로','↑ 바위시티 · ↓ 새싹마을']},
  items:[{x:20,y:10,item:'potion',n:1,flag:'i_r1a'},{x:1,y:10,item:'ball',n:2,flag:'i_r1b'},{x:19,y:21,item:'antidote',n:1,flag:'i_r1c'}],
  npcs:[{id:'r1_tip',x:16,y:17,dir:'down',look:'man',name:'아저씨',wander:1,text:['풀숲에서는 야생 몬스터가 튀어나오지.','몬스터의 HP를 줄이고, 잠들거나 마비되게 하면 붙잡기 쉬워진다네!']},
@@ -176,7 +197,7 @@ defMap('city',{name:'바위시티',out:1,music:'city',bg:'city',region:'city',
  signs:{'4,3':['바위시티','단단한 의지가 모이는 바위의 도시']},
  npcs:[{id:'c_old',x:8,y:6,dir:'down',look:'old',name:'할아버지',text:['체육관 관장 단단은 바위 타입 몬스터를 쓴다네.','바위에는 물이나 풀 기술이 잘 통하지. 불꽃과 비행은 고전할 게야.']},
    {id:'c_girl',x:16,y:13,dir:'left',look:'lady',name:'아가씨',wander:1,text:['동쪽 2번 도로 숲에는 여러 타입의 몬스터가 살아요.','상점에서 상태 이상 치료약도 꼭 챙기세요!']},
-   {id:'c_kid',x:7,y:12,dir:'up',look:'kid',name:'꼬마',wander:1,text:['몬스터 센터에서는 공짜로 몬스터를 회복시켜 줘!','센터 PC로 보관함에 몬스터를 맡길 수 있어.']},
+   {id:'c_kid',x:7,y:12,dir:'up',look:'kid',name:'꼬마',wander:1,text:['몬스터 센터에서는 공짜로 몬스터를 회복시켜 줘!','센터의 합성 연구원한테 같은 몬스터 두 마리를 데려가면 더 강한 몬스터로 바꿔 준대!']},
    {id:'c_guard',x:22,y:9,dir:'down',look:'guide',name:'경비원',text:['여기서부터 2번 도로야. 숲에는 강한 몬스터가 많으니 조심하렴.']}],
  trig:[{x:22,y:10,w:2,h:2,cond:()=>!G.flags.badge0,run:async()=>{const g=npcById('c_guard');g.dir='down';await emoteOn(g,'!');
    await say('잠깐! 이 앞 2번 도로 숲은 아주 위험해.',{name:'경비원'});await say('바위시티 체육관의 배지를 얻은 트레이너만 지나갈 수 있단다.',{name:'경비원'});await walkPlayer(['left']);}}]});
@@ -195,6 +216,7 @@ function centerMap(id,out,ox,oy,region,music){defMap(id,{name:'몬스터 센터'
  warps:{'6,9':[out,ox,oy,'down']},
  obj:{'12,3':()=>pcMenu(),'4,2':['회복 장치가 반짝이고 있다.']},
  npcs:[{id:'nurse_'+id,x:6,y:2,dir:'down',look:'nurse',name:'간호사',talk:()=>nurse(out,ox,oy)},
+   {id:'fuse_'+id,x:10,y:7,dir:'left',look:'aide',name:'합성 연구원',talk:()=>fusionLab()},
    {id:'cg_'+id,x:2,y:7,dir:'right',look:id==='center1'?'old':'lady',name:id==='center1'?'할아버지':'아가씨',wander:1,
     text:id==='center1'?['몬스터가 쓰러지면 몬스터 센터로 데려오게나.','그리고 항상 회복약을 넉넉히 챙겨 두게!']:['물결마을 체육관 관장 하라 씨는 물 타입의 달인이에요.','전기 타입과 풀 타입 몬스터가 있으면 든든하겠죠!']}]});}
 centerMap('center1','city',5,11,'city');

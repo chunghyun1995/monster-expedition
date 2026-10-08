@@ -196,4 +196,4 @@ body.land #pad .mid{left:auto;right:8px;top:8px;transform:none}
 .lcdt{font-family:'Galmuri9','Galmuri11',monospace}
 
 /* 대화창이 떠 있는 동안 아래쪽 설명 상자는 숨겨 겹치지 않게 */
-#topUI.talking .page .desc{visibility:hidden}
+#topUI .page .desc.under-dlg{visibility:hidden}

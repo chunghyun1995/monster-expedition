@@ -303,3 +303,56 @@ async function pcMenu(){sfx('menu');await say(`${J(G.name,'은')} PC의 전원�
       const m=G.box.splice(r,1)[0];G.party.push(m);sfx('save');await say(`${J(N(m),'을')} 데려왔다!`);}
     else break;}
   sfx('back');await say('PC의 전원을 껐다.');}
+
+/* ================= 몬스터 합성 =================
+   같은 종류 두 마리 → 무작위 타입의 상위(진화형) 몬스터 1마리.
+   레벨은 둘 중 높은 레벨 +2. 둘 중 하나라도 이로치면 결과도 이로치. */
+const FUSE_POOL=()=>Object.keys(SP).map(Number).filter(s=>SP[s].st>=1&&SP[s].line>9&&s!==13);
+function fusionResult(src){const pool=FUSE_POOL().filter(s=>s!==src),types=[...new Set(pool.flatMap(s=>SP[s].t))];
+  const t=types[rnd(types.length)],cand=pool.filter(s=>SP[s].t.includes(t));
+  const hi=cand.filter(s=>SP[s].st>=2),use=SP[src].st>=1&&hi.length?hi:cand;return use[rnd(use.length)];}
+function allMons(){return[...G.party.map((m,i)=>({m,where:'party',i})),...G.box.map((m,i)=>({m,where:'box',i}))];}
+async function fusionLab(){const o={name:'합성 연구원'};
+  if(!G.flags.fuseIntro){G.flags.fuseIntro=1;
+    await say('어서 오세요! 여기는 몬스터 합성 연구실이에요.',o);
+    await say('같은 종류의 몬스터 두 마리를 맡겨 주시면, 하나로 합쳐서 더 강한 상위 몬스터로 만들어 드려요.',o);
+    await say('어떤 타입이 나올지는 저도 몰라요! 레벨은 두 마리 중 높은 쪽보다 2 올라간답니다.',o);}
+  const all=allMons(),cnt={};for(const x of all)cnt[x.m.sid]=(cnt[x.m.sid]||0)+1;
+  const sids=Object.keys(cnt).map(Number).filter(s=>cnt[s]>=2).sort((a,b)=>a-b);
+  if(!sids.length){await say('지금은 같은 종류의 몬스터가 두 마리 이상 없네요. 파티나 보관함에 두 마리를 모아서 다시 와 주세요!',o);return;}
+  if(await ask('합성을 해 볼까요?',['합성한다','그만둔다'],o)!==0){await say('또 오세요!',o);return;}
+  // 1) 종류 고르기
+  const tp=page(TOP,'');const sp=sid=>`<div class="abs" style="inset:0;background:linear-gradient(#e8dcff,#f8f4ff)"></div><div class="title-bar">몬스터 합성<span class="r">같은 종류 2마리 → 상위 몬스터</span></div>
+    <img class="abs big" src="${monIcon(sid)}" style="left:${U(80)};top:${U(30)};width:${U(96)};height:${U(96)}">
+    <div class="sheet" style="left:${U(8)};top:${U(132)};width:${U(240)};text-align:center"><b>${SP[sid].n}</b> ${typesHtml(sid)}<div class="desc">보유 ${cnt[sid]}마리 · 결과 타입은 무작위</div></div>`;
+  const si=await list(sids.map(s=>({html:`<img src="${monIcon(s)}"><span>${SP[s].n}</span><span class="r">× ${cnt[s]}</span>`})),
+    {rect:[4,4,248,150],rowH:20,backdrop:true,bg:'linear-gradient(#7a6aa8,#4a3d72)',buttons:[{html:'그만두기',x:170,y:160,w:82,h:28,cls:'dark',val:-1}],onMove:i=>tp.innerHTML=sp(sids[i])});
+  if(si<0){tp.remove();await say('또 오세요!',o);return;}
+  const sid=sids[si],mine=all.filter(x=>x.m.sid===sid);
+  // 2) 재료 두 마리 고르기
+  const pick=async(excl,title)=>{const c=mine.filter(x=>x!==excl);if(c.length===1&&excl)return c[0];
+    const r=await list(c.map(x=>({html:`<img src="${monIcon(x.m.sid,x.m.shiny)}"><span>${esc(N(x.m))}</span><span class="r">${x.where==='party'?'파티':'보관함'} · Lv${x.m.lv}</span>`})),
+      {rect:[4,4,248,150],rowH:20,backdrop:true,bg:'linear-gradient(#7a6aa8,#4a3d72)',buttons:[{html:'그만두기',x:170,y:160,w:82,h:28,cls:'dark',val:-1}],onMove:i=>tp.innerHTML=monTopPage(c[i].m,title)});
+    return r<0?null:c[r];};
+  const a=await pick(null,'첫 번째 재료');if(!a){tp.remove();return;}
+  const b=await pick(a,'두 번째 재료');tp.remove();if(!b)return;
+  if(await ask(`${N(a.m)} Lv${a.m.lv} + ${N(b.m)} Lv${b.m.lv}\n합성하면 두 마리는 사라져요. 괜찮아요?`,['합성한다','그만둔다'],o)!==0){await say('또 오세요!',o);return;}
+  // 3) 합성
+  const to=fusionResult(sid),lv=Math.min(100,Math.max(a.m.lv,b.m.lv)+2);
+  const m=makeMon(to,lv,{met:{map:'합성 연구실',lv},ot:G.name,shiny:a.m.shiny||b.m.shiny});
+  const partyIdx=[a,b].filter(x=>x.where==='party').map(x=>G.party.indexOf(x.m));
+  G.party=G.party.filter(x=>x!==a.m&&x!==b.m);G.box=G.box.filter(x=>x!==a.m&&x!==b.m);
+  if(partyIdx.length)G.party.splice(Math.min(...partyIdx),0,m);else addMon(m);
+  await say('그럼 시작할게요! 합성 장치, 가동!',o);
+  const fx=page(TOP,`<div class="abs" style="inset:0;background:radial-gradient(circle at 50% 45%,#ffffff,#b8a8f0 60%,#4a3d72)"></div>
+    <img class="abs big fa" src="${monIcon(sid,a.m.shiny)}" style="left:${U(30)};top:${U(50)};width:${U(64)};height:${U(64)};transition:all .9s ease-in">
+    <img class="abs big fb" src="${monIcon(sid,b.m.shiny)}" style="left:${U(162)};top:${U(50)};width:${U(64)};height:${U(64)};transition:all .9s ease-in">
+    <img class="abs big fr" src="${monIcon(to,m.shiny)}" style="left:${U(80)};top:${U(34)};width:${U(96)};height:${U(96)};opacity:0;transform:scale(.2);transition:all .6s cubic-bezier(.2,1.6,.4,1)">`);
+  await sleep(300);sfx('absorb');for(const q of['.fa','.fb']){const e=fx.querySelector(q);e.style.left=U(96);e.style.opacity='.2';e.style.filter='brightness(4)';}
+  await sleep(950);sfx('open');const r=fx.querySelector('.fr');r.style.opacity='1';r.style.transform='scale(1)';
+  await sleep(500);cry(to);if(m.shiny)sfx('shiny');
+  G.seen[to]=G.caught[to]=1;await Music.jingle('evolved');
+  await say(`합성 성공! ${SP[to].t.map(x=>TYPES[x].n).join('·')} 타입 ${J(SP[to].n,'이')} 태어났다! (Lv${lv})`);
+  await nicknamePrompt(m);fx.remove();
+  if(!G.party.includes(m))await say(`파티가 가득 차서 ${J(N(m),'은')} 보관함으로 보내졌다.`);
+  await say('소중히 키워 주세요!',o);}

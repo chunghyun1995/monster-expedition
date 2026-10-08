@@ -148,7 +148,7 @@ const TCLASS={kid:{n:'꼬마',m:16,look:'kid'},girl:{n:'소녀',m:20,look:'girl'
   hiker:{n:'등산가',m:32,look:'hiker'},swimmer:{n:'수영선수',m:20,look:'swim'},fisher:{n:'낚시꾼',m:28,look:'fisher'},lass:{n:'아가씨',m:24,look:'lady'},
   leader:{n:'관장',m:100},rival:{n:'라이벌',m:35,look:'rival'}};
 /* 라이벌 파티: 라이벌은 주인공의 스타터에 유리한 몬스터를 고른다 */
-const COUNTER={1:4,4:7,7:1};
+const COUNTER={1:4,4:7,7:1,17:27}; // 17 찌릿쥐(이스터에그) → 라이벌은 흙두더
 function rivalTeam(stage){const r=G.rivalStarter;
   if(stage===1)return[[r,5]];
   if(stage===2)return[[10,9],[15,9],[r,12]];
