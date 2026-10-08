@@ -197,3 +197,18 @@ body.land #pad .mid{left:auto;right:8px;top:8px;transform:none}
 
 /* 대화창이 떠 있는 동안 아래쪽 설명 상자는 숨겨 겹치지 않게 */
 #topUI .page .desc.under-dlg{visibility:hidden}
+/* 안내 툴팁 */
+#ds{position:relative}
+.guide{position:absolute;z-index:200;overflow:hidden;border-radius:calc(var(--u)*1.5);animation:gin .18s ease-out}
+.guide.dim{background:rgba(8,10,24,.5)}
+.guide.out{opacity:0;transition:opacity .15s}
+.gspot{position:absolute;border-radius:calc(var(--u)*8);box-shadow:0 0 0 9999px rgba(8,10,24,.55),0 0 0 calc(var(--u)*1.5) #ffcf3a inset;animation:gpulse 1s ease-in-out infinite alternate;pointer-events:none}
+.gbub{position:absolute;padding:calc(var(--u)*6) calc(var(--u)*8) calc(var(--u)*5);background:#fffdf2;color:#2b2f45;border:calc(var(--u)*1.5) solid #3d4562;border-radius:calc(var(--u)*6);box-shadow:0 calc(var(--u)*2) 0 rgba(0,0,0,.35);font-size:calc(var(--u)*9);line-height:1.5;word-break:keep-all}
+.gbub .gt{display:inline-block;margin-bottom:calc(var(--u)*3);padding:0 calc(var(--u)*5);border-radius:calc(var(--u)*3);background:#ffcf3a;color:#5a3a00;font-size:calc(var(--u)*7.5);line-height:calc(var(--u)*11)}
+.gbub .gx b{color:#d2405a;font-weight:normal}
+.gbub .gk{margin-top:calc(var(--u)*3);text-align:right;font-size:calc(var(--u)*7);color:#8a90a8}
+.garr{position:absolute;width:0;height:0;margin-left:calc(var(--u)*-5);border-left:calc(var(--u)*5) solid transparent;border-right:calc(var(--u)*5) solid transparent}
+.garr.up{top:calc(var(--u)*-6.5);border-bottom:calc(var(--u)*6) solid #3d4562}
+.garr.dn{bottom:calc(var(--u)*-6.5);border-top:calc(var(--u)*6) solid #3d4562}
+@keyframes gin{from{opacity:0}}
+@keyframes gpulse{to{box-shadow:0 0 0 9999px rgba(8,10,24,.55),0 0 0 calc(var(--u)*2.5) #ffcf3a inset}}

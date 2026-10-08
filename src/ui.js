@@ -135,3 +135,38 @@ function fadeTo(v,which='both',white=false){for(const id of(which==='both'?['fad
 /* 위/아래 화면 페이지(전체를 덮는 HTML) */
 function page(root,html,cls=''){return el(root,'page '+cls,html);}
 function clearPages(root){root.querySelectorAll(':scope>.page').forEach(e=>e.remove());}
+
+/* ---------- 처음 쓰는 기능 안내 툴팁 ----------
+   guide(id, 대상, 문구): 대상(선택자/요소/'top'/'bot')을 비추고 말풍선을 띄운다. 한 번 본 안내는 다시 나오지 않는다. */
+const GUIDE_KEY='monster-expedition-guides-v2';let GUIDES={};
+try{GUIDES=JSON.parse(localStorage.getItem(GUIDE_KEY)||'{}');}catch(e){}
+function guideSeen(id){return !SET.tips||!!GUIDES[id];}
+function guideReset(){GUIDES={};try{localStorage.removeItem(GUIDE_KEY);}catch(e){}}
+let guideQ=Promise.resolve();
+function guide(id,target,text,o={}){if(guideSeen(id))return Promise.resolve();GUIDES[id]=1;try{localStorage.setItem(GUIDE_KEY,JSON.stringify(GUIDES));}catch(e){}
+  return guideQ=guideQ.then(()=>new Promise(res=>{
+    const ds=$('#ds'),dr=ds.getBoundingClientRect(),u=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--u'))||2;
+    let el0=typeof target==='function'?target():typeof target==='string'?(target==='top'?$('#scrTop'):target==='bot'?$('#scrBot'):document.querySelector(target)):target;
+    if(el0&&!el0.getClientRects().length)el0=null;
+    const scr=(el0&&el0.closest('.scr'))||$(o.screen==='top'?'#scrTop':'#scrBot')||ds,sr=scr.getBoundingClientRect();
+    const r=el0?el0.getBoundingClientRect():null,whole=!el0||el0===scr;
+    const lay=document.createElement('div');lay.className='guide';lay.style.cssText=`left:${sr.left-dr.left}px;top:${sr.top-dr.top}px;width:${sr.width}px;height:${sr.height}px`;
+    const pad=u*2.5;
+    if(r&&!whole){const sp=document.createElement('div');sp.className='gspot';sp.style.cssText=`left:${r.left-sr.left-pad}px;top:${r.top-sr.top-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px`;lay.appendChild(sp);}
+    else lay.classList.add('dim');
+    const bub=document.createElement('div');bub.className='gbub';
+    bub.innerHTML=`<div class="gt">${o.title?esc(o.title):'처음 쓰는 기능'}</div><div class="gx">${text}</div><div class="gk">${matchMedia('(pointer:coarse)').matches?'화면을 탭하면':'A(Z) 키를 누르면'} 닫혀요 ▶</div>`;
+    lay.appendChild(bub);ds.appendChild(lay);
+    // 말풍선 위치: 대상 아래가 넓으면 아래, 아니면 위
+    const bw=Math.min(sr.width-u*12,u*200);bub.style.width=bw+'px';
+    const bh=bub.offsetHeight,cx=r&&!whole?r.left-sr.left+r.width/2:sr.width/2;
+    let left=clamp(cx-bw/2,u*6,sr.width-bw-u*6),top,below=true;
+    if(r&&!whole){const tb=r.top-sr.top,bb=r.bottom-sr.top;below=sr.height-bb>=bh+u*12||tb<bh+u*12&&sr.height-bb>tb;top=below?bb+pad+u*7:tb-pad-u*7-bh;top=clamp(top,u*4,sr.height-bh-u*4);
+      const ar=document.createElement('i');ar.className='garr '+(below?'up':'dn');ar.style.left=clamp(cx-left,u*10,bw-u*10)+'px';bub.appendChild(ar);}
+    else top=(sr.height-bh)/2;
+    bub.style.left=left+'px';bub.style.top=top+'px';sfx('menu');
+    let done=false;const close=()=>{if(done)return;done=true;popH(h);sfx('cur');lay.classList.add('out');setTimeout(()=>lay.remove(),160);res();};
+    const h=pushH({key(k){if(k==='a'||k==='b'||k==='menu')close();}});
+    lay.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();});lay.addEventListener('click',e=>{e.stopPropagation();close();});}));}
+/* 패널이 화면에 그려진 다음 띄우기 */
+function guideSoon(id,target,text,o){if(guideSeen(id))return;setTimeout(()=>guide(id,target,text,o),90);}

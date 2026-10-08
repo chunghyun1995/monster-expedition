@@ -40,7 +40,7 @@ async function edgeWarp(to,side){busy=true;const m2=MAPS[to];let x=P.x,y=P.y;
 function checkTrig(){const m=curMap();for(const t of m.trig){if(P.x>=t.x&&P.x<t.x+t.w&&P.y>=t.y&&P.y<t.y+t.h&&(!t.cond||t.cond())){runScript(t.run);return true;}}return false;}
 
 /* ---------- 필드 업데이트 ---------- */
-function updateWorld(dt){const m=curMap();
+function updateWorld(dt){const m=curMap();if(!busy&&!ui.length&&!P.moving&&SET.tips)worldGuides();
   /* NPC 배회 */
   if(!busy&&!ui.length)for(const n of npcsOf(m)){if(!n.wander||n.mv)continue;if(--n.wt>0)continue;n.wt=90+rnd(180);
     const d=['up','down','left','right'][rnd(4)],[dx,dy]=DV[d],nx=n.x+dx,ny=n.y+dy;n.dir=d;
@@ -190,7 +190,7 @@ function drawTrans(g){const t=transFx;if(t.type==='flash'){g.fillStyle=t.col||'r
     g.fillStyle='#fff';g.font='bold 16px Galmuri11, sans-serif';g.textAlign='center';g.fillText(t.label,128,102);g.textAlign='left';}}}
 
 /* ---------- 아래 화면 배경 ---------- */
-function renderBot(){const g=bctx;
+function renderBot(){const g=bctx;g.setTransform(SC,0,0,SC,0,0);g.imageSmoothingEnabled=false;
   if(botMode==='title'||botMode==='plain'||botMode==='credits'){drawTitleBot(g);return;}
   if(botMode==='battle'){g.fillStyle='#262b42';g.fillRect(0,0,W,H);g.fillStyle='#2e3450';for(let y=-20;y<H+20;y+=24)for(let x=-20;x<W+20;x+=24){const o=(frame*.25)%24;g.beginPath();g.arc(x+o,y+o,7,0,7);g.fill();}return;}
   const c=botMode==='menu'?['#3d5aa8','#4a68b8']:['#2f8a8a','#3a9a9a'];g.fillStyle=c[0];g.fillRect(0,0,W,H);g.fillStyle=c[1];
@@ -198,7 +198,7 @@ function renderBot(){const g=bctx;
 
 /* ---------- 메인 루프 ---------- */
 let lastT=performance.now();
-function render(){const g=ctx;g.setTransform(1,0,0,1,0,0);g.imageSmoothingEnabled=false;
+function render(){const g=ctx;g.setTransform(SC,0,0,SC,0,0);g.imageSmoothingEnabled=false;
   if(state==='world')drawWorld(g);else if(state==='battle')drawBattle(g);else if(state==='evolve')drawEvolve(g);else if(state==='intro')drawIntro(g);
   else if(state==='credits')drawCredits(g);else drawTitle(g);
   if(transFx)drawTrans(g);}
@@ -223,3 +223,11 @@ async function titleScreen(){state='title';botMode='title';Music.play('title');c
     await intro();return;}}
 
 Pad.init();requestAnimationFrame(loop);titleScreen();
+
+/* 필드에서 처음 하는 일 안내 */
+function worldGuides(){const touch=matchMedia('(pointer:coarse)').matches;
+  if(!guideSeen('move'))return guide('move','top',touch?'아래 <b>원형 패드</b>로 걸어 다닐 수 있어요. 짧게 누르면 방향만 바뀌어요.<br>사람이나 물건 앞에서 <b>A</b>를 누르면 말을 걸거나 조사해요.':'<b>방향키</b>로 걸어 다닐 수 있어요. 짧게 누르면 방향만 바뀌어요.<br>사람이나 물건 앞에서 <b>Z</b>를 누르면 말을 걸거나 조사해요.',{title:'이동과 조사'});
+  if(G.flags.pad&&!guideSeen('menu')&&document.querySelector('#padUI .btn.red'))return guide('menu','#padUI .btn.red',`여기서 <b>메뉴</b>를 열어요. 도감·몬스터·가방·리포트(저장)·설정이 들어 있어요.${touch?'':' 키보드는 <b>Enter</b>.'}`,{title:'메뉴'});
+  if(G.flags.pad&&!guideSeen('padapp')&&document.querySelector('#padUI .nav'))return guide('padapp','#padUI .lcd',`원정패드의 <b>◀ ▶</b>로 시계 · 파티 · 지도 · 만보기 앱을 바꿔 볼 수 있어요.${touch?'':' 키보드는 <b>Q / E</b>.'}`,{title:'원정패드'});
+  if(G.flags.shoes&&!guideSeen('run'))return guide('run','top',`<b>B${touch?'':'(X)'}</b>를 누른 채로 이동하면 질주신발로 빠르게 달릴 수 있어요.`,{title:'달리기'});
+  if(G.flags.badge0&&!guideSeen('fuse'))return guide('fuse','top','같은 몬스터가 두 마리 이상 모이면 <b>몬스터 센터의 합성 연구원</b>에게 가 보세요. 더 강한 상위 몬스터로 합성해 줘요.',{title:'몬스터 합성'});}

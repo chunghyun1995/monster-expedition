@@ -3,7 +3,7 @@
    core.js — 공통 유틸, 설정, 입력, 화면 크기
    ========================================================= */
 const $=s=>document.querySelector(s);
-const W=256,H=192,T=16;
+const W=256,H=192,T=16,SC=2; // SC: 캔버스 내부 해상도 배율(반 픽셀 디테일용)
 const rnd=n=>Math.floor(Math.random()*n);
 const chance=p=>Math.random()*100<p;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -35,7 +35,7 @@ function rng(seed){let s=(seed*2654435761)>>>0||1;return()=>{s^=s<<13;s>>>=0;s^=
 
 /* ---------- 설정 ---------- */
 const SET_KEY='monster-expedition-settings-v2';
-const SET={text:1,anim:1,bgm:3,sfx:1,style:0,layout:0};
+const SET={text:1,anim:1,bgm:3,sfx:1,style:0,layout:0,tips:1};
 try{Object.assign(SET,JSON.parse(localStorage.getItem(SET_KEY)||'{}'));}catch(e){}
 function saveSettings(){try{localStorage.setItem(SET_KEY,JSON.stringify(SET));}catch(e){}}
 

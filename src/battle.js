@@ -73,6 +73,8 @@ async function recall(side){const S=B[side];sfx('absorb');S.white=1;await tween(
 /* ---------- 명령 ---------- */
 async function chooseAction(){
   while(true){msg(`${J(N(pm()),'은')}\n무엇을 할까?`);
+    guideSoon('battle','#botUI .btn.red','<b>싸운다</b>를 누르면 기술을 고를 수 있어요. 아래의 <b>가방</b>에선 회복약을, <b>몬스터</b>에선 교체를 할 수 있어요.',{title:'전투'});
+    if(B.wild&&Object.keys(G.bag).some(k=>ITEMS[k]&&ITEMS[k].ball&&G.bag[k]>0))guideSoon('catch','#botUI .btn.yellow','야생 몬스터는 HP를 줄인 뒤 <b>가방 → 캡슐</b>을 던지면 붙잡을 수 있어요. 잠듦·마비 같은 상태 이상이면 더 잘 잡혀요!',{title:'포획'});
     const i=await panel([{html:`<span style="font-size:${U(20)}">싸운다</span>`,x:24,y:14,w:208,h:104,cls:'red',flash:1},
       {html:`<img src="${menuIcon('bag')}" style="width:${U(22)};height:${U(22)}"><span>가방</span>`,x:4,y:124,w:84,h:64,cls:'yellow'},
       {html:'<span>도망치다</span>',x:96,y:140,w:64,h:48,cls:'blue'},
@@ -88,6 +90,7 @@ async function chooseMove(){const p=pm(),f=fm();
     return{html:`<span class="mn">${d.n}</span><span class="mi"><span>${TYPES[d.t].n} · ${CATN[d.c]}</span><span>PP ${x.pp}/${d.pp}</span></span><span class="hint">${e==null?'':e===0?'효과가 없다':e>1?'효과가 굉장하다':e<1?'효과가 별로다':''}</span>`,
       x:4+(j%2)*126,y:6+Math.floor(j/2)*68,w:122,h:62,cls:'mvbtn',disabled:x.pp<=0};});
   btns.push({html:'취소',x:4,y:146,w:248,h:40,cls:'dark'});
+  guideSoon('moves','#botUI .mvbtn','기술 버튼에는 <b>타입 · 분류 · 남은 PP</b>가 보여요. 상대에게 잘 통하면 <b>"효과가 굉장하다"</b>라고 미리 알려 줘요.',{title:'기술 고르기'});
   const i=await panel(btns,{onOpen:h=>h.els.forEach((e,j)=>{if(j<p.moves.length){const c=TYPES[MV[p.moves[j].id].t].c;e.style.background=`linear-gradient(${shade(c,.3)},${shade(c,-.1)})`;e.style.borderColor=shade(c,-.5);}})});
   if(i<0||i===btns.length-1)return'back';return i;}
 
@@ -295,6 +298,7 @@ async function endBattle(res){const o=B.o;clearInterval(B.lowT);
 async function evolve(m){const from=m.sid,to=SP[from].ev[1],oldName=N(m);state='evolve';Pad.hide();botMode='plain';Music.play('evolve');
   EV={sid:from,white:0,scale:1,flash:0,f0:frame};await fadeTo(0);
   await say(`어...? ${oldName}의 모습이...!`,{keep:1});cry(from);await tween(700,k=>EV.white=k);
+  guideSoon('evolve','top','진화를 원하지 않으면 지금 <b>B</b>를 누르세요. 진화를 멈출 수 있어요.',{title:'진화'});
   let cancel=false;const h={key(k){if(k==='b')cancel=true;}};pushH(h);
   for(let i=0;i<16&&!cancel;i++){const d=Math.max(70,420-i*24);EV.sid=i%2?to:from;await tween(d,k=>EV.scale=(i%2?1.1:.95)+Math.sin(k*Math.PI)*.08);
     if(i%3===0){const a=Math.random()*7;for(let j=0;j<8;j++)FX.add({x:128+Math.cos(a+j)*90,y:80+Math.sin(a+j)*70,vx:-Math.cos(a+j)*3,vy:-Math.sin(a+j)*2.4,shape:'star',c:'#fff8b0',s:2,life:30});}sfx('cur');}

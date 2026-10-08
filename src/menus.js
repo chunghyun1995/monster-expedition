@@ -55,6 +55,7 @@ async function openMenu(){if(busy)return;busy=true;sfx('menu');
     const btns=T.map(([k,l,ok],i)=>({html:`<img src="${menuIcon(k)}" style="width:${U(24)};height:${U(24)};image-rendering:pixelated"><span style="font-size:${U(10.5)}">${ok?esc(l):'???'}</span>`,
       x:i%2?132:8,y:6+Math.floor(i/2)*54,w:116,h:48,cls:'tile',disabled:!ok}));
     btns.push({html:'닫기',x:78,y:168,w:100,h:20,cls:'dark'});
+    guideSoon('save',()=>[...document.querySelectorAll('#botUI .btn.tile')][4],'<b>리포트</b>로 지금까지의 모험을 저장해요. 게임을 끄기 전에 꼭 저장하세요!',{title:'저장'});
     const i=await panel(btns,{backdrop:true,bg:'linear-gradient(135deg,#5a8ad8,#3d5aa8)',start:menuIdx,menuClose:true});
     if(i<0||i===6)break;menuIdx=i;
     if(i===0)await dexScreen();else if(i===1)await partyScreen('field');else if(i===2)await bagScreen('field');
@@ -82,6 +83,7 @@ async function partyScreen(mode,o={}){let at=o.start!=null?o.start:mode==='force
       return{html:partyCellHtml(m),x:i%2?130:4,y:4+Math.floor(i/2)*52,w:122,h:48,cls:'pcell'+(i===0?' first':'')+(m.hp<=0?' ko':'')};});
     const tip={field:'몬스터를 선택해 주세요.',battle:'교체할 몬스터를 선택해 주세요.',forced:'다음에 내보낼 몬스터를 선택해 주세요.',item:o.tip||'누구에게 사용할까요?',deposit:'맡길 몬스터를 선택해 주세요.'}[mode];
     if(mode!=='forced')btns.push({html:'돌아가기',x:180,y:162,w:72,h:26,cls:'dark'});
+    if(mode==='field')guideSoon('party','#botUI .pcell','몬스터를 누르면 <b>정보 보기 · 순서 바꾸기 · 도구 사용</b>을 할 수 있어요. 맨 앞 몬스터가 전투에 먼저 나가요.',{title:'몬스터'});
     const i=await panel(btns,{backdrop:true,bg:'linear-gradient(#5aa0e8,#3a6ab8)',start:Math.min(at,G.party.length-1),cancel:mode==='forced'?false:-1,
       html:`<div class="abs" style="left:${U(6)};top:${U(166)};color:#fff;font-size:${U(8.5)}">${tip}</div>`,
       onMove:j=>{const m=G.party[j];tp.innerHTML=m?monTopPage(m,{field:'몬스터',battle:'몬스터 교체',forced:'몬스터 교체',item:'도구 사용',deposit:'몬스터 맡기기'}[mode]):'';}});
@@ -158,6 +160,7 @@ async function bagScreen(mode){const tp=page(TOP,''),prevBot=botMode;botMode='me
     const items=ids.map(k=>({html:`<img src="${itemIcon(k)}"><span>${ITEMS[k].n}</span><span class="r">${ITEMS[k].p==='key'?'':'× '+G.bag[k]}</span>`,
       disabled:mode==='battle'&&(ITEMS[k].p==='key'||(ITEMS[k].ball&&!B.wild))}));
     const tabs=POCKETS.map((p,j)=>({html:p[1],x:4+j*84,y:4,w:80,h:24,cls:'tab'+(j===bagPocket?' on':''),val:-10-j}));
+    guideSoon('bag','#botUI .btn.tab','가방은 <b>회복 · 캡슐 · 중요한 물건</b> 주머니로 나뉘어 있어요. 탭을 누르거나 <b>◀ ▶</b>로 바꿔요.',{title:'가방'});
     let moved=0;
     const r=await list(items,{rect:[4,32,248,126],rowH:18,backdrop:true,bg:'linear-gradient(#e89a4a,#b8682a)',keys:['left','right','__tab'],allowDisabled:false,
       buttons:[{html:'닫기',x:180,y:162,w:72,h:26,cls:'dark',val:-1}],
@@ -186,7 +189,7 @@ async function applyItem(id,m,o={}){const it=ITEMS[id];G.bag[id]--;
   if(it.cure){m.st='';m.slp=0;sfx('heal');await say(`${N(m)}의 상태 이상이 나았다!`);}}
 
 /* ================= 도감 ================= */
-async function dexScreen(){const tp=page(TOP,''),prevBot=botMode;botMode='menu';const ids=Object.keys(SP).map(Number);let at=0;
+async function dexScreen(){const tp=page(TOP,''),prevBot=botMode;botMode='menu';guideSoon('dex','top','만난 몬스터는 <b>실루엣</b>, 붙잡은 몬스터는 <b>자세한 정보</b>가 기록돼요. 모든 칸을 채워 보세요!',{title:'도감'});const ids=Object.keys(SP).map(Number);let at=0;
   const show=(id,bounce)=>{const sp=SP[id],seen=G.seen[id],cg=G.caught[id];
     tp.innerHTML=`<div class="abs" style="inset:0;background:linear-gradient(#e2566f,#b63a52)"></div><div class="title-bar" style="background:linear-gradient(#3a2a3a,#241824)">몬스터 도감<span class="r">발견 ${Object.keys(G.seen).length} · 포획 ${Object.keys(G.caught).length}</span></div>
     <div class="abs" style="left:${U(8)};top:${U(24)};width:${U(100)};height:${U(100)};border-radius:${U(6)};background:${seen?'radial-gradient(#ffffff,#cfe8f8)':'#1d2030'};border:${U(2)} solid #3a2a3a"></div>
@@ -237,13 +240,13 @@ async function saveMenu(){const tp=page(TOP,`<div class="abs" style="inset:0;bac
 
 /* ================= 설정 ================= */
 async function optionsMenu(){const rows=[['텍스트 속도',['느림','보통','빠름'],'text'],['전투 애니메이션',['끄기','켜기'],'anim'],['배경음 볼륨',['0','1','2','3','4','5'],'bgm'],
-  ['효과음',['끄기','켜기'],'sfx'],['전투 방식',['교체','연속'],'style'],['화면 배치',['자동','세로','가로'],'layout']];
+  ['효과음',['끄기','켜기'],'sfx'],['전투 방식',['교체','연속'],'style'],['화면 배치',['자동','세로','가로'],'layout'],['안내 툴팁',['끄기','켜기','처음부터'],'tips']];
   const html=i=>i===rows.length?'<span style="margin:auto">결정</span>':`<span>${rows[i][0]}</span><span class="r" style="color:#3d5aa8">◀ ${rows[i][1][SET[rows[i][2]]]} ▶</span>`;
   const tp=page(TOP,`<div class="abs" style="inset:0;background:linear-gradient(#d8dce8,#f4f6fb)"></div><div class="title-bar">설정</div>
     <div class="sheet desc" style="left:${U(14)};top:${U(30)};width:${U(228)}">◀ ▶ 로 값을 바꾸고 결정을 누르세요.<br>전투 방식 "교체"는 상대가 다음 몬스터를 낼 때 교체할지 물어봅니다.<br>화면 배치 "가로"는 넓은 화면에서 두 화면을 나란히 보여 줍니다.</div>`);
   try{await list([...rows.map((r,i)=>({html:html(i)})),{html:html(rows.length)}],{rect:[4,4,248,150],rowH:21,backdrop:true,bg:'linear-gradient(#6a7290,#3d4562)',keys:['left','right','a'],tapPick:false,
     buttons:[{html:'결정',x:170,y:160,w:82,h:28,cls:'blue',val:-1}],
-    onOpen:h=>{optH=h;},onKey:(k,i,close)=>{if(k==='a'){if(i>=rows.length){sfx('sel');close(i);return;}k='right';}if(i>=rows.length)return;const r=rows[i],n=r[1].length;SET[r[2]]=(SET[r[2]]+(k==='left'?-1:1)+n)%n;saveSettings();applyVolume();if(r[2]==='layout')layout();sfx('cur');optH.update(i,html(i));}});}
+    onOpen:h=>{optH=h;},onKey:(k,i,close)=>{if(k==='a'){if(i>=rows.length){sfx('sel');close(i);return;}k='right';}if(i>=rows.length)return;const r=rows[i],n=r[1].length;SET[r[2]]=(SET[r[2]]+(k==='left'?-1:1)+n)%n;if(r[2]==='tips'&&SET.tips===2){guideReset();SET.tips=1;toast('안내 툴팁을 처음부터 다시 보여 줍니다');}saveSettings();applyVolume();if(r[2]==='layout')layout();sfx('cur');optH.update(i,html(i));}});}
   finally{tp.remove();}}
 let optH=null;
 
@@ -256,7 +259,7 @@ async function shop(){const o={name:'점원'};let first=1;
 function shopTop(id,mode){const it=ITEMS[id];return`<div class="abs" style="inset:0;background:linear-gradient(#cfe0ff,#f2f6ff)"></div><div class="title-bar">몬스터 상점 · ${mode}<span class="r">${money(G.money)}</span></div>
   ${it?`<img class="abs big" src="${itemIcon(id)}" style="left:${U(20)};top:${U(36)};width:${U(48)};height:${U(48)}"><div class="sheet" style="left:${U(84)};top:${U(30)};width:${U(164)};height:${U(60)}"><div style="font-size:${U(11)}">${it.n}</div><div style="font-size:${U(9)};color:#6a7190">가방에 ${G.bag[id]||0}개</div></div>
   <div class="sheet desc" style="left:${U(8)};top:${U(98)};width:${U(240)};height:${U(50)}">${it.d}</div>`:''}`;}
-async function shopBuy(){const tp=page(TOP,'');let at=0;
+async function shopBuy(){const tp=page(TOP,'');let at=0;guideSoon('shop','bot','사고 싶은 물건을 고른 뒤 <b>▲ ▼</b>로 수량을 정해요. 배지를 모으면 파는 물건이 늘어나요.',{title:'상점'});
   try{while(true){const st=shopStock();
     const r=await list(st.map(k=>({html:`<img src="${itemIcon(k)}"><span>${ITEMS[k].n}</span><span class="r">${money(ITEMS[k].price)}</span>`})),
       {rect:[4,4,248,150],rowH:20,start:at,backdrop:true,bg:'linear-gradient(#5a8ad8,#3d5aa8)',buttons:[{html:'그만두기',x:170,y:160,w:82,h:28,cls:'dark',val:-1}],onMove:i=>tp.innerHTML=shopTop(st[i],'사기')});
@@ -289,7 +292,7 @@ async function nurse(out,ox,oy){const o={name:'간호사'},n=npcById('nurse_'+G.
   await say('기다리셨습니다! 맡겨 주신 몬스터는 모두 건강해졌어요.',o);n.bow=1;await sleep(400);n.bow=0;await say('또 들러 주세요!',o);}
 
 /* ================= PC 보관함 ================= */
-async function pcMenu(){sfx('menu');await say(`${J(G.name,'은')} PC의 전원을 켰다!`);
+async function pcMenu(){sfx('menu');guideSoon('pc','top','파티에는 6마리까지 데리고 다닐 수 있어요. 나머지는 <b>보관함</b>에 맡기고 언제든 데려올 수 있어요.',{title:'PC 보관함'});await say(`${J(G.name,'은')} PC의 전원을 켰다!`);
   while(true){const c=await ask('무엇을 할까?',['몬스터 맡기기','몬스터 데려오기','그만두기']);
     if(c===0){if(G.party.length<=1){await say('마지막 한 마리는 맡길 수 없습니다!');continue;}
       const i=await partyScreen('deposit');if(i<0)continue;const m=G.party[i];
