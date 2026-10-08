@@ -48,6 +48,7 @@ body{background:radial-gradient(ellipse at 50% 0%,#2a2f45 0%,#14161f 70%)}
 .btn small{font-size:calc(var(--u)*8);opacity:.75}
 .btn.dark{background:linear-gradient(#4b5574,#2f3650);color:#fff;border-color:#1e2235}
 .btn.red{background:linear-gradient(#ff8a8a,#e04a5a);color:#fff;border-color:#8a1f2e;text-shadow:0 1px 0 rgba(0,0,0,.35)}
+.btn.purple{background:linear-gradient(#c8a8ff,#7a4ad8);color:#fff;border-color:#3d2280;text-shadow:0 1px 0 rgba(0,0,0,.35)}
 .btn.blue{background:linear-gradient(#8ec5ff,#3d7ad6);color:#fff;border-color:#1f3f7a;text-shadow:0 1px 0 rgba(0,0,0,.35)}
 .btn.green{background:linear-gradient(#a6ec8a,#4caf50);color:#fff;border-color:#24632a;text-shadow:0 1px 0 rgba(0,0,0,.35)}
 .btn.yellow{background:linear-gradient(#ffe58a,#f0b429);color:#4a3200;border-color:#8a6100}
@@ -223,6 +224,9 @@ body.land #pad .mid{left:auto;right:8px;top:8px;transform:none}
 @keyframes gin{from{opacity:0}}
 @keyframes gpulse{to{box-shadow:0 0 0 9999px rgba(8,10,24,.55),0 0 0 calc(var(--u)*2.5) #ffcf3a inset}}
 
+.codebox{position:absolute;font:inherit;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:calc(var(--u)*7);line-height:1.35;word-break:break-all;resize:none;border:calc(var(--u)*2) solid #5a6488;border-radius:calc(var(--u)*5);background:#fff;color:var(--ink);padding:calc(var(--u)*4);-webkit-user-select:text;user-select:text;outline:none}
+.codebox:focus{box-shadow:0 0 0 calc(var(--u)*2) var(--hi)}
+
 </style>
 </head>
 <body>
@@ -310,7 +314,7 @@ function fieldFree(){return typeof state!=='undefined'&&state==='world'&&!ui.len
 function dirDown(k){dirStack=dirStack.filter(x=>x!==k);dirStack.push(k);tapDir=fieldFree()?k:null;}
 function clearDirs(){dirStack=[];tapDir=null;if(typeof P!=='undefined'&&P)P.chain=false;}
 function dirUp(k){dirStack=dirStack.filter(x=>x!==k);}
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;
+addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
   if(e.key==='m'||e.key==='M'){audioInit();toggleMute();return;}
   const k=KEYMAP[e.key];if(!k)return;e.preventDefault();
   if(k==='b')held.b=true;
@@ -1466,7 +1470,7 @@ defMap('city',{name:'바위시티',out:1,music:'city',bg:'city',region:'city',
  signs:{'4,3':['바위시티','단단한 의지가 모이는 바위의 도시']},
  npcs:[{id:'c_old',x:8,y:6,dir:'down',look:'old',name:'할아버지',text:['체육관 관장 단단은 바위 타입 몬스터를 쓴다네.','바위에는 물이나 풀 기술이 잘 통하지. 불꽃과 비행은 고전할 게야.']},
    {id:'c_girl',x:16,y:13,dir:'left',look:'lady',name:'아가씨',wander:1,text:['동쪽 2번 도로 숲에는 여러 타입의 몬스터가 살아요.','상점에서 상태 이상 치료약도 꼭 챙기세요!']},
-   {id:'c_kid',x:7,y:12,dir:'up',look:'kid',name:'꼬마',wander:1,text:['몬스터 센터에서는 공짜로 몬스터를 회복시켜 줘!','센터의 합성 연구원한테 같은 몬스터 두 마리를 데려가면 더 강한 몬스터로 바꿔 준대!']},
+   {id:'c_kid',x:7,y:12,dir:'up',look:'kid',name:'꼬마',wander:1,text:['몬스터 센터에서는 공짜로 몬스터를 회복시켜 줘!','몬스터 두 마리를 합성하면 더 높은 등급의 몬스터가 된대! 메뉴의 몬스터 화면에서도 할 수 있어.']},
    {id:'c_guard',x:22,y:9,dir:'down',look:'guide',name:'경비원',text:['여기서부터 2번 도로야. 숲에는 강한 몬스터가 많으니 조심하렴.']}],
  trig:[{x:22,y:10,w:2,h:2,cond:()=>!G.flags.badge0,run:async()=>{const g=npcById('c_guard');g.dir='down';await emoteOn(g,'!');
    await say('잠깐! 이 앞 2번 도로 숲은 아주 위험해.',{name:'경비원'});await say('바위시티 체육관의 배지를 얻은 트레이너만 지나갈 수 있단다.',{name:'경비원'});await walkPlayer(['left']);}}]});
@@ -1721,8 +1725,9 @@ async function partyScreen(mode,o={}){let at=o.start!=null?o.start:mode==='force
       if(c===0){if(m.hp<=0){await say(`${J(N(m),'은')} 싸울 수 있는 기력이 없다!`);continue;}if(i===B.pi){await say(`${J(N(m),'은')} 이미 싸우고 있다!`);continue;}return i;}
       if(c===1)await summary(G.party,i);continue;}
     /* field */
-    const c=await panel([{html:'정보 보기',x:40,y:30,w:176,h:40,cls:'blue'},{html:'순서 바꾸기',x:40,y:78,w:176,h:40,disabled:G.party.length<2},{html:'취소',x:40,y:126,w:176,h:32,cls:'dark'}],{backdrop:true,bg:'rgba(20,24,40,.55)'});
+    const c=await panel([{html:'정보 보기',x:40,y:14,w:176,h:36,cls:'blue'},{html:'순서 바꾸기',x:40,y:56,w:176,h:36,disabled:G.party.length<2},{html:'합성하기',x:40,y:98,w:176,h:36,cls:'purple',disabled:allMons().length<2},{html:'취소',x:40,y:140,w:176,h:32,cls:'dark'}],{backdrop:true,bg:'rgba(20,24,40,.55)'});
     if(c===0)await summary(G.party,i);
+    else if(c===2){tp.innerHTML='';await fusionFlow({m,where:'party',i});at=Math.min(at,G.party.length-1);}
     else if(c===1){msg(`${J(N(m),'을')} 어디로 옮길까요?`);
       const btn2=G.party.map((mm,j)=>({html:partyCellHtml(mm),x:j%2?130:4,y:4+Math.floor(j/2)*52,w:122,h:48,cls:'pcell'+(j===i?' first':'')}));
       const j=await panel(btn2,{backdrop:true,bg:'linear-gradient(#e8a05a,#b8703a)',start:i});hideMsg();
@@ -1856,12 +1861,52 @@ async function trainerCard(){const tp=page(TOP,''),bp=el(BOT,'abs','',[0,0,256,1
 const SAVE_KEY='monster-expedition-save-v2';
 function saveGame(){G.x=P.x;G.y=P.y;G.dir=P.dir;G.savedAt=Date.now();try{localStorage.setItem(SAVE_KEY,JSON.stringify(G));return true;}catch(e){return false;}}
 function readSave(){try{const s=localStorage.getItem(SAVE_KEY);return s?JSON.parse(s):null;}catch(e){return null;}}
+/* ---------- 저장 코드 (다른 기기로 옮기기) ----------
+   형식: ME2-<체크섬4>-<base64url(deflate(JSON))>  · 압축을 못 쓰는 브라우저는 ME2U-(무압축) */
+const b64u={enc:u8=>{let s='';for(let i=0;i<u8.length;i+=8192)s+=String.fromCharCode.apply(null,u8.subarray(i,i+8192));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');},
+  dec:t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;}};
+function ck4(t){let h=2166136261;for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,16777619);}return(h>>>0).toString(36).slice(-4).padStart(4,'0').toUpperCase();}
+async function pipeBytes(u8,stream){const cs=new stream('deflate-raw'),w=cs.writable.getWriter();w.write(u8);w.close();return new Uint8Array(await new Response(cs.readable).arrayBuffer());}
+async function makeSaveCode(){const raw=new TextEncoder().encode(JSON.stringify(G));let tag='ME2',data;
+  try{if(!window.CompressionStream)throw 0;data=b64u.enc(await pipeBytes(raw,CompressionStream));}catch(e){tag='ME2U';data=b64u.enc(raw);}
+  return`${tag}-${ck4(data)}-${data}`;}
+async function readSaveCode(code){const t=String(code||'').replace(/\s+/g,'');const m=/^(ME2U?)-([0-9A-Z]{4})-([A-Za-z0-9_-]+)$/.exec(t);
+  if(!m)throw new Error('코드 형식이 올바르지 않아요.');if(ck4(m[3])!==m[2])throw new Error('코드 일부가 빠졌거나 잘못 입력됐어요.');
+  let bytes=b64u.dec(m[3]);if(m[1]==='ME2'){if(!window.DecompressionStream)throw new Error('이 브라우저는 코드 불러오기를 지원하지 않아요.');bytes=await pipeBytes(bytes,DecompressionStream);}
+  const g=JSON.parse(new TextDecoder().decode(bytes));
+  if(!g||!Array.isArray(g.party)||!g.party.length||!MAPS[g.map]||typeof g.name!=='string')throw new Error('저장 데이터를 읽을 수 없어요.');
+  return g;}
+async function copyText(t,ta){try{await navigator.clipboard.writeText(t);return true;}catch(e){}
+  try{ta.removeAttribute('readonly');ta.select();const ok=document.execCommand('copy');ta.setAttribute('readonly','');return ok;}catch(e){return false;}}
+/* 저장 코드 보여 주기 */
+async function showSaveCode(){const code=await makeSaveCode();
+  const tp=page(TOP,`<div class="abs" style="inset:0;background:linear-gradient(#2a3358,#1d2340)"></div><div class="title-bar">저장 코드<span class="r">${code.length}자</span></div>
+    <div class="sheet desc" style="left:${U(10)};top:${U(26)};width:${U(236)}">이 코드를 복사해서 메모장이나 메신저에 보관하세요.<br>다른 기기의 타이틀 화면에서 <b>코드로 불러오기</b>를 누르고 붙여 넣으면 지금 상태 그대로 이어서 할 수 있어요.<br><span style="color:#b63a52">코드를 받은 사람은 누구나 이 모험을 불러올 수 있어요.</span></div>`);
+  return new Promise(res=>{const wrap=el(BOT,'abs','',[0,0,256,192]);el(wrap,'backdrop').style.background='linear-gradient(#e8eefc,#c8d4f0)';
+    const ta=el(wrap,'codebox','',[8,8,240,128],'textarea');ta.value=code;ta.readOnly=true;ta.spellcheck=false;
+    const cp=el(wrap,'btn blue','<span>복사하기</span>',[8,144,150,40]),cl=el(wrap,'btn dark','<span>닫기</span>',[166,144,82,40]);
+    const close=()=>{popH(h);wrap.remove();tp.remove();res();};
+    cp.addEventListener('click',async ev=>{ev.stopPropagation();const ok=await copyText(code,ta);sfx(ok?'sel':'bad');toast(ok?'저장 코드를 복사했어요!':'자동 복사에 실패했어요. 코드를 길게 눌러 직접 복사해 주세요.');});
+    cl.addEventListener('click',ev=>{ev.stopPropagation();sfx('back');close();});ta.addEventListener('click',ev=>{ev.stopPropagation();ta.select();});
+    const h={key(k){if(k==='b'||k==='menu')close();else if(k==='a')cp.click();}};pushH(h);});}
+/* 저장 코드 입력 → 저장 데이터 (취소하면 null) */
+function inputSaveCode(){const tp=page(TOP,`<div class="abs" style="inset:0;background:linear-gradient(#2a3358,#1d2340)"></div><div class="title-bar">코드로 불러오기</div>
+    <div class="sheet desc" style="left:${U(10)};top:${U(26)};width:${U(236)}">다른 기기에서 만든 <b>저장 코드</b>를 아래 칸에 붙여 넣고 <b>불러오기</b>를 누르세요.<br>불러오면 이 기기의 리포트는 코드의 내용으로 바뀌어요.</div>`);
+  return new Promise(res=>{const wrap=el(BOT,'abs','',[0,0,256,192]);el(wrap,'backdrop').style.background='linear-gradient(#e8eefc,#c8d4f0)';
+    const ta=el(wrap,'codebox','',[8,8,240,128],'textarea');ta.placeholder='ME2-XXXX-... 형식의 코드를 붙여 넣으세요';ta.spellcheck=false;ta.autocomplete='off';
+    const ok=el(wrap,'btn blue','<span>불러오기</span>',[8,144,150,40]),cl=el(wrap,'btn dark','<span>취소</span>',[166,144,82,40]);
+    const close=v=>{popH(h);ta.blur();wrap.remove();tp.remove();res(v);};
+    const go=async()=>{try{const g=await readSaveCode(ta.value);sfx('sel');close(g);}catch(e){sfx('bad');toast(e.message||'코드를 읽을 수 없어요.');}};
+    ok.addEventListener('click',ev=>{ev.stopPropagation();go();});cl.addEventListener('click',ev=>{ev.stopPropagation();sfx('back');close(null);});
+    ta.addEventListener('keydown',e=>e.stopPropagation());ta.addEventListener('click',e=>e.stopPropagation());
+    const h={key(k){if(k==='b')close(null);}};pushH(h);setTimeout(()=>{if(!matchMedia('(pointer:coarse)').matches)ta.focus();},60);});}
 async function saveMenu(){const tp=page(TOP,`<div class="abs" style="inset:0;background:rgba(10,14,30,.55)"></div>
   <div class="sheet kv" style="left:${U(40)};top:${U(16)};width:${U(176)};padding:${U(8)} ${U(12)}"><b>장소</b><span>${esc(curMap().name)}</span><b>이름</b><span>${esc(G.name)}</span>
   <b>배지</b><span>${G.badges.filter(Boolean).length}</span><b>도감</b><span>${Object.keys(G.caught).length}</span><b>플레이 시간</b><span>${fmtTime(G.playMs)}</span></div>`);
-  try{const r=await ask('지금까지의 모험을 리포트에 기록하시겠습니까?',['예','아니오'],{keep:1});if(r!==0){hideMsg();return false;}
+  try{const r=await ask('지금까지의 모험을 리포트에 기록하시겠습니까?',['리포트에 기록','기록하고 저장 코드 만들기','그만두기'],{keep:1});if(r!==0&&r!==1){hideMsg();return false;}
     msg('리포트를 기록하고 있습니다...\n전원을 끄지 마세요.');await sleep(900);
-    if(saveGame()){await Music.jingle('save');await say(`${J(G.name,'은')} 리포트에 제대로 기록했다!`);return true;}
+    if(saveGame()){await Music.jingle('save');await say(`${J(G.name,'은')} 리포트에 제대로 기록했다!`,{keep:r===1});
+      if(r===1){hideMsg();tp.style.display='none';await showSaveCode();}return true;}
     await say('리포트를 기록하지 못했습니다... (브라우저 저장소를 쓸 수 없음)');return false;}
   finally{tp.remove();}}
 
@@ -1935,57 +1980,57 @@ async function pcMenu(){sfx('menu');guideSoon('pc','top','파티에는 6마리�
   sfx('back');await say('PC의 전원을 껐다.');}
 
 /* ================= 몬스터 합성 =================
-   같은 종류 두 마리 → 무작위 타입의 상위(진화형) 몬스터 1마리.
-   레벨은 둘 중 높은 레벨 +2. 둘 중 하나라도 이로치면 결과도 이로치. */
-const FUSE_POOL=()=>Object.keys(SP).map(Number).filter(s=>SP[s].st>=1&&SP[s].line>9&&s!==13);
-function fusionResult(src){const pool=FUSE_POOL().filter(s=>s!==src),types=[...new Set(pool.flatMap(s=>SP[s].t))];
-  const t=types[rnd(types.length)],cand=pool.filter(s=>SP[s].t.includes(t));
-  const hi=cand.filter(s=>SP[s].st>=2),use=SP[src].st>=1&&hi.length?hi:cand;return use[rnd(use.length)];}
+   아무 몬스터 두 마리 → 한 단계 위 등급(진화 단계)의 무작위 타입 몬스터 1마리.
+   등급 = min(2, 두 마리 중 높은 진화 단계 + 1). 레벨은 높은 쪽 +2. 둘 중 하나라도 이로치면 결과도 이로치. */
+const STAGE_N=['기본','1진화','최종진화'];
+function fusionStage(a,b){return Math.min(2,Math.max(SP[a.sid].st,SP[b.sid].st)+1);}
+function fusionPool(stage){return Object.keys(SP).map(Number).filter(s=>SP[s].st===stage&&s!==13&&(stage===2||SP[s].line>9));}
+function fusionResult(a,b){const pool=fusionPool(fusionStage(a,b)),types=[...new Set(pool.flatMap(s=>SP[s].t))];
+  const t=types[rnd(types.length)],cand=pool.filter(s=>SP[s].t.includes(t));return cand[rnd(cand.length)];}
 function allMons(){return[...G.party.map((m,i)=>({m,where:'party',i})),...G.box.map((m,i)=>({m,where:'box',i}))];}
-async function fusionLab(){const o={name:'합성 연구원'};
-  if(!G.flags.fuseIntro){G.flags.fuseIntro=1;
-    await say('어서 오세요! 여기는 몬스터 합성 연구실이에요.',o);
-    await say('같은 종류의 몬스터 두 마리를 맡겨 주시면, 하나로 합쳐서 더 강한 상위 몬스터로 만들어 드려요.',o);
-    await say('어떤 타입이 나올지는 저도 몰라요! 레벨은 두 마리 중 높은 쪽보다 2 올라간답니다.',o);}
-  const all=allMons(),cnt={};for(const x of all)cnt[x.m.sid]=(cnt[x.m.sid]||0)+1;
-  const sids=Object.keys(cnt).map(Number).filter(s=>cnt[s]>=2).sort((a,b)=>a-b);
-  if(!sids.length){await say('지금은 같은 종류의 몬스터가 두 마리 이상 없네요. 파티나 보관함에 두 마리를 모아서 다시 와 주세요!',o);return;}
-  if(await ask('합성을 해 볼까요?',['합성한다','그만둔다'],o)!==0){await say('또 오세요!',o);return;}
-  // 1) 종류 고르기
-  const tp=page(TOP,'');const sp=sid=>`<div class="abs" style="inset:0;background:linear-gradient(#e8dcff,#f8f4ff)"></div><div class="title-bar">몬스터 합성<span class="r">같은 종류 2마리 → 상위 몬스터</span></div>
-    <img class="abs big" src="${monIcon(sid)}" style="left:${U(80)};top:${U(30)};width:${U(96)};height:${U(96)}">
-    <div class="sheet" style="left:${U(8)};top:${U(132)};width:${U(240)};text-align:center"><b>${SP[sid].n}</b> ${typesHtml(sid)}<div class="desc">보유 ${cnt[sid]}마리 · 결과 타입은 무작위</div></div>`;
-  const si=await list(sids.map(s=>({html:`<img src="${monIcon(s)}"><span>${SP[s].n}</span><span class="r">× ${cnt[s]}</span>`})),
-    {rect:[4,4,248,150],rowH:20,backdrop:true,bg:'linear-gradient(#7a6aa8,#4a3d72)',buttons:[{html:'그만두기',x:170,y:160,w:82,h:28,cls:'dark',val:-1}],onMove:i=>tp.innerHTML=sp(sids[i])});
-  if(si<0){tp.remove();await say('또 오세요!',o);return;}
-  const sid=sids[si],mine=all.filter(x=>x.m.sid===sid);
-  // 2) 재료 두 마리 고르기
-  const pick=async(excl,title)=>{const c=mine.filter(x=>x!==excl);if(c.length===1&&excl)return c[0];
-    const r=await list(c.map(x=>({html:`<img src="${monIcon(x.m.sid,x.m.shiny)}"><span>${esc(N(x.m))}</span><span class="r">${x.where==='party'?'파티':'보관함'} · Lv${x.m.lv}</span>`})),
-      {rect:[4,4,248,150],rowH:20,backdrop:true,bg:'linear-gradient(#7a6aa8,#4a3d72)',buttons:[{html:'그만두기',x:170,y:160,w:82,h:28,cls:'dark',val:-1}],onMove:i=>tp.innerHTML=monTopPage(c[i].m,title)});
-    return r<0?null:c[r];};
-  const a=await pick(null,'첫 번째 재료');if(!a){tp.remove();return;}
-  const b=await pick(a,'두 번째 재료');tp.remove();if(!b)return;
-  if(await ask(`${N(a.m)} Lv${a.m.lv} + ${N(b.m)} Lv${b.m.lv}\n합성하면 두 마리는 사라져요. 괜찮아요?`,['합성한다','그만둔다'],o)!==0){await say('또 오세요!',o);return;}
-  // 3) 합성
-  const to=fusionResult(sid),lv=Math.min(100,Math.max(a.m.lv,b.m.lv)+2);
-  const m=makeMon(to,lv,{met:{map:'합성 연구실',lv},ot:G.name,shiny:a.m.shiny||b.m.shiny});
+/* 합성 재료 고르기 (파티 + 보관함) */
+async function pickFuseMon(excl,title){const c=allMons().filter(x=>!excl||x.m!==excl.m);if(!c.length)return null;
+  const tp=page(TOP,'');
+  try{const r=await list(c.map(x=>({html:`<img src="${monIcon(x.m.sid,x.m.shiny)}"><span>${esc(N(x.m))}</span><span class="r">${x.where==='party'?'파티':'보관함'} · ${STAGE_N[SP[x.m.sid].st]} · Lv${x.m.lv}</span>`})),
+      {rect:[4,4,248,150],rowH:20,backdrop:true,bg:'linear-gradient(#7a6aa8,#4a3d72)',buttons:[{html:'그만두기',x:170,y:160,w:82,h:28,cls:'dark',val:-1}],
+       onMove:i=>{tp.innerHTML=monTopPage(c[i].m,title);if(excl){const st=fusionStage(excl.m,c[i].m);tp.insertAdjacentHTML('beforeend',`<div class="sheet" style="left:${U(8)};top:${U(142)};width:${U(240)};height:${U(44)};display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:${U(9.5)};padding:${U(3)};z-index:3;background:#f6f2ff">${esc(N(excl.m))} + ${esc(N(c[i].m))}<div>→ <b style="color:#7a4ad8">${STAGE_N[st]}</b> 등급 몬스터 · 타입은 무작위</div></div>`);}}});
+    return r<0?null:c[r];}finally{tp.remove();}}
+async function fusionFlow(first){const o={name:'합성 장치'};
+  if(allMons().length<2){await say('합성하려면 몬스터가 두 마리 이상 있어야 해요.');return false;}
+  const a=first||await pickFuseMon(null,'첫 번째 재료');if(!a)return false;
+  const b=await pickFuseMon(a,'두 번째 재료');if(!b)return false;
+  if(G.party.length<=2&&a.where==='party'&&b.where==='party'&&G.party.length===2&&!G.box.length){} // 결과가 파티에 들어가므로 문제없음
+  const st=fusionStage(a.m,b.m);
+  if(await ask(`${N(a.m)} Lv${a.m.lv} + ${N(b.m)} Lv${b.m.lv} → ${STAGE_N[st]} 등급\n합성하면 두 마리는 사라져요. 괜찮아요?`,['합성한다','그만둔다'])!==0)return false;
+  const to=fusionResult(a.m,b.m),lv=Math.min(100,Math.max(a.m.lv,b.m.lv)+2);
+  const m=makeMon(to,lv,{met:{map:'합성 장치',lv},ot:G.name,shiny:a.m.shiny||b.m.shiny});
   const partyIdx=[a,b].filter(x=>x.where==='party').map(x=>G.party.indexOf(x.m));
   G.party=G.party.filter(x=>x!==a.m&&x!==b.m);G.box=G.box.filter(x=>x!==a.m&&x!==b.m);
   if(partyIdx.length)G.party.splice(Math.min(...partyIdx),0,m);else addMon(m);
-  await say('그럼 시작할게요! 합성 장치, 가동!',o);
+  const prevBot=botMode;botMode='plain';
   const fx=page(TOP,`<div class="abs" style="inset:0;background:radial-gradient(circle at 50% 45%,#ffffff,#b8a8f0 60%,#4a3d72)"></div>
-    <img class="abs big fa" src="${monIcon(sid,a.m.shiny)}" style="left:${U(30)};top:${U(50)};width:${U(64)};height:${U(64)};transition:all .9s ease-in">
-    <img class="abs big fb" src="${monIcon(sid,b.m.shiny)}" style="left:${U(162)};top:${U(50)};width:${U(64)};height:${U(64)};transition:all .9s ease-in">
+    <img class="abs big fa" src="${monIcon(a.m.sid,a.m.shiny)}" style="left:${U(30)};top:${U(50)};width:${U(64)};height:${U(64)};transition:all .9s ease-in">
+    <img class="abs big fb" src="${monIcon(b.m.sid,b.m.shiny)}" style="left:${U(162)};top:${U(50)};width:${U(64)};height:${U(64)};transition:all .9s ease-in">
     <img class="abs big fr" src="${monIcon(to,m.shiny)}" style="left:${U(80)};top:${U(34)};width:${U(96)};height:${U(96)};opacity:0;transform:scale(.2);transition:all .6s cubic-bezier(.2,1.6,.4,1)">`);
-  await sleep(300);sfx('absorb');for(const q of['.fa','.fb']){const e=fx.querySelector(q);e.style.left=U(96);e.style.opacity='.2';e.style.filter='brightness(4)';}
-  await sleep(950);sfx('open');const r=fx.querySelector('.fr');r.style.opacity='1';r.style.transform='scale(1)';
-  await sleep(500);cry(to);if(m.shiny)sfx('shiny');
-  G.seen[to]=G.caught[to]=1;await Music.jingle('evolved');
-  await say(`합성 성공! ${SP[to].t.map(x=>TYPES[x].n).join('·')} 타입 ${J(SP[to].n,'이')} 태어났다! (Lv${lv})`);
-  await nicknamePrompt(m);fx.remove();
-  if(!G.party.includes(m))await say(`파티가 가득 차서 ${J(N(m),'은')} 보관함으로 보내졌다.`);
-  await say('소중히 키워 주세요!',o);}
+  try{await sleep(300);sfx('absorb');for(const q of['.fa','.fb']){const e=fx.querySelector(q);e.style.left=U(96);e.style.opacity='.2';e.style.filter='brightness(4)';}
+    await sleep(950);sfx('open');const r=fx.querySelector('.fr');r.style.opacity='1';r.style.transform='scale(1)';
+    await sleep(500);cry(to);if(m.shiny)sfx('shiny');
+    G.seen[to]=G.caught[to]=1;await Music.jingle('evolved');
+    await say(`합성 성공! ${SP[to].t.map(x=>TYPES[x].n).join('·')} 타입 ${J(SP[to].n,'이')} 태어났다! (Lv${lv})`);
+    await nicknamePrompt(m);
+    if(!G.party.includes(m))await say(`파티가 가득 차서 ${J(N(m),'은')} 보관함으로 보내졌다.`);}
+  finally{fx.remove();botMode=prevBot;}
+  return true;}
+/* 몬스터 센터 합성 연구원 */
+async function fusionLab(){const o={name:'합성 연구원'};
+  if(!G.flags.fuseIntro2){G.flags.fuseIntro2=1;
+    await say('어서 오세요! 여기는 몬스터 합성 연구실이에요.',o);
+    await say('아무 몬스터나 두 마리를 맡겨 주시면, 하나로 합쳐서 한 단계 위 등급의 몬스터로 만들어 드려요.',o);
+    await say('어떤 타입이 나올지는 저도 몰라요! 레벨은 두 마리 중 높은 쪽보다 2 올라간답니다.',o);
+    await say('참, 원정패드의 메뉴 → 몬스터 화면에서도 합성 장치를 쓸 수 있게 해 뒀어요!',o);}
+  if(allMons().length<2){await say('지금은 몬스터가 한 마리뿐이네요. 동료를 더 모아서 다시 와 주세요!',o);return;}
+  if(await ask('합성을 해 볼까요?',['합성한다','그만둔다'],o)!==0){await say('또 오세요!',o);return;}
+  if(await fusionFlow())await say('소중히 키워 주세요!',o);else await say('또 오세요!',o);}
 
 /* =========================================================
    battle.js — DS 스타일 턴제 배틀 + 진화 연출
@@ -2529,9 +2574,14 @@ async function titleScreen(){state='title';botMode='title';Music.play('title');c
   st.remove();
   while(true){const sv=readSave();
     const btns=[{html:sv?`<div style="font-size:${U(12)}">이어하기</div><small>${esc(sv.name)} · 배지 ${(sv.badges||[]).filter(Boolean).length} · 도감 ${Object.keys(sv.caught||{}).length} · ${fmtTime(sv.playMs||0)}</small>`:'<div style="font-size:'+U(12)+'">이어하기</div><small>리포트 없음</small>',x:20,y:16,w:216,h:56,cls:'blue',disabled:!sv},
-      {html:`<div style="font-size:${U(12)}">처음부터 시작</div>`,x:20,y:80,w:216,h:44},{html:'설정',x:20,y:132,w:216,h:36,cls:'dark'}];
+      {html:`<div style="font-size:${U(12)}">처음부터 시작</div>`,x:20,y:78,w:216,h:36},{html:'<div>코드로 불러오기</div><small>다른 기기에서 이어 하기</small>',x:20,y:120,w:216,h:36,cls:'purple'},{html:'설정',x:20,y:162,w:216,h:24,cls:'dark'}];
     const i=await panel(btns,{start:sv?0:1,cancel:false});
-    if(i===2){await optionsMenu();continue;}
+    if(i===3){await optionsMenu();continue;}
+    if(i===2){const g=await inputSaveCode();if(!g)continue;
+      if(sv){const c=await ask(`${g.name}의 모험(배지 ${(g.badges||[]).filter(Boolean).length} · 도감 ${Object.keys(g.caught||{}).length})을 불러옵니다. 이 기기의 기존 리포트는 덮어써집니다. 괜찮습니까?`,['불러오기','돌아가기'],{start:1});if(c!==0)continue;}
+      try{localStorage.setItem(SAVE_KEY,JSON.stringify(g));}catch(e){}
+      lg.remove();await fadeTo(1);G=g;G.flags=G.flags||{};G.badges=G.badges||[0,0];G.box=G.box||[];busy=true;state='world';enterMap(G.map,G.x,G.y,G.dir||'down',{sign:1});Pad.show();await fadeTo(0);busy=false;
+      await say(`저장 코드를 불러왔다! ${G.name}의 모험을 이어서 시작한다.`);return;}
     if(i===1&&sv){const c=await ask('기존 리포트가 있습니다. 처음부터 시작하면 리포트를 저장할 때 덮어쓰게 됩니다. 괜찮습니까?',['처음부터 시작','돌아가기'],{start:1});if(c!==0)continue;}
     lg.remove();await fadeTo(1);
     if(i===0){G=sv;G.flags=G.flags||{};G.badges=G.badges||[0,0];busy=true;state='world';enterMap(G.map,G.x,G.y,G.dir||'down',{sign:1});Pad.show();await fadeTo(0);busy=false;return;}
@@ -2545,7 +2595,7 @@ function worldGuides(){const touch=matchMedia('(pointer:coarse)').matches;
   if(G.flags.pad&&!guideSeen('menu')&&document.querySelector('#padUI .btn.red'))return guide('menu','#padUI .btn.red',`여기서 <b>메뉴</b>를 열어요. 도감·몬스터·가방·리포트(저장)·설정이 들어 있어요.${touch?'':' 키보드는 <b>Enter</b>.'}`,{title:'메뉴'});
   if(G.flags.pad&&!guideSeen('padapp')&&document.querySelector('#padUI .nav'))return guide('padapp','#padUI .lcd',`원정패드의 <b>◀ ▶</b>로 시계 · 파티 · 지도 · 만보기 앱을 바꿔 볼 수 있어요.${touch?'':' 키보드는 <b>Q / E</b>.'}`,{title:'원정패드'});
   if(G.flags.shoes&&!guideSeen('run'))return guide('run','top',`<b>B${touch?'':'(X)'}</b>를 누른 채로 이동하면 질주신발로 빠르게 달릴 수 있어요.`,{title:'달리기'});
-  if(G.flags.badge0&&!guideSeen('fuse'))return guide('fuse','top','같은 몬스터가 두 마리 이상 모이면 <b>몬스터 센터의 합성 연구원</b>에게 가 보세요. 더 강한 상위 몬스터로 합성해 줘요.',{title:'몬스터 합성'});}
+  if(G.flags.badge0&&!guideSeen('fuse'))return guide('fuse','top','몬스터 두 마리를 합치면 <b>한 단계 위 등급</b>의 무작위 타입 몬스터가 돼요. <b>메뉴 → 몬스터 → 합성하기</b>나 몬스터 센터의 합성 연구원에게서 할 수 있어요.',{title:'몬스터 합성'});}
 
 </script>
 </body>

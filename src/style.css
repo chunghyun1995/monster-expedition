@@ -38,6 +38,7 @@ body{background:radial-gradient(ellipse at 50% 0%,#2a2f45 0%,#14161f 70%)}
 .btn small{font-size:calc(var(--u)*8);opacity:.75}
 .btn.dark{background:linear-gradient(#4b5574,#2f3650);color:#fff;border-color:#1e2235}
 .btn.red{background:linear-gradient(#ff8a8a,#e04a5a);color:#fff;border-color:#8a1f2e;text-shadow:0 1px 0 rgba(0,0,0,.35)}
+.btn.purple{background:linear-gradient(#c8a8ff,#7a4ad8);color:#fff;border-color:#3d2280;text-shadow:0 1px 0 rgba(0,0,0,.35)}
 .btn.blue{background:linear-gradient(#8ec5ff,#3d7ad6);color:#fff;border-color:#1f3f7a;text-shadow:0 1px 0 rgba(0,0,0,.35)}
 .btn.green{background:linear-gradient(#a6ec8a,#4caf50);color:#fff;border-color:#24632a;text-shadow:0 1px 0 rgba(0,0,0,.35)}
 .btn.yellow{background:linear-gradient(#ffe58a,#f0b429);color:#4a3200;border-color:#8a6100}
@@ -212,3 +213,6 @@ body.land #pad .mid{left:auto;right:8px;top:8px;transform:none}
 .garr.dn{bottom:calc(var(--u)*-6.5);border-top:calc(var(--u)*6) solid #3d4562}
 @keyframes gin{from{opacity:0}}
 @keyframes gpulse{to{box-shadow:0 0 0 9999px rgba(8,10,24,.55),0 0 0 calc(var(--u)*2.5) #ffcf3a inset}}
+
+.codebox{position:absolute;font:inherit;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:calc(var(--u)*7);line-height:1.35;word-break:break-all;resize:none;border:calc(var(--u)*2) solid #5a6488;border-radius:calc(var(--u)*5);background:#fff;color:var(--ink);padding:calc(var(--u)*4);-webkit-user-select:text;user-select:text;outline:none}
+.codebox:focus{box-shadow:0 0 0 calc(var(--u)*2) var(--hi)}

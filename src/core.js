@@ -56,7 +56,7 @@ function fieldFree(){return typeof state!=='undefined'&&state==='world'&&!ui.len
 function dirDown(k){dirStack=dirStack.filter(x=>x!==k);dirStack.push(k);tapDir=fieldFree()?k:null;}
 function clearDirs(){dirStack=[];tapDir=null;if(typeof P!=='undefined'&&P)P.chain=false;}
 function dirUp(k){dirStack=dirStack.filter(x=>x!==k);}
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;
+addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
   if(e.key==='m'||e.key==='M'){audioInit();toggleMute();return;}
   const k=KEYMAP[e.key];if(!k)return;e.preventDefault();
   if(k==='b')held.b=true;
