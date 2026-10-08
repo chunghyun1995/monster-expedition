@@ -206,22 +206,30 @@ function loop(now){const dt=Math.min(.05,(now-lastT)/1000);lastT=now;frame++;
   if(G&&(state==='world'||state==='battle'))G.playMs=(G.playMs||0)+dt*1000;
   if(state==='world')updateWorld(dt);FX.step();render();renderBot();requestAnimationFrame(loop);}
 
+async function startFromCode(g,lg){try{localStorage.setItem(SAVE_KEY,JSON.stringify(g));}catch(e){}
+  lg.remove();hideMsg();await fadeTo(1);G=g;G.flags=G.flags||{};G.badges=G.badges||[0,0];G.box=G.box||[];busy=true;state='world';enterMap(G.map,G.x,G.y,G.dir||'down',{sign:1});Pad.show();await fadeTo(0);busy=false;
+  await say(`저장 코드를 불러왔다! ${G.name}의 모험을 이어서 시작한다.`);}
 async function titleScreen(){state='title';botMode='title';Music.play('title');clearPages(BOT);
   const lg=page(TOP,`<div class="logo"><h1>몬스터 원정대</h1><p>MONSTER EXPEDITION</p></div><div class="ver">Ver 2.0</div>`);
   const st=page(BOT,`<div class="abs blink" style="left:0;right:0;top:${U(80)};text-align:center;color:#fff;font-size:${U(14)}">— 터치 또는 Z 키로 시작 —</div>
     <div class="abs" style="left:0;right:0;top:${U(170)};text-align:center;color:#8f9ad8;font-size:${U(7.5)}">오리지널 몬스터 RPG · 소리는 M 키로 켜고 끕니다</div>`);
   await new Promise(res=>{const h={tapA:1,key(k){if(k==='a'||k==='menu'){popH(h);sfx('sel');res();}}};pushH(h);st.addEventListener('click',()=>h.key('a'));});
   st.remove();
+  // QR/링크로 열린 경우: 주소의 #c=코드 를 바로 불러오기
+  let linkCode=location.hash.startsWith('#c=')?location.hash:null;
+  if(linkCode)try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}
   while(true){const sv=readSave();
+    if(linkCode){const lc=linkCode;linkCode=null;let g=null;
+      try{g=await readSaveCode(lc);}catch(e){await say(`불러오기 링크를 읽지 못했어요. (${e.message})`);}
+      if(g){const c=await ask(`${g.name}의 모험(배지 ${(g.badges||[]).filter(Boolean).length} · 도감 ${Object.keys(g.caught||{}).length})을 불러올까요?${sv?' 이 기기의 기존 리포트는 덮어써집니다.':''}`,['불러오기','그만두기']);
+        if(c===0){await startFromCode(g,lg);return;}}}
     const btns=[{html:sv?`<div style="font-size:${U(12)}">이어하기</div><small>${esc(sv.name)} · 배지 ${(sv.badges||[]).filter(Boolean).length} · 도감 ${Object.keys(sv.caught||{}).length} · ${fmtTime(sv.playMs||0)}</small>`:'<div style="font-size:'+U(12)+'">이어하기</div><small>리포트 없음</small>',x:20,y:16,w:216,h:56,cls:'blue',disabled:!sv},
       {html:`<div style="font-size:${U(12)}">처음부터 시작</div>`,x:20,y:78,w:216,h:36},{html:'<div>코드로 불러오기</div><small>다른 기기에서 이어 하기</small>',x:20,y:120,w:216,h:36,cls:'purple'},{html:'설정',x:20,y:162,w:216,h:24,cls:'dark'}];
     const i=await panel(btns,{start:sv?0:1,cancel:false});
     if(i===3){await optionsMenu();continue;}
     if(i===2){const g=await inputSaveCode();if(!g)continue;
       if(sv){const c=await ask(`${g.name}의 모험(배지 ${(g.badges||[]).filter(Boolean).length} · 도감 ${Object.keys(g.caught||{}).length})을 불러옵니다. 이 기기의 기존 리포트는 덮어써집니다. 괜찮습니까?`,['불러오기','돌아가기'],{start:1});if(c!==0)continue;}
-      try{localStorage.setItem(SAVE_KEY,JSON.stringify(g));}catch(e){}
-      lg.remove();await fadeTo(1);G=g;G.flags=G.flags||{};G.badges=G.badges||[0,0];G.box=G.box||[];busy=true;state='world';enterMap(G.map,G.x,G.y,G.dir||'down',{sign:1});Pad.show();await fadeTo(0);busy=false;
-      await say(`저장 코드를 불러왔다! ${G.name}의 모험을 이어서 시작한다.`);return;}
+      await startFromCode(g,lg);return;}
     if(i===1&&sv){const c=await ask('기존 리포트가 있습니다. 처음부터 시작하면 리포트를 저장할 때 덮어쓰게 됩니다. 괜찮습니까?',['처음부터 시작','돌아가기'],{start:1});if(c!==0)continue;}
     lg.remove();await fadeTo(1);
     if(i===0){G=sv;G.flags=G.flags||{};G.badges=G.badges||[0,0];busy=true;state='world';enterMap(G.map,G.x,G.y,G.dir||'down',{sign:1});Pad.show();await fadeTo(0);busy=false;return;}

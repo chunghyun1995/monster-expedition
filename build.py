@@ -2,7 +2,7 @@
 import pathlib
 root=pathlib.Path(__file__).parent
 src=root/'src'
-ORDER=['core','audio','data','mon','gfx','ui','maps','menus','battle','world']
+ORDER=['vendor_qr','core','audio','data','mon','gfx','ui','maps','menus','battle','world']
 shell=(src/'shell.html').read_text(encoding='utf-8')
 css=(src/'style.css').read_text(encoding='utf-8')
 js='\n'.join((src/f'{n}.js').read_text(encoding='utf-8') for n in ORDER)

@@ -236,33 +236,68 @@ const b64u={enc:u8=>{let s='';for(let i=0;i<u8.length;i+=8192)s+=String.fromChar
   dec:t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;}};
 function ck4(t){let h=2166136261;for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,16777619);}return(h>>>0).toString(36).slice(-4).padStart(4,'0').toUpperCase();}
 async function pipeBytes(u8,stream){const cs=new stream('deflate-raw'),w=cs.writable.getWriter();w.write(u8);w.close();return new Uint8Array(await new Response(cs.readable).arrayBuffer());}
-async function makeSaveCode(){const raw=new TextEncoder().encode(JSON.stringify(G));let tag='ME2',data;
-  try{if(!window.CompressionStream)throw 0;data=b64u.enc(await pipeBytes(raw,CompressionStream));}catch(e){tag='ME2U';data=b64u.enc(raw);}
+/* 짧은 코드용 압축 표현(ME3): 다시 계산할 수 있는 값은 빼고 배열로 촘촘하게 */
+const MVK=Object.keys(MV),B32='0123456789abcdefghijklmnopqrstuv';
+const bits=o=>{let n=0n;for(const k in o)if(o[k])n|=1n<<BigInt(k);return n.toString(36);},unbits=t=>{const o={};let n=BigInt(0);for(const ch of t)n=n*36n+BigInt(parseInt(ch,36));for(let i=0;n>0n;i++,n>>=1n)if(n&1n)o[i]=1;return o;};
+const GKEYS=['v','name','id','money','party','box','bag','map','x','y','dir','flags','seen','caught','badges','heal','steps','playMs','start','starter','rivalStarter','savedAt'];
+function packMon(m){const mv=m.moves.map(x=>MVK.indexOf(x.id).toString(36)+(x.pp===MV[x.id].pp?'':'.'+x.pp)).join(',');
+  const ex={};for(const k in m)if(!['sid','lv','exp','nick','moves','iv','nat','shiny','st','slp','hp','uid','met','ot'].includes(k))ex[k]=m[k];
+  const a=[m.sid,m.lv,m.exp-expFor(m.lv),m.nick||'',mv,m.iv.map(v=>B32[v]).join(''),m.nat,m.shiny?1:0,m.st||'',m.slp||0,m.hp,m.met?m.met.map:'',m.met?m.met.lv:0,m.ot===G.name?0:(m.ot||'')];
+  if(Object.keys(ex).length)a.push(ex);return a;}
+function unpackMon(a,name){const[sid,lv,dexp,nick,mv,iv,nat,sh,st,slp,hp,mm,ml,ot,ex]=a;
+  const m={sid,lv,exp:expFor(lv)+dexp,nick,moves:mv?mv.split(',').map(t=>{const[i,pp]=t.split('.');const id=MVK[parseInt(i,36)];return{id,pp:pp!=null?+pp:MV[id].pp};}):[],
+    iv:[...iv].map(c=>B32.indexOf(c)),nat,shiny:!!sh,st,slp,hp,uid:Date.now().toString(36)+rnd(1e6).toString(36),met:mm?{map:mm,lv:ml}:null,ot:ot===0?name:ot||null};
+  return Object.assign(m,ex||{});}
+function packSave(g){const fl=Object.keys(g.flags).filter(k=>g.flags[k]===1),fo={};for(const k in g.flags)if(g.flags[k]!==1&&g.flags[k])fo[k]=g.flags[k];
+  const ex={};for(const k in g)if(!GKEYS.includes(k))ex[k]=g[k];
+  return[3,g.name,g.id,g.money,g.party.map(packMon),g.box.map(packMon),g.bag,g.map,g.x,g.y,'udlr'.indexOf(g.dir[0]),fl.join(','),fo,bits(g.seen),bits(g.caught),g.badges.map(b=>b?1:0).join(''),
+    [g.heal.map,g.heal.x,g.heal.y],g.steps|0,Math.round((g.playMs||0)/1000),Math.round((g.start||Date.now())/1000),g.starter,g.rivalStarter,ex];}
+function unpackSave(a){const[v,name,id,money,party,box,bag,map,x,y,dir,fl,fo,seen,caught,badges,heal,steps,ps,start,starter,rival,ex]=a;
+  const flags={};if(fl)fl.split(',').forEach(k=>flags[k]=1);Object.assign(flags,fo);
+  return Object.assign({v:2,name,id,money,party:party.map(m=>unpackMon(m,name)),box:box.map(m=>unpackMon(m,name)),bag,map,x,y,dir:['up','down','left','right'][dir]||'down',flags,
+    seen:unbits(seen),caught:unbits(caught),badges:[...badges].map(Number),heal:{map:heal[0],x:heal[1],y:heal[2]},steps,playMs:ps*1000,start:start*1000,starter,rivalStarter:rival},ex||{});}
+async function makeSaveCode(){const raw=new TextEncoder().encode(JSON.stringify(packSave(G)));let tag='ME3',data;
+  try{if(!window.CompressionStream)throw 0;data=b64u.enc(await pipeBytes(raw,CompressionStream));}catch(e){tag='ME3U';data=b64u.enc(raw);}
   return`${tag}-${ck4(data)}-${data}`;}
-async function readSaveCode(code){const t=String(code||'').replace(/\s+/g,'');const m=/^(ME2U?)-([0-9A-Z]{4})-([A-Za-z0-9_-]+)$/.exec(t);
+async function readSaveCode(code){let t=String(code||'').trim();const hi=t.indexOf('#c=');if(hi>=0)t=decodeURIComponent(t.slice(hi+3));t=t.replace(/\s+/g,'');
+  const m=/^(ME[23]U?)-([0-9A-Z]{4})-([A-Za-z0-9_-]+)$/.exec(t);
   if(!m)throw new Error('코드 형식이 올바르지 않아요.');if(ck4(m[3])!==m[2])throw new Error('코드 일부가 빠졌거나 잘못 입력됐어요.');
-  let bytes=b64u.dec(m[3]);if(m[1]==='ME2'){if(!window.DecompressionStream)throw new Error('이 브라우저는 코드 불러오기를 지원하지 않아요.');bytes=await pipeBytes(bytes,DecompressionStream);}
-  const g=JSON.parse(new TextDecoder().decode(bytes));
+  let bytes=b64u.dec(m[3]);if(!m[1].endsWith('U')){if(!window.DecompressionStream)throw new Error('이 브라우저는 코드 불러오기를 지원하지 않아요.');bytes=await pipeBytes(bytes,DecompressionStream);}
+  let g=JSON.parse(new TextDecoder().decode(bytes));if(m[1].startsWith('ME3'))g=unpackSave(g);
   if(!g||!Array.isArray(g.party)||!g.party.length||!MAPS[g.map]||typeof g.name!=='string')throw new Error('저장 데이터를 읽을 수 없어요.');
   return g;}
+/* QR·링크: 게임 주소#c=코드 → 다른 휴대폰 카메라로 찍으면 바로 불러오기 화면 */
+const GAME_URL='https://chunghyun1995.github.io/monster-expedition/';
+function saveLink(code){const base=/^https?:$/.test(location.protocol)?location.origin+location.pathname:GAME_URL;return base+'#c='+code;}
+function qrCanvas(text){const q=qrcode(0,'L');q.addData(text);q.make();const n=q.getModuleCount(),qz=2,[c,g]=mkCanvas(n+qz*2,n+qz*2);
+  g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.fillStyle='#1d1d2b';for(let y=0;y<n;y++)for(let x=0;x<n;x++)if(q.isDark(y,x))g.fillRect(x+qz,y+qz,1,1);return c;}
 async function copyText(t,ta){try{await navigator.clipboard.writeText(t);return true;}catch(e){}
   try{ta.removeAttribute('readonly');ta.select();const ok=document.execCommand('copy');ta.setAttribute('readonly','');return ok;}catch(e){return false;}}
 /* 저장 코드 보여 주기 */
-async function showSaveCode(){const code=await makeSaveCode();
-  const tp=page(TOP,`<div class="abs" style="inset:0;background:linear-gradient(#2a3358,#1d2340)"></div><div class="title-bar">저장 코드<span class="r">${code.length}자</span></div>
-    <div class="sheet desc" style="left:${U(10)};top:${U(26)};width:${U(236)}">이 코드를 복사해서 메모장이나 메신저에 보관하세요.<br>다른 기기의 타이틀 화면에서 <b>코드로 불러오기</b>를 누르고 붙여 넣으면 지금 상태 그대로 이어서 할 수 있어요.<br><span style="color:#b63a52">코드를 받은 사람은 누구나 이 모험을 불러올 수 있어요.</span></div>`);
+async function showSaveCode(){const code=await makeSaveCode(),link=saveLink(code);
+  const tp=page(TOP,`<div class="abs" style="inset:0;background:linear-gradient(#2a3358,#1d2340)"></div><div class="title-bar">저장 코드 · QR<span class="r">코드 ${code.length}자</span></div>
+    <div class="abs qrbox" style="left:${U(8)};top:${U(24)};width:${U(140)};height:${U(140)}"></div>
+    <div class="sheet desc" style="left:${U(154)};top:${U(24)};width:${U(94)};height:${U(140)};padding:${U(5)} ${U(6)};font-size:${U(8)}"><b>옆 기기 카메라로 QR을 찍으면</b> 게임이 열리면서 바로 불러와요.<br><b>QR을 누르면 크게</b> 볼 수 있어요.<br><br>멀리 있는 기기라면 아래 <b>코드나 링크를 복사</b>해서 보내세요.</div>
+    <div class="abs" style="left:0;right:0;top:${U(168)};text-align:center;color:#ffb0b8;font-size:${U(7.5)}">코드·QR을 받은 사람은 누구나 이 모험을 불러올 수 있어요.</div>`);
+  const qc=qrCanvas(link);qc.style.cssText='width:100%;height:100%;image-rendering:pixelated;border-radius:6px';const qb=tp.querySelector('.qrbox');qb.appendChild(qc);
+  // QR을 누르면 화면 가득 크게 (휴대폰 카메라로 찍기 쉽게)
+  let big=null;const unbig=()=>{if(big){big.remove();big=null;}};
+  qb.style.pointerEvents='auto';qb.style.cursor='zoom-in';qb.addEventListener('click',ev=>{ev.stopPropagation();sfx('sel');
+    big=document.createElement('div');big.className='qrbig';const c2=qrCanvas(link);big.appendChild(c2);big.insertAdjacentHTML('beforeend','<p>다른 기기의 카메라로 찍으세요 · 누르면 닫혀요</p>');
+    big.addEventListener('click',e=>{e.stopPropagation();unbig();});document.body.appendChild(big);});
   return new Promise(res=>{const wrap=el(BOT,'abs','',[0,0,256,192]);el(wrap,'backdrop').style.background='linear-gradient(#e8eefc,#c8d4f0)';
-    const ta=el(wrap,'codebox','',[8,8,240,128],'textarea');ta.value=code;ta.readOnly=true;ta.spellcheck=false;
-    const cp=el(wrap,'btn blue','<span>복사하기</span>',[8,144,150,40]),cl=el(wrap,'btn dark','<span>닫기</span>',[166,144,82,40]);
-    const close=()=>{popH(h);wrap.remove();tp.remove();res();};
-    cp.addEventListener('click',async ev=>{ev.stopPropagation();const ok=await copyText(code,ta);sfx(ok?'sel':'bad');toast(ok?'저장 코드를 복사했어요!':'자동 복사에 실패했어요. 코드를 길게 눌러 직접 복사해 주세요.');});
+    const ta=el(wrap,'codebox','',[8,8,240,92],'textarea');ta.value=code;ta.readOnly=true;ta.spellcheck=false;
+    const cp=el(wrap,'btn blue','<span>코드 복사</span>',[8,108,118,36]),lk=el(wrap,'btn purple','<span>링크 복사</span>',[130,108,118,36]),cl=el(wrap,'btn dark','<span>닫기</span>',[8,150,240,34]);
+    const close=()=>{unbig();popH(h);wrap.remove();tp.remove();res();};
+    const doCopy=async(t,what)=>{const ok=await copyText(t,ta);sfx(ok?'sel':'bad');toast(ok?`${what}를 복사했어요!`:'자동 복사에 실패했어요. 코드를 길게 눌러 직접 복사해 주세요.');};
+    cp.addEventListener('click',ev=>{ev.stopPropagation();doCopy(code,'저장 코드');});lk.addEventListener('click',ev=>{ev.stopPropagation();doCopy(link,'불러오기 링크');});
     cl.addEventListener('click',ev=>{ev.stopPropagation();sfx('back');close();});ta.addEventListener('click',ev=>{ev.stopPropagation();ta.select();});
-    const h={key(k){if(k==='b'||k==='menu')close();else if(k==='a')cp.click();}};pushH(h);});}
+    const h={key(k){if(big){unbig();return;}if(k==='b'||k==='menu')close();else if(k==='a')cp.click();}};pushH(h);});}
 /* 저장 코드 입력 → 저장 데이터 (취소하면 null) */
 function inputSaveCode(){const tp=page(TOP,`<div class="abs" style="inset:0;background:linear-gradient(#2a3358,#1d2340)"></div><div class="title-bar">코드로 불러오기</div>
-    <div class="sheet desc" style="left:${U(10)};top:${U(26)};width:${U(236)}">다른 기기에서 만든 <b>저장 코드</b>를 아래 칸에 붙여 넣고 <b>불러오기</b>를 누르세요.<br>불러오면 이 기기의 리포트는 코드의 내용으로 바뀌어요.</div>`);
+    <div class="sheet desc" style="left:${U(10)};top:${U(26)};width:${U(236)}">다른 기기에서 만든 <b>저장 코드나 링크</b>를 아래 칸에 붙여 넣고 <b>불러오기</b>를 누르세요.<br>불러오면 이 기기의 리포트는 코드의 내용으로 바뀌어요.</div>`);
   return new Promise(res=>{const wrap=el(BOT,'abs','',[0,0,256,192]);el(wrap,'backdrop').style.background='linear-gradient(#e8eefc,#c8d4f0)';
-    const ta=el(wrap,'codebox','',[8,8,240,128],'textarea');ta.placeholder='ME2-XXXX-... 형식의 코드를 붙여 넣으세요';ta.spellcheck=false;ta.autocomplete='off';
+    const ta=el(wrap,'codebox','',[8,8,240,128],'textarea');ta.placeholder='ME3-XXXX-... 형식의 코드(또는 불러오기 링크)를 붙여 넣으세요';ta.spellcheck=false;ta.autocomplete='off';
     const ok=el(wrap,'btn blue','<span>불러오기</span>',[8,144,150,40]),cl=el(wrap,'btn dark','<span>취소</span>',[166,144,82,40]);
     const close=v=>{popH(h);ta.blur();wrap.remove();tp.remove();res(v);};
     const go=async()=>{try{const g=await readSaveCode(ta.value);sfx('sel');close(g);}catch(e){sfx('bad');toast(e.message||'코드를 읽을 수 없어요.');}};

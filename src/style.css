@@ -216,3 +216,7 @@ body.land #pad .mid{left:auto;right:8px;top:8px;transform:none}
 
 .codebox{position:absolute;font:inherit;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:calc(var(--u)*7);line-height:1.35;word-break:break-all;resize:none;border:calc(var(--u)*2) solid #5a6488;border-radius:calc(var(--u)*5);background:#fff;color:var(--ink);padding:calc(var(--u)*4);-webkit-user-select:text;user-select:text;outline:none}
 .codebox:focus{box-shadow:0 0 0 calc(var(--u)*2) var(--hi)}
+.qrbox{background:#fff;border-radius:calc(var(--u)*4);padding:calc(var(--u)*3);box-shadow:0 calc(var(--u)*2) 0 rgba(0,0,0,.35)}
+.qrbig{position:fixed;inset:0;z-index:999;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;cursor:zoom-out}
+.qrbig canvas{width:min(92vw,82vh);height:min(92vw,82vh);image-rendering:pixelated}
+.qrbig p{margin:0;color:#3d4562;font-size:14px}
