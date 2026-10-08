@@ -2439,7 +2439,7 @@ async function trainerCard(){const tp=page(TOP,''),bp=el(BOT,'abs','',[0,0,256,1
   person(tp.querySelector('canvas').getContext('2d'),0,0,'down',0,LOOK.player);
   bp.innerHTML=`<div class="backdrop" style="background:linear-gradient(#5a4a3a,#2a2018)"></div><div class="abs" style="left:${U(8)};top:${U(6)};color:#f2dca0;font-size:${U(10)}">배지 케이스</div>`;
   const B2=[['반석 배지','단단'],['물결 배지','하라'],['불꽃 배지','화련'],['번개 배지','찌나'],['창공 배지','하늬']];
-  B2.forEach(([n,w],i)=>{const cx=i<3?24+i*72:60+(i-3)*72,cy=i<3?24:104,s=el(bp,'badge-slot','',[cx,cy,48,48]);if(G.badges[i])s.innerHTML=`<img src="${badgeIcon(i)}">`;
+  B2.forEach(([n,w],i)=>{const cx=i<3?24+i*72:40+(i-3)*72,cy=i<3?24:104,s=el(bp,'badge-slot','',[cx,cy,48,48]);if(G.badges[i])s.innerHTML=`<img src="${badgeIcon(i)}">`;
     el(bp,'abs',`<div style="text-align:center;color:#f2dca0;font-size:${U(8)}">${G.badges[i]?n:'???'}<br><span style="font-size:${U(7)};color:#c8b080">${G.badges[i]?'관장 '+w:''}</span></div>`,[cx-14,cy+50,76,26]);
     s.addEventListener('click',e=>{e.stopPropagation();if(G.badges[i])sfx('sparkle');});});
   const cb=el(bp,'btn dark','돌아가기',[166,158,84,28]);
