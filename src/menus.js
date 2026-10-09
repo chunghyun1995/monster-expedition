@@ -164,7 +164,7 @@ async function bagScreen(mode){const tp=page(TOP,''),prevBot=botMode;botMode='me
     <div class="sheet desc" style="left:${U(14)};top:${U(118)};width:${U(234)};height:${U(66)}">${it?it.d:'이 주머니에는 아무것도 없다.'}</div>`;};
   try{while(true){const ids=bagItems(bagPocket);
     const items=ids.map(k=>({html:`<img src="${itemIcon(k)}"><span>${ITEMS[k].n}</span><span class="r">${ITEMS[k].p==='key'?'':'× '+G.bag[k]}</span>`,
-      disabled:mode==='battle'&&(ITEMS[k].p==='key'||(ITEMS[k].ball&&!B.wild))}));
+      disabled:mode==='battle'&&(ITEMS[k].p==='key'||(ITEMS[k].ball&&!!B.foeHero))}));
     const tabs=POCKETS.map((p,j)=>({html:p[1],x:4+j*84,y:4,w:80,h:24,cls:'tab'+(j===bagPocket?' on':''),val:-10-j}));
     guideSoon('bag','#botUI .btn.tab','가방은 <b>회복 · 캡슐 · 중요한 물건</b> 주머니로 나뉘어 있어요. 탭을 누르거나 <b>◀ ▶</b>로 바꿔요.',{title:'가방'});
     let moved=0;

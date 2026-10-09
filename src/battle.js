@@ -50,7 +50,7 @@ async function battle(o){const wild=o.kind==='wild';
   else{ballRow('e',false);ballRow('p',false);await sleep(30);ballRow('e',true);ballRow('p',true);await bsay(`${J(tn(),'이')} 승부를 걸어왔다!`,true);ballRow('e',false);ballRow('p',false);await sendFoe();}
   await sendPlayer();
   let res=null;
-  while(!res){res=B.hero?await heroTurn():await doTurn(await chooseAction());}
+  while(!res){res=B.hero?await heroTurn():B.foeHero?await foeHeroTurn():await doTurn(await chooseAction());}
   return await endBattle(res);}
 
 async function sendFoe(){const f=fm();G.seen[f.sid]=1;B.st.e=[0,0,0,0,0,0];B.part=new Set(B.p.show&&pm().hp>0?[pm()]:[]);B.e=blank();
@@ -75,6 +75,7 @@ async function chooseAction(){
   while(true){msg(`${J(N(pm()),'은')}\n무엇을 할까?`);
     guideSoon('battle','#botUI .btn.red','<b>싸운다</b>를 누르면 기술을 고를 수 있어요. 아래의 <b>가방</b>에선 회복약을, <b>몬스터</b>에선 교체를 할 수 있어요.',{title:'전투'});
     if(B.wild&&Object.keys(G.bag).some(k=>ITEMS[k]&&ITEMS[k].ball&&G.bag[k]>0))guideSoon('catch','#botUI .btn.yellow','야생 몬스터는 HP를 줄인 뒤 <b>가방 → 캡슐</b>을 던지면 붙잡을 수 있어요. 잠듦·마비 같은 상태 이상이면 더 잘 잡혀요!',{title:'포획'});
+    if(!B.wild&&!B.foeHero&&Object.keys(G.bag).some(k=>ITEMS[k]&&ITEMS[k].ball&&G.bag[k]>0))guideSoon('steal','#botUI .btn.yellow','상대 트레이너의 몬스터도 <b>캡슐</b>로 빼앗을 수 있어요. 대신 화가 난 트레이너가 <b>직접 덤벼들고</b>, 이 승부에서 지면 빼앗은 몬스터를 되찾아 가요!',{title:'몬스터 빼앗기'});
     if(autoFight()){await sleep(220);return{type:'move',mi:autoMoveIndex()};}
     const i=await panel([{html:`<span style="font-size:${U(20)}">싸운다</span>`,x:24,y:14,w:208,h:104,cls:'red',flash:1},
       {html:`<img src="${menuIcon('bag')}" style="width:${U(22)};height:${U(22)}"><span>가방</span>`,x:4,y:124,w:84,h:64,cls:'yellow'},
@@ -87,7 +88,7 @@ async function chooseAction(){
 async function chooseMove(){const p=pm(),f=fm();
   if(p.moves.every(x=>x.pp<=0)){await bsay(`${J(N(p),'은')} 쓸 수 있는 기술이 없다!`,true);return'struggle';}
   msg(`${J(N(p),'은')}\n무엇을 할까?`);
-  const btns=p.moves.map((x,j)=>{const d=MV[x.id],e=d.c==='x'?null:effT(d.t,SP[f.sid].t);
+  const btns=p.moves.map((x,j)=>{const d=MV[x.id],e=d.c==='x'||!f?null:effT(d.t,SP[f.sid].t);
     return{html:`<span class="mn">${d.n}</span><span class="mi"><span>${TYPES[d.t].n} · ${CATN[d.c]}</span><span>PP ${x.pp}/${d.pp}</span></span><span class="hint">${e==null?'':e===0?'효과가 없다':e>1?'효과가 굉장하다':e<1?'효과가 별로다':''}</span>`,
       x:4+(j%2)*126,y:6+Math.floor(j/2)*68,w:122,h:62,cls:'mvbtn',disabled:x.pp<=0};});
   btns.push({html:'취소',x:4,y:146,w:248,h:40,cls:'dark'});
@@ -109,7 +110,7 @@ async function doTurn(act){B.flinch={};B.moved={};
   if(act.type==='run'){if(!B.wild){await bsay('안 돼! 트레이너와의 승부에서 등을 보일 수는 없다!',true);return null;}
     if(tryRun()){sfx('run');await bsay('무사히 도망쳤다!',true);return'run';}await bsay('도망칠 수 없었다!');B.moved.p=1;}
   else if(act.type==='switch'){await bsay(`돌아와, ${N(pm())}!`);await recall('p');B.pi=act.idx;await sendPlayer();B.moved.p=1;}
-  else if(act.type==='item'){if(ITEMS[act.id].ball){if(await throwBall(act.id))return'caught';}else await useItemBattle(act);B.moved.p=1;}
+  else if(act.type==='item'){if(ITEMS[act.id].ball){if(await throwBall(act.id)){if(B.wild)return'caught';await foeHeroStart();return null;}}else await useItemBattle(act);B.moved.p=1;}
   if(eAct.type==='item'){B.usedItem=1;G.bag;await bsay(`${J(tn(),'은')} 고급회복약을 사용했다!`);sfx('heal');await animHP('e',fm(),fm().hp+60);B.moved.e=1;}
   const seq=[];
   if(act.type==='move'){const pid=act.mi==='struggle'?'struggle':pm().moves[act.mi].id;
@@ -346,7 +347,8 @@ async function throwBall(id){const e=fm(),it=ITEMS[id];G.bag[id]--;await bsay(`$
     await bsay(`좋았어! ${J(N(e),'을')} 붙잡았다!`,true);
     const isNew=!G.caught[e.sid];G.caught[e.sid]=1;G.seen[e.sid]=1;e.ot=G.name;
     if(isNew){await bsay(`${N(e)}의 데이터가 몬스터 도감에 새로 등록되었다!`,true);await dexEntryPop(e.sid);}
-    hudE.classList.add('out');await nicknamePrompt(e);e.st=e.st||'';
+    // 트레이너의 몬스터는 이름 짓기 없이 바로 데려온다(지면 되찾아 가므로 기록해 둔다)
+    hudE.classList.add('out');if(B.wild)await nicknamePrompt(e);else{(B.stolen=B.stolen||[]).push(e);e.met=e.met||{map:curMap().name,lv:e.lv};}e.st=e.st||'';
     if(addMon(e)==='box')await bsay(`${J(N(e),'은')} 보관함으로 전송되었다!`,true);
     return true;}
   sfx('breakout');B.ball.open=1;B.e.show=true;B.e.white=1;FX.burst(ex,ey+10,10,{c:['#ffffff','#9fd8ff'],shape:'star',s:3,life:18,sp:2});
@@ -395,6 +397,7 @@ async function endBattle(res){const o=B.o;clearInterval(B.lowT);
       await bsay(`${J(tn(),'과')}의 승부에서 이겼다!`,true);if(o.lose)await say(o.lose,{name:tn(),keep:1});
       const lastLv=B.foe[B.foe.length-1].lv,prize=TCLASS[o.cls].m*lastLv;G.money+=prize;await bsay(`${J(G.name,'은')} 상금으로 ${money(prize)}을 손에 넣었다!`,true);}}
   else if(res==='lose'){
+    if(B.stolen&&B.stolen.length)await giveBack();
     if(o.noLose){B.etr.show=true;B.etr.x=130;await tween(420,k=>B.etr.x=130*(1-k));if(o.winMsg)await say(o.winMsg,{name:tn(),keep:1});}
     else{await bsay(`${G.name}에게는 싸울 수 있는 몬스터가 없다!`,true);const lost=Math.floor(G.money/2);G.money-=lost;
       await bsay(B.wild?`${J(G.name,'은')} 허둥지둥 ${money(lost)}을 떨어뜨리고 말았다...`:`${J(G.name,'은')} 상금으로 ${money(lost)}을 건네주었다...`,true);await bsay('...... 눈앞이 캄캄해졌다!',true);}}
@@ -452,12 +455,12 @@ async function heroStart(){B.heroUsed=1;
   await bsay(`${J(G.name,'은')} 쓰러진 몬스터들 앞을 막아섰다!`,true);
   await bsay(`${tnOrWild()} 앞에 ${J(G.name,'이')} 직접 맞선다!`);
   return true;}
-const tnOrWild=()=>B.wild?`야생 ${N(fm())}`:N(fm());
+const tnOrWild=()=>B.foeHero?tn():B.wild?`야생 ${N(fm())}`:N(fm());
 function heroHud(hp){const h=B.hero,v=hp==null?h.hp:hp,p=clamp(v/h.max*100,0,100);
   hudP.querySelector('.nm').textContent=G.name;hudP.querySelector('.lv').innerHTML=`<span class="stb" style="background:#e2566f">트레이너</span>`;
   const bar=hudP.querySelector('.hpb i');bar.style.width=p+'%';bar.style.background=hpColor(p);hudP.querySelector('.hpt').textContent=`${Math.max(0,Math.ceil(v))} / ${h.max}`;}
 async function heroHP(to){const h=B.hero,from=h.hp;to=clamp(Math.round(to),0,h.max);h.hp=to;await tween(Math.min(900,300+Math.abs(from-to)/h.max*700),k=>heroHud(from+(to-from)*k));heroHud();}
-async function heroTurn(){const f=fm(),h=B.hero;
+async function heroTurn(){const f=fm(),h=B.hero,vsT=!!B.foeHero;
   msg(`${J(G.name,'은')}\n어떻게 맞설까?`);
   const heal=['super','potion'].find(k=>G.bag[k]>0);
   const btns=[...HERO_ACT.map((a,i)=>({html:`<span class="mn">${a.n}</span><span class="mi"><span>${a.d}</span><span>명중 ${a.acc}</span></span>`,x:4+i*126,y:6,w:122,h:62,cls:'mvbtn hero'})),
@@ -471,22 +474,97 @@ async function heroTurn(){const f=fm(),h=B.hero;
     const c=center('e');
     if(i===0){sfx('throw');await tween(380,k=>{FX.add({x:40+(c.x-40)*k,y:150-(150-c.y)*k-Math.sin(k*Math.PI)*40,shape:'circ',c:'#8a7a6a',s:3,life:3});});}
     else{sfx('run');await tween(240,k=>B.ptr.x=k*60);await tween(160,k=>B.ptr.x=60*(1-k));}
-    if(rnd(100)<a.acc){const mx=maxHp(f),dmg=Math.max(1,Math.round(mx*(a.lo+Math.random()*(a.hi-a.lo))));sfx('hit');await hitReact('e',1);await animHP('e',f,f.hp-dmg);
+    if(rnd(100)<a.acc){
+      if(vsT){const t=B.foeHero,dmg=Math.max(1,Math.round(t.max*(a.lo+Math.random()*(a.hi-a.lo))*(h.lv/Math.max(1,t.lv))**.3));sfx('hit');await trainerBlink();await foeHeroHP(t.hp-dmg);}
+      else{const mx=maxHp(f),dmg=Math.max(1,Math.round(mx*(a.lo+Math.random()*(a.hi-a.lo))));sfx('hit');await hitReact('e',1);await animHP('e',f,f.hp-dmg);}
       if(i===1&&Math.random()<.35){await bsay(`반동으로 ${G.name}도 조금 다쳤다!`);await heroHP(h.hp-Math.round(h.max*.06));}}
     else{sfx('miss');await bsay(`하지만 ${tnOrWild()}에게 빗나갔다!`);}}
   else if(i===2&&heal){G.bag[heal]--;await bsay(`${J(G.name,'은')} ${J(ITEMS[heal].n,'을')} 꿀꺽 마셨다!`);sfx('heal');await heroHP(h.hp+Math.round(h.max*(heal==='super'?.6:.35)));}
   else{if(B.wild){if(Math.random()<.6){sfx('run');await bsay('몬스터들을 안고 무사히 도망쳤다!',true);return'run';}await bsay('도망칠 수 없었다!');}
     else{guard=true;await bsay(`${J(G.name,'은')} 몸을 웅크리고 버틴다!`);}}
   // 상대가 쓰러졌는지
-  if(f.hp<=0){await faint('e');
+  if(vsT){if(B.foeHero.hp<=0)return await foeHeroDown();}
+  else if(f.hp<=0){await faint('e');
     if(!B.wild&&B.fi<B.foe.length-1){B.fi++;await bsay(`${J(G.name,'은')} 숨을 고른다...`);await sendFoe();return null;}
     await bsay(`${J(G.name,'이')} 직접 승리를 거머쥐었다!`,true);return'win';}
   // 상대의 반격
-  const id=aiHeroMove(f),mv=MV[id];await bsay(`${tnOrWild()}의 ${mv.n}!`);
-  if(SET.anim)await animMove('e',mv,false);
-  const pw=mv.p||40,raw=h.max*(.1+pw/650)*(.85+Math.random()*.3)*(f.lv/Math.max(1,h.lv))**.5*(guard?.4:1);
-  if(rnd(100)<(mv.a||100)){sfx('hit');B.shake=5;setTimeout(()=>B.shake=0,260);await heroHP(h.hp-Math.max(1,Math.round(raw)));}
-  else{sfx('miss');await bsay(`${J(G.name,'은')} 몸을 날려 피했다!`);}
+  if(vsT)await trainerAct(true,guard);
+  else{const id=aiHeroMove(f),mv=MV[id];await bsay(`${tnOrWild()}의 ${mv.n}!`);
+    if(SET.anim)await animMove('e',mv,false);
+    const pw=mv.p||40,raw=h.max*(.1+pw/650)*(.85+Math.random()*.3)*(f.lv/Math.max(1,h.lv))**.5*(guard?.4:1);
+    if(rnd(100)<(mv.a||100)){sfx('hit');B.shake=5;setTimeout(()=>B.shake=0,260);await heroHP(h.hp-Math.max(1,Math.round(raw)));}
+    else{sfx('miss');await bsay(`${J(G.name,'은')} 몸을 날려 피했다!`);}}
   if(h.hp<=0){sfx('faint');await tween(400,k=>B.ptr.x=-k*130);B.ptr.show=false;hudP.classList.add('out');await bsay(`${J(G.name,'은')} 힘이 다해 쓰러졌다...`,true);return'lose';}
   return null;}
 function aiHeroMove(e){const av=e.moves.filter(x=>x.pp>0&&MV[x.id].p);return av.length?av[rnd(av.length)].id:e.moves[0].id;}
+
+/* ---------- 몬스터를 빼앗긴 트레이너가 직접 덤벼든다 ----------
+   트레이너전에서 캡슐로 상대 몬스터를 붙잡으면 바로 내 것이 되지만, 화가 난 트레이너가 남은 몬스터 대신 직접 싸운다.
+   트레이너를 쓰러뜨리면 승리. 내 몬스터와 나(최후의 수단)까지 모두 쓰러지면 빼앗은 몬스터를 되찾아 간다. */
+const FOE_ACT=[{n:'주먹 날리기',acc:95,lo:.14,hi:.21},{n:'날아차기',acc:75,lo:.25,hi:.36}];
+async function foeHeroStart(){const lv=Math.max(...B.foe.map(m=>m.lv))+2,max=30+lv*4;
+  B.foeHero={lv,max,hp:max,healed:0};B.fi=-1;B.ball=null;B.e=blank();B.st.e=[0,0,0,0,0,0];
+  Music.play('rival');B.etr.show=true;B.etr.x=130;sfx('run');await tween(420,k=>B.etr.x=130*(1-k),EASE.out);
+  await say('이런 미친놈! 뭐하는 짓이야!',{name:tn(),keep:1});
+  foeHeroHud();hudE.classList.remove('out');
+  await bsay(`화가 난 ${J(tn(),'이')} 직접 덤벼들었다!`,true);}
+function foeHeroHud(hp){const t=B.foeHero,v=hp==null?t.hp:hp,p=clamp(v/t.max*100,0,100);
+  hudE.querySelector('.nm').textContent=B.o.name;hudE.querySelector('.lv').innerHTML=`<span class="stb" style="background:#e2566f">트레이너</span>`;
+  const bar=hudE.querySelector('.hpb i');bar.style.width=p+'%';bar.style.background=hpColor(p);}
+async function foeHeroHP(to){const t=B.foeHero,from=t.hp;to=clamp(Math.round(to),0,t.max);t.hp=to;
+  await tween(Math.min(900,300+Math.abs(from-to)/t.max*700),k=>foeHeroHud(from+(to-from)*k));foeHeroHud();}
+async function trainerBlink(){B.shake=3;setTimeout(()=>B.shake=0,200);for(let i=0;i<4;i++){B.etr.show=!B.etr.show;await sleep(65);}B.etr.show=true;}
+async function foeHeroTurn(){const act=await chooseAction();B.flinch={};B.moved={};
+  if(act.type==='run'){await bsay('안 돼! 화가 난 트레이너에게 등을 보일 수는 없다!',true);return null;}
+  if(act.type==='switch'){await bsay(`돌아와, ${N(pm())}!`);await recall('p');B.pi=act.idx;await sendPlayer();}
+  else if(act.type==='item')await useItemBattle(act);
+  else{await monVsTrainer(act.mi);if(B.foeHero.hp<=0)return await foeHeroDown();}
+  if(pm().hp>0)await trainerAct(false);
+  if(pm().hp>0)await endTurn(); // 독·화상 (상대 쪽은 몬스터가 없어 건너뛴다)
+  if(pm().hp<=0)return await playerDown();
+  return null;}
+/* 내 몬스터가 트레이너를 공격: 트레이너 체력에 대한 비율로, 위력·공격력·레벨 차이를 반영 */
+async function monVsTrainer(mi){const u=pm(),t=B.foeHero;B.moved.p=1;
+  if(u.st==='slp'){if(--u.slp<=0){u.st='';u.slp=0;updHud('p');await bsay(`${J(N(u),'은')} 잠에서 깨어났다!`);}
+    else{await statusAnim('p','slp');await bsay(`${J(N(u),'은')} 쿨쿨 잠들어 있다.`);return;}}
+  if(u.st==='par'&&chance(25)){await statusAnim('p','par');await bsay(`${J(N(u),'은')} 몸이 저려서 움직일 수 없다!`);return;}
+  const id=mi==='struggle'?'struggle':u.moves[mi].id,mv=MV[id];
+  if(id!=='struggle')u.moves[mi].pp=Math.max(0,u.moves[mi].pp-1);
+  await bsay(`${N(u)}의 ${mv.n}!`);
+  if(mv.a&&rnd(100)>=mv.a){sfx('miss');await bsay(`그러나 ${N(u)}의 공격은 빗나갔다!`);return;}
+  if(!mv.p){await animMove('p',mv);
+    if(mv.fx.self){for(const[s,v]of mv.fx.self)await statChange('p',s,v);}else await bsay(`하지만 ${J(tn(),'은')} 아랑곳하지 않는다!`);return;}
+  await animMove('p',mv);sfx('hit');await trainerBlink();
+  const su=calc(u),ph=mv.c==='p',A=(ph?su[1]*mult(B.st.p[1]):su[3]*mult(B.st.p[3]))*(ph&&u.st==='brn'?.5:1);
+  const crit=Math.random()<1/16,stab=SP[u.sid].t.includes(mv.t)?1.2:1;
+  const d=Math.max(1,Math.round(t.max*(.1+mv.p/500)*Math.sqrt(A/(10+t.lv*1.6))*(.85+Math.random()*.3)*stab*(crit?1.5:1)));
+  await foeHeroHP(t.hp-d);if(crit)await bsay('급소에 맞았다!');
+  if(mv.fx.drain&&u.hp>0){const hh=Math.max(1,Math.floor(d*mv.fx.drain/100));sfx('absorb');await animHP('p',u,u.hp+hh);await bsay(`${tn()}에게서 체력을 흡수했다!`);}
+  if(mv.fx.recoil){const rr=Math.max(1,Math.floor((id==='struggle'?maxHp(u):d)*mv.fx.recoil/100));await animHP('p',u,u.hp-rr);await bsay(`${J(N(u),'은')} 반동으로 데미지를 입었다!`);}
+  if(u.hp<=0)await faint('p');}
+/* 트레이너의 행동: 체력이 적으면 한 번 회복, 아니면 주먹·발차기 (onHero: 내가 직접 싸우는 중) */
+async function trainerAct(onHero,guard){const t=B.foeHero;
+  if(!t.healed&&t.hp<t.max*.3){t.healed=1;await bsay(`${J(tn(),'은')} 고급회복약을 벌컥벌컥 마셨다!`);sfx('heal');await foeHeroHP(t.hp+Math.round(t.max*.45));return;}
+  const a=FOE_ACT[Math.random()<.6?0:1];await bsay(`${tn()}의 ${a.n}!`);
+  sfx('run');await tween(200,k=>B.etr.x=-k*50);await tween(160,k=>B.etr.x=-50*(1-k));
+  if(onHero){const h=B.hero;
+    if(rnd(100)<a.acc){const raw=h.max*(a.lo+Math.random()*(a.hi-a.lo))*(t.lv/Math.max(1,h.lv))**.3*(guard?.4:1);sfx('hit');B.shake=5;setTimeout(()=>B.shake=0,260);await heroHP(h.hp-Math.max(1,Math.round(raw)));}
+    else{sfx('miss');await bsay(`${J(G.name,'은')} 몸을 날려 피했다!`);}
+    return;}
+  const u=pm();
+  if(rnd(100)<a.acc){const dmg=Math.max(1,Math.round(maxHp(u)*(a.lo+Math.random()*(a.hi-a.lo))*(t.lv/Math.max(1,u.lv))**.6));sfx('hit');await hitReact('p',1);await animHP('p',u,u.hp-dmg);}
+  else{sfx('miss');await bsay(`${J(N(u),'은')} 재빨리 피했다!`);}
+  if(u.hp<=0)await faint('p');}
+async function playerDown(){if(!G.party.some(m=>m.hp>0)){if(!B.heroUsed&&await heroStart())return null;return'lose';}
+  B.pi=await partyScreen('forced');await sendPlayer();return null;}
+async function foeHeroDown(){sfx('faint');await tween(420,k=>B.etr.x=k*130);B.etr.show=false;hudE.classList.add('out');
+  await bsay(`${J(tn(),'은')} 털썩 주저앉았다!`,true);
+  await say('크윽... 졌다. 그 몬스터는 이제 네 거야. 잘 돌봐 줘...',{name:tn(),keep:1});
+  return'win';}
+/* 패배: 빼앗았던 몬스터를 트레이너가 되찾아 간다 */
+async function giveBack(){const names=B.stolen.map(m=>N(m));
+  for(const m of B.stolen)for(const list of[G.party,G.box]){const i=list.indexOf(m);if(i>=0)list.splice(i,1);}
+  B.stolen=[];B.pi=0;
+  B.etr.show=true;B.etr.x=130;hudE.classList.add('out');await tween(420,k=>B.etr.x=130*(1-k),EASE.out);
+  await say('흥, 내 몬스터는 돌려받겠어!',{name:tn(),keep:1});
+  await bsay(`${J(tn(),'은')} ${J(names.join(', '),'을')} 되찾아 갔다...`,true);}
