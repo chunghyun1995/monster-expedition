@@ -5,6 +5,8 @@ DS 감성의 **2화면 턴제 몬스터 RPG**입니다. 브라우저에서 바�
 
 ▶ 플레이: GitHub Pages 주소 (`https://<아이디>.github.io/monster-expedition/`)
 
+📱 안드로이드 앱: [최신 APK 내려받기](https://github.com/chunghyun1995/monster-expedition/releases/latest) (Android 7.0 이상, Android 12 · 13 · 14에서 테스트) — 아래 [안드로이드 앱(APK)](#안드로이드-앱apk) 참고
+
 ## 조작
 
 | 동작 | 키보드 | 모바일 / 터치 |
@@ -56,6 +58,38 @@ DS 감성의 **2화면 턴제 몬스터 RPG**입니다. 브라우저에서 바�
 - 2배 정밀 도트: 48×48 몬스터(디더링 명암·색 외곽선·눈 하이라이트), 인물 자동 외곽선·명암, 반 픽셀 타일 디테일
 - 칩튠 BGM 13곡과 팡파르, 효과음, 종마다 다른 울음소리 (Web Audio로 실시간 합성)
 
+## 안드로이드 앱(APK)
+
+웹 게임(`index.html`)을 그대로 담은 안드로이드 앱입니다. 인터넷 없이도 실행되고(글꼴까지 앱에 내장), 게임 내용은 웹 버전과 같습니다.
+
+**설치**
+
+1. 휴대폰에서 [Releases](https://github.com/chunghyun1995/monster-expedition/releases/latest)의 `monster-expedition.apk`를 내려받아 엽니다.
+2. "출처를 알 수 없는 앱" 설치를 허용하라는 안내가 나오면 허용합니다.
+3. 새 버전은 지우지 말고 **그대로 덮어 설치**하세요. 리포트(세이브)가 유지됩니다.
+
+**지원 버전**: Android 7.0(API 24) 이상. `targetSdk 35`. 빌드할 때마다 Android 12(API 31) · 13(API 33) · 14(API 34) 에뮬레이터에 설치해 실행, 뒤로 가기, 저장 유지를 자동으로 확인합니다.
+
+| 항목 | 앱에서의 동작 |
+| --- | --- |
+| 화면 | 상태 표시줄·내비게이션 바를 숨긴 전체 화면, 카메라 구멍(컷아웃)과 키보드 영역은 비워 둠, 가로·세로 회전해도 진행 유지 |
+| 뒤로 가기 | B(취소) 버튼. Android 13 이상은 새 뒤로 가기 방식(OnBackInvokedCallback) 사용 |
+| 소리 | 볼륨 키로 조절, 앱을 벗어나면 멈추고 돌아오면 다시 재생 |
+| 리포트 | 앱 안(WebView localStorage)에 저장. 웹 버전과 세이브는 따로이며, 저장 코드로 서로 옮길 수 있음 |
+| 저장 코드 복사 | 안드로이드 클립보드로 바로 복사 |
+| 기타 | 자동 사냥 중 화면 꺼짐 방지, Android 12+ 게임 앱으로 등록, Android 13+ 테마 아이콘 |
+
+**직접 빌드**: Android Studio로 `android/` 폴더를 열거나, JDK 17과 Android SDK가 있으면
+
+```
+cd android
+./gradlew assembleRelease   # → android/app/build/outputs/apk/release/app-release.apk
+```
+
+빌드할 때 저장소 맨 위의 `index.html`이 앱에 자동으로 들어가므로, 게임을 고친 뒤 `python3 build.py`만 하면 됩니다. `main`에 `index.html`이나 `android/`의 변경이 올라가면 GitHub Actions(`.github/workflows/android.yml`)가 APK를 빌드·테스트하고 Releases에 새 APK를 올립니다.
+
+**서명 키**: 기본은 저장소에 함께 있는 공용 키(`android/app/monster-expedition.jks`, 비밀번호 `monster-expedition`)라서 어디서 빌드해도 서로 덮어 설치됩니다. 공개 저장소에 있는 키이므로, 다른 사람이 같은 서명의 APK를 만들 수도 있습니다. 개인 키로 바꾸려면 저장소 Settings → Secrets에 `ME_KEYSTORE_BASE64`(키 파일 base64), `ME_KEYSTORE_PASSWORD`, `ME_KEY_ALIAS`, `ME_KEY_PASSWORD`를 넣으세요(로컬 빌드는 같은 이름의 환경 변수, `ME_KEYSTORE_FILE`은 키 파일 경로). 키를 바꾸면 기존 앱을 지우고 새로 설치해야 하므로, 먼저 저장 코드로 리포트를 옮겨 두세요.
+
 ## 프로젝트 구조
 
 ```
@@ -74,12 +108,16 @@ src/
   menus.js        원정패드와 모든 메뉴 화면
   battle.js       배틀과 진화
   world.js        필드 이동, 타이틀·오프닝·엔딩, 메인 루프
+android/          안드로이드 앱(APK) 프로젝트
+  app/src/main/   MainActivity(전체 화면 WebView), 매니페스트, 아이콘
+  fonts/          앱에 내장하는 Galmuri 글꼴(OFL)
+  ci/             에뮬레이터 테스트 스크립트
 ```
 
-수정한 뒤에는 `python3 build.py`로 `index.html`을 다시 만들고 커밋하면 GitHub Pages에 반영됩니다.
+수정한 뒤에는 `python3 build.py`로 `index.html`을 다시 만들고 커밋하면 GitHub Pages에 반영되고, `main`이면 새 APK도 Releases에 올라갑니다.
 
 ## 참고
 
 - QR 생성: [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) (MIT, Kazuhiko Arase) — index.html에 포함
-- 폰트: [Galmuri](https://github.com/quiple/galmuri) (SIL Open Font License), jsDelivr CDN으로 불러옵니다. 불러오지 못하면 시스템 글꼴로 표시됩니다.
+- 폰트: [Galmuri](https://github.com/quiple/galmuri) (SIL Open Font License), jsDelivr CDN으로 불러옵니다. 불러오지 못하면 시스템 글꼴로 표시됩니다. 안드로이드 앱에는 Galmuri11·Galmuri9를 내장합니다(`android/fonts/OFL.txt`).
 - 리포트(세이브)는 브라우저의 localStorage에 저장됩니다. v1 세이브와는 호환되지 않습니다.

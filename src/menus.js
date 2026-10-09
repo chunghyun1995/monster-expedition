@@ -278,7 +278,8 @@ const GAME_URL='https://chunghyun1995.github.io/monster-expedition/';
 function saveLink(code){const base=/^https?:$/.test(location.protocol)?location.origin+location.pathname:GAME_URL;return base+'#c='+code;}
 function qrCanvas(text){const q=qrcode(0,'L');q.addData(text);q.make();const n=q.getModuleCount(),qz=2,[c,g]=mkCanvas(n+qz*2,n+qz*2);
   g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.fillStyle='#1d1d2b';for(let y=0;y<n;y++)for(let x=0;x<n;x++)if(q.isDark(y,x))g.fillRect(x+qz,y+qz,1,1);return c;}
-async function copyText(t,ta){try{await navigator.clipboard.writeText(t);return true;}catch(e){}
+async function copyText(t,ta){try{if(window.MEApp){MEApp.copyText(t);return true;}}catch(e){} // 안드로이드 앱
+  try{await navigator.clipboard.writeText(t);return true;}catch(e){}
   try{ta.removeAttribute('readonly');ta.select();const ok=document.execCommand('copy');ta.setAttribute('readonly','');return ok;}catch(e){return false;}}
 /* 저장 코드 보여 주기 */
 async function showSaveCode(){const code=await makeSaveCode(),link=saveLink(code);
