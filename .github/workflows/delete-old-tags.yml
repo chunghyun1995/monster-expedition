@@ -1,0 +1,23 @@
+# 한 번만 쓰는 정리 작업: 지운 릴리스의 태그(apk-9, apk-13) 삭제. 실행한 뒤 이 파일은 지운다.
+name: Delete old tags
+
+on:
+  push:
+    branches: [claude/monster-expedition-apk-s582te]
+    paths: ['.github/workflows/delete-old-tags.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  delete:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete tags apk-9, apk-13
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for tag in apk-9 apk-13; do
+            gh api -X DELETE "repos/${{ github.repository }}/git/refs/tags/$tag"
+          done
+          gh api "repos/${{ github.repository }}/tags" --jq '.[].name'
