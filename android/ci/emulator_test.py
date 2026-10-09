@@ -72,6 +72,26 @@ def diagnose():
     print('--- logcat ---\n' + '\n'.join(lines[-120:]), flush=True)
 
 
+def current_focus():
+    return next((l.strip() for l in adb('shell', 'dumpsys', 'window', check=False).splitlines()
+                 if 'mCurrentFocus' in l), '')
+
+
+def app_focus():
+    # 전체 화면 안내 팝업(ImmersiveModeConfirmation, Android 15+는 설치할 때마다 한 번 뜸)이 떠 있으면
+    # 뒤로 가기가 그 팝업으로 간다. 실제 휴대폰에서도 첫 뒤로 가기는 팝업을 닫는다. 테스트에서는 먼저 닫아 둔다.
+    for _ in range(5):
+        focus = current_focus()
+        if PKG in focus:
+            return True
+        print('포커스가 앱이 아님:', focus, flush=True)
+        if 'ImmersiveModeConfirmation' in focus:
+            key(4)
+        else:
+            time.sleep(1)
+    return False
+
+
 def back_log(page):
     # 뒤로 가기가 게임까지 오지 않았을 때: 어느 창이 포커스였는지, 앱이 뒤로 갔는지, 콜백이 불렸는지
     print('JS:', page.js("JSON.stringify({back: window.__back, visibility: document.visibilityState, focus: document.hasFocus()})"),
@@ -151,6 +171,7 @@ class Page:
 
 
 # ---------- 1. 배포용 APK ----------
+adb('shell', 'settings', 'put', 'secure', 'immersive_mode_confirmations', 'confirmed', check=False)  # 전체 화면 안내 팝업 끄기
 adb('install', '-r', release_apk)
 adb('logcat', '-c')
 launch(20)
@@ -162,8 +183,10 @@ w, h = (int(v) for v in size.split('x'))
 adb('shell', 'input', 'tap', str(w // 2), str(h * 6 // 10))  # 아래 화면 터치 → 게임 시작
 time.sleep(4)
 shot('2-start')
+expect(app_focus(), '앱 창에 포커스')
 key(4)  # 뒤로 가기
 expect(pid() == first, '뒤로 가기를 눌러도 앱이 꺼지지 않음')
+expect(PKG in current_focus(), '뒤로 가기 후에도 게임 화면 유지(홈으로 나가지 않음)')
 shot('3-back')
 log = adb('logcat', '-d')
 expect(f'Process: {PKG}' not in log, '앱 크래시 없음')
@@ -192,6 +215,7 @@ def debug_checks():
     expect(info['bridge'] and info['openUrl'] == 'function', '앱 브리지(MEApp: 클립보드 복사·링크 열기) 연결')
     expect(info['audio'] == 'function/function', '소리 일시정지/재개 함수')
     page.js("window.__back=0;addEventListener('keydown',e=>{if(e.key==='Backspace')window.__back++});1")
+    expect(app_focus(), '앱 창에 포커스')
     key(4)  # (뒤로 가기에 앱이 꺼지지 않는지는 1단계에서 확인)
     if page.js('window.__back') != 1:
         back_log(page)
