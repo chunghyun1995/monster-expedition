@@ -40,8 +40,14 @@ def shot(name):
 
 
 def launch(wait):
-    report['last_launch'] = adb('shell', 'am', 'start', '-W', '-n', ACT)
-    time.sleep(wait)
+    # 설치·강제 종료 직후에는 패키지 관리자가 마무리하면서 막 띄운 앱을 한 번 더 종료하기도 한다
+    # ("Force stopping ...: pkg removed"). 프로세스가 없으면 다시 띄운다. 크래시는 끝에서 따로 검사한다.
+    for attempt in range(3):
+        report['last_launch'] = adb('shell', 'am', 'start', '-W', '-n', ACT)
+        time.sleep(wait)
+        if pid():
+            return
+        print(f'앱 프로세스가 없어 다시 실행 ({attempt + 1})', flush=True)
 
 
 def key(code, wait=2):
@@ -60,8 +66,8 @@ def expect(ok, what):
 def diagnose():
     # 실패 원인을 작업 로그에서 바로 볼 수 있게 실행 결과와 logcat 핵심 줄을 출력한다
     print('--- last am start ---\n' + report.get('last_launch', ''), flush=True)
-    keys = ('AndroidRuntime', PKG, 'ActivityTaskManager', 'ActivityManager', 'chromium', 'cr_', 'lowmemorykiller',
-            'DEBUG', 'libc')
+    keys = ('AndroidRuntime', PKG, 'MonsterExpedition', 'AwBrowserTerminator', 'cr_AwContents', 'sandboxed_process',
+            'lowmemorykiller', 'lmkd', 'WebViewFactory')
     lines = [l for l in adb('logcat', '-d', check=False).splitlines() if any(k in l for k in keys)]
     print('--- logcat ---\n' + '\n'.join(lines[-120:]), flush=True)
 
@@ -143,6 +149,7 @@ expect(not js_errors, 'JS 오류 없음' + (': ' + js_errors[0] if js_errors els
 
 # ---------- 2. 디버그 APK로 게임 내부 확인 ----------
 adb('install', '-r', debug_apk)
+time.sleep(3)  # 패키지 교체 마무리(이전 프로세스 종료·브로드캐스트) 대기
 launch(15)
 page = Page()
 info = json.loads(page.js("""JSON.stringify({
@@ -175,4 +182,9 @@ expect(page.js("localStorage.getItem('ci-test')") == 'saved', '앱을 완전히 
 page.js("localStorage.removeItem('ci-test');1")
 page.close()
 shot('4-relaunch')
+log = adb('logcat', '-d')
+expect(f'Process: {PKG}' not in log, '테스트 전체에서 앱 크래시 없음')
+gone = [l for l in log.splitlines() if 'WebView renderer gone' in l]
+if gone:
+    print('참고: WebView 렌더러 종료 후 다시 만듦\n' + '\n'.join(gone), flush=True)
 finish(0)

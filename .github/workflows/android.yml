@@ -120,6 +120,7 @@ jobs:
           api-level: ${{ matrix.api-level }}
           target: google_apis
           arch: x86_64
+          ram-size: 4096M
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: python android/ci/emulator_test.py ${{ matrix.api-level }} dist/monster-expedition.apk dist/monster-expedition-debug.apk test-output
