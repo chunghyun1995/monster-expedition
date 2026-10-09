@@ -15,12 +15,12 @@ fun env(name: String): String? = System.getenv(name)?.takeIf { it.isNotBlank() }
 
 android {
     namespace = "io.github.chunghyun1995.monsterexpedition"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "io.github.chunghyun1995.monsterexpedition"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = buildMinutes
         versionName = "3.0 ($gameBuild)"
     }

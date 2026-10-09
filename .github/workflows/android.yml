@@ -1,7 +1,7 @@
 # 몬스터 원정대 안드로이드 APK
-#  - build: index.html(웹 게임)을 담은 APK 빌드 → Actions 아티팩트로 올림
-#  - emulator-test: Android 12 · 13 · 14 에뮬레이터에 설치해 실행 확인 (android/ci/emulator_test.py)
-#  - release: main 브랜치면 GitHub Releases에 APK 게시 (휴대폰에서 바로 내려받기)
+#  - build: index.html(웹 게임)을 담은 APK와 플레이 스토어 업로드용 AAB 빌드 → Actions 아티팩트로 올림
+#  - emulator-test: Android 12 · 13 · 14 · 15 · 16 에뮬레이터에 설치해 실행 확인 (android/ci/emulator_test.py)
+#  - release: main 브랜치면 GitHub Releases에 APK(휴대폰에서 바로 설치)와 AAB(Play Console 업로드) 게시
 name: Android APK
 
 on:
@@ -54,7 +54,7 @@ jobs:
           ME_KEYSTORE_PASSWORD: ${{ secrets.ME_KEYSTORE_PASSWORD }}
           ME_KEY_ALIAS: ${{ secrets.ME_KEY_ALIAS }}
           ME_KEY_PASSWORD: ${{ secrets.ME_KEY_PASSWORD }}
-        run: ./gradlew --no-daemon assembleRelease assembleDebug
+        run: ./gradlew --no-daemon assembleRelease assembleDebug bundleRelease
 
       - name: Collect APKs
         run: |
@@ -64,6 +64,24 @@ jobs:
           TOOLS="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)"
           "${TOOLS}aapt" dump badging dist/monster-expedition.apk | head -3
           "${TOOLS}apksigner" verify --print-certs dist/monster-expedition.apk | grep -E 'DN|SHA-256'
+          cp android/app/build/outputs/bundle/release/app-release.aab dist/monster-expedition.aab
+
+      # AAB(Android App Bundle): 플레이 스토어에 올리는 파일. 형식 검사 + 서명·targetSdk·버전 확인
+      - name: Check AAB
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download --repo google/bundletool --pattern 'bundletool-all-*.jar' --output "$RUNNER_TEMP/bundletool.jar"
+          java -jar "$RUNNER_TEMP/bundletool.jar" validate --bundle dist/monster-expedition.aab > /dev/null
+          java -jar "$RUNNER_TEMP/bundletool.jar" dump manifest --bundle dist/monster-expedition.aab > "$RUNNER_TEMP/aab-manifest.xml"
+          grep -oE '(versionCode|versionName|minSdkVersion|targetSdkVersion)="[^"]*"' "$RUNNER_TEMP/aab-manifest.xml"
+          grep -q 'targetSdkVersion="36"' "$RUNNER_TEMP/aab-manifest.xml" || { echo "::error::AAB targetSdk가 36이 아닙니다."; exit 1; }
+          if grep -q 'android.permission.' "$RUNNER_TEMP/aab-manifest.xml"; then
+            echo "::error::권한이 추가되었습니다. 개인정보처리방침(privacy.html)·데이터 보안 답변을 함께 고치세요."
+            grep -o 'android.permission.[A-Z_]*' "$RUNNER_TEMP/aab-manifest.xml"; exit 1
+          fi
+          jarsigner -verify dist/monster-expedition.aab | tail -1
+          keytool -printcert -jarfile dist/monster-expedition.aab | grep -E 'Owner|SHA256'
 
       - uses: actions/upload-artifact@v4
         with:
@@ -74,6 +92,11 @@ jobs:
         with:
           name: monster-expedition-debug-apk
           path: dist/monster-expedition-debug.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: monster-expedition-aab
+          path: dist/monster-expedition.aab
 
   emulator-test:
     needs: build
@@ -86,13 +109,15 @@ jobs:
           - api-level: 31 # Android 12
           - api-level: 33 # Android 13
           - api-level: 34 # Android 14
+          - api-level: 35 # Android 15
+          - api-level: 36 # Android 16
     name: emulator-test (API ${{ matrix.api-level }})
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/download-artifact@v4
         with:
-          pattern: monster-expedition-*
+          pattern: monster-expedition-*apk
           path: dist
           merge-multiple: true
 
@@ -143,8 +168,9 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: monster-expedition-apk
+          pattern: monster-expedition-{apk,aab}
           path: dist
+          merge-multiple: true
 
       - uses: softprops/action-gh-release@v2
         with:
@@ -152,12 +178,15 @@ jobs:
           name: 몬스터 원정대 APK ${{ github.run_number }}
           target_commitish: ${{ github.sha }}
           make_latest: true
-          files: dist/monster-expedition.apk
+          files: |
+            dist/monster-expedition.apk
+            dist/monster-expedition.aab
           body: |
             안드로이드 휴대폰에서 아래 **monster-expedition.apk**를 내려받아 설치하세요.
             (처음 설치할 때 "출처를 알 수 없는 앱 설치" 허용이 필요할 수 있어요.)
 
-            - 지원: Android 7.0 이상 (Android 12 · 13 · 14 에뮬레이터 테스트 통과)
+            - 지원: Android 7.0 이상 (Android 12 · 13 · 14 · 15 · 16 에뮬레이터 테스트 통과)
+            - **monster-expedition.aab**는 플레이 스토어(Play Console) 업로드용 파일입니다. 휴대폰에는 APK를 설치하세요.
             - 이전 버전이 깔려 있으면 지우지 말고 그대로 덮어 설치하면 리포트(세이브)가 유지됩니다.
               (apk-13 이하는 예전 공용 키로 서명돼 있어서, 그 버전이 깔려 있으면 저장 코드로 리포트를 옮긴 뒤 지우고 설치하세요.)
             - 커밋: ${{ github.sha }}

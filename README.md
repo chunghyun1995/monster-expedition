@@ -69,7 +69,7 @@
 2. "출처를 알 수 없는 앱" 설치를 허용하라는 안내가 나오면 허용합니다.
 3. 새 버전은 지우지 말고 **그대로 덮어 설치**하세요. 리포트(세이브)가 유지됩니다.
 
-**지원 버전**: Android 7.0(API 24) 이상. `targetSdk 35`. 빌드할 때마다 Android 12(API 31) · 13(API 33) · 14(API 34) 에뮬레이터에 설치해 실행, 뒤로 가기, 저장 유지를 자동으로 확인합니다.
+**지원 버전**: Android 7.0(API 24) 이상. `targetSdk 36`(Android 16, 플레이 스토어 요구 수준). 빌드할 때마다 Android 12(API 31) · 13(API 33) · 14(API 34) · 15(API 35) · 16(API 36) 에뮬레이터에 설치해 실행, 뒤로 가기, 저장 유지를 자동으로 확인합니다.
 
 | 항목 | 앱에서의 동작 |
 | --- | --- |
@@ -78,6 +78,7 @@
 | 소리 | 볼륨 키로 조절, 앱을 벗어나면 멈추고 돌아오면 다시 재생 |
 | 리포트 | 앱 안(WebView localStorage)에 저장. 웹 버전과 세이브는 따로이며, 저장 코드로 서로 옮길 수 있음 |
 | 저장 코드 복사 | 안드로이드 클립보드로 바로 복사 |
+| 권한·개인정보 | 요청하는 권한 없음(인터넷 권한도 없음), 개인정보 수집 없음. 설정 → 개인정보처리방침은 브라우저로 [privacy.html](https://chunghyun1995.github.io/monster-expedition/privacy.html)을 엶 |
 | 기타 | 자동 사냥 중 화면 꺼짐 방지, Android 12+ 게임 앱으로 등록, Android 13+ 테마 아이콘 |
 
 **직접 빌드**: Android Studio로 `android/` 폴더를 열거나, JDK 17과 Android SDK가 있으면
@@ -85,11 +86,14 @@
 ```
 cd android
 ./gradlew assembleRelease   # → android/app/build/outputs/apk/release/app-release.apk
+./gradlew bundleRelease     # → android/app/build/outputs/bundle/release/app-release.aab (플레이 스토어 업로드용)
 ```
 
-빌드할 때 저장소 맨 위의 `index.html`이 앱에 자동으로 들어가므로, 게임을 고친 뒤 `python3 build.py`만 하면 됩니다. `main`에 `index.html`이나 `android/`의 변경이 올라가면 GitHub Actions(`.github/workflows/android.yml`)가 APK를 빌드·테스트하고 Releases에 새 APK를 올립니다.
+빌드할 때 저장소 맨 위의 `index.html`이 앱에 자동으로 들어가므로, 게임을 고친 뒤 `python3 build.py`만 하면 됩니다. `main`에 `index.html`이나 `android/`의 변경이 올라가면 GitHub Actions(`.github/workflows/android.yml`)가 APK와 AAB를 빌드·테스트하고 Releases에 새 APK(휴대폰 설치용)와 AAB(플레이 스토어 업로드용)를 올립니다.
 
 **서명 키**: Releases에 올라가는 APK는 저장소에 올리지 않은 개인 키로 서명합니다. GitHub Actions는 저장소 시크릿 4개(`ME_KEYSTORE_BASE64` 키 파일 base64, `ME_KEYSTORE_PASSWORD`, `ME_KEY_ALIAS`, `ME_KEY_PASSWORD`)로 키를 받고, 시크릿이 없으면 빌드를 멈춥니다. 로컬에서 같은 키로 서명하려면 환경 변수 `ME_KEYSTORE_FILE`(키 파일 경로)과 비밀번호·별칭 변수를 지정하세요. 지정하지 않으면 배포용은 서명 없이(`app-release-unsigned.apk`), 디버그용은 Android 기본 디버그 키로 만들어집니다. 키 파일과 비밀번호를 잃어버리면 같은 앱으로 업데이트를 낼 수 없으니 꼭 백업해 두세요.
+
+**플레이 스토어**: 등록에 필요한 아이콘·그래픽 이미지·스크린샷·소개 문구·정책 답변과 등록 순서는 [`store/`](store/README.md)에 있습니다.
 
 > APK 13 이하(apk-1 ~ apk-13)는 예전 공용 키로 서명돼 있어서 새 APK를 덮어 설치할 수 없습니다. 그 버전을 쓰고 있다면 리포트 → 저장 코드로 진행을 옮겨 둔 뒤, 앱을 지우고 새로 설치해 저장 코드로 불러오세요.
 
@@ -115,6 +119,8 @@ android/          안드로이드 앱(APK) 프로젝트
   app/src/main/   MainActivity(전체 화면 WebView), 매니페스트, 아이콘
   fonts/          앱에 내장하는 Galmuri 글꼴(OFL)
   ci/             에뮬레이터 테스트 스크립트
+privacy.html      개인정보처리방침 (GitHub Pages)
+store/            플레이 스토어 등록 자료(아이콘·그래픽·스크린샷·문구·등록 순서)
 ```
 
 수정한 뒤에는 `python3 build.py`로 `index.html`을 다시 만들고 커밋하면 GitHub Pages에 반영되고, `main`이면 새 APK도 Releases에 올라갑니다.
