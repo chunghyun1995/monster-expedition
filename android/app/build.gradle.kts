@@ -26,23 +26,28 @@ android {
     }
 
     signingConfigs {
-        // 기본은 저장소에 함께 둔 공용 키(monster-expedition.jks). 어디서 빌드해도 서명이 같아서 덮어 설치된다.
-        // 나만의 키를 쓰려면 환경 변수(ME_KEYSTORE_FILE 등, README 참고)로 바꾼다.
-        create("shared") {
-            storeFile = file(env("ME_KEYSTORE_FILE") ?: "monster-expedition.jks")
-            storePassword = env("ME_KEYSTORE_PASSWORD") ?: "monster-expedition"
-            keyAlias = env("ME_KEY_ALIAS") ?: "monster-expedition"
-            keyPassword = env("ME_KEY_PASSWORD") ?: "monster-expedition"
+        // 배포용 개인 서명 키. 키 파일은 저장소에 올리지 않고, GitHub Actions에서는 저장소 시크릿,
+        // 로컬에서는 환경 변수(ME_KEYSTORE_FILE·ME_KEYSTORE_PASSWORD·ME_KEY_ALIAS·ME_KEY_PASSWORD)로 넘긴다.
+        env("ME_KEYSTORE_FILE")?.let { path ->
+            create("private") {
+                storeFile = file(path)
+                storePassword = env("ME_KEYSTORE_PASSWORD") ?: error("ME_KEYSTORE_PASSWORD 환경 변수가 없습니다.")
+                keyAlias = env("ME_KEY_ALIAS") ?: error("ME_KEY_ALIAS 환경 변수가 없습니다.")
+                keyPassword = env("ME_KEY_PASSWORD") ?: env("ME_KEYSTORE_PASSWORD")
+            }
         }
     }
 
     buildTypes {
+        val privateKey = signingConfigs.findByName("private")
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("shared")
+            // 개인 키가 없으면 서명하지 않은 APK(app-release-unsigned.apk)가 나온다
+            signingConfig = privateKey
         }
         debug {
-            signingConfig = signingConfigs.getByName("shared")
+            // 개인 키가 있으면 디버그 APK도 같은 키로 서명해 배포용 위에 덮어 설치할 수 있게 한다
+            if (privateKey != null) signingConfig = privateKey
         }
     }
 
