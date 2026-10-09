@@ -234,3 +234,5 @@ body.land #pad .mid{left:auto;right:8px;top:8px;transform:none}
 @keyframes porBob{50%{transform:translateY(1px)}}
 @keyframes porIn{from{transform:translateY(calc(var(--u)*6));opacity:0}}
 #dlg.withpor .tag{left:calc(var(--u)*58)}
+.updbar{position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:1000;display:flex;gap:10px;align-items:center;padding:8px 12px;border-radius:10px;background:#fffdf2;color:#2b2f45;border:2px solid #3d4562;box-shadow:0 3px 0 rgba(0,0,0,.35);font-size:14px}
+.updbar button{font:inherit;border:none;border-radius:7px;padding:5px 10px;background:#3d7ad6;color:#fff;cursor:pointer}

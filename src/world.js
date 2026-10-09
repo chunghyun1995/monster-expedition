@@ -210,8 +210,15 @@ function loop(now){const dt=Math.min(.05,(now-lastT)/1000);lastT=now;frame++;
 async function startFromCode(g,lg){try{localStorage.setItem(SAVE_KEY,JSON.stringify(g));}catch(e){}
   lg.remove();hideMsg();await fadeTo(1);G=g;G.flags=G.flags||{};G.badges=G.badges||[0,0];G.box=G.box||[];busy=true;state='world';enterMap(G.map,G.x,G.y,G.dir||'down',{sign:1});Pad.show();await fadeTo(0);busy=false;
   await say(`저장 코드를 불러왔다! ${G.name}의 모험을 이어서 시작한다.`);}
-async function titleScreen(){state='title';botMode='title';Music.play('title');clearPages(BOT);
-  const lg=page(TOP,`<div class="logo"><h1>몬스터 원정대</h1><p>MONSTER EXPEDITION</p></div><div class="ver">Ver 2.0</div>`);
+/* 새 버전 확인: 서버의 index.html이 지금 실행 중인 것과 다르면 새로고침 안내 */
+async function checkUpdate(){if(!/^https?:$/.test(location.protocol))return;
+  try{const t=await(await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='(\w+)'/.exec(t);
+    if(!m||m[1]===BUILD)return;
+    const bar=document.createElement('div');bar.className='updbar';bar.innerHTML='<span>새 버전이 있어요!</span><button>새로고침</button>';
+    bar.querySelector('button').addEventListener('click',e=>{e.stopPropagation();location.replace(location.pathname+'?v='+m[1]+location.hash);});
+    document.body.appendChild(bar);}catch(e){}}
+async function titleScreen(){checkUpdate();state='title';botMode='title';Music.play('title');clearPages(BOT);
+  const lg=page(TOP,`<div class="logo"><h1>몬스터 원정대</h1><p>MONSTER EXPEDITION</p></div><div class="ver">Ver 3.0 · ${BUILD}</div>`);
   const st=page(BOT,`<div class="abs blink" style="left:0;right:0;top:${U(80)};text-align:center;color:#fff;font-size:${U(14)}">— 터치 또는 Z 키로 시작 —</div>
     <div class="abs" style="left:0;right:0;top:${U(170)};text-align:center;color:#8f9ad8;font-size:${U(7.5)}">오리지널 몬스터 RPG · 소리는 M 키로 켜고 끕니다</div>`);
   await new Promise(res=>{const h={tapA:1,key(k){if(k==='a'||k==='menu'){popH(h);sfx('sel');res();}}};pushH(h);st.addEventListener('click',()=>h.key('a'));});
