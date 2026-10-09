@@ -67,18 +67,28 @@ def finish(code):
 class Page:
     """디버그 빌드의 WebView에 크롬 개발자 도구 프로토콜로 붙어 JS를 실행한다."""
 
+    port = 9222
+
     def __init__(self):
-        adb('forward', 'tcp:9222', f'localabstract:webview_devtools_remote_{pid()}')
+        Page.port += 1  # 연결마다 새 포트(이전 연결의 포워딩이 남아 있어도 섞이지 않게)
+        self.port = Page.port
         pages = []
-        for _ in range(30):
-            try:
-                pages = [p for p in json.load(urllib.request.urlopen('http://127.0.0.1:9222/json', timeout=5))
-                         if p.get('type') == 'page']
-                if pages:
-                    break
-            except Exception:
-                pass
+        for _ in range(60):
+            # 앱이 막 켜지는 중이면 PID·디버깅 소켓이 아직 없을 수 있어 매번 다시 찾는다
+            p = pid().split()
+            if p:
+                adb('forward', f'tcp:{self.port}', f'localabstract:webview_devtools_remote_{p[0]}', check=False)
+                try:
+                    url = f'http://127.0.0.1:{self.port}/json'
+                    pages = [x for x in json.load(urllib.request.urlopen(url, timeout=5)) if x.get('type') == 'page']
+                    if pages:
+                        break
+                except Exception:
+                    pass
             time.sleep(1)
+        if not pages:
+            print('pid:', pid(), 'devtools sockets:', adb('shell', 'grep', 'devtools', '/proc/net/unix', check=False),
+                  flush=True)
         expect(pages, 'WebView 원격 디버깅 연결')
         # Origin 헤더를 보내면 최신 WebView(Chrome 111+)가 연결을 거부한다
         self.ws = websocket.create_connection(pages[0]['webSocketDebuggerUrl'], timeout=30, suppress_origin=True)
@@ -98,7 +108,7 @@ class Page:
 
     def close(self):
         self.ws.close()
-        adb('forward', '--remove', 'tcp:9222', check=False)
+        adb('forward', '--remove', f'tcp:{self.port}', check=False)
 
 
 # ---------- 1. 배포용 APK ----------

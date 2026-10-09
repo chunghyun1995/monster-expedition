@@ -105,6 +105,16 @@ jobs:
 
       - run: pip install websocket-client
 
+      # 시스템 이미지 내려받기가 가끔 실패해서(ZipFile unknown archive) 미리 받아 둔다(최대 3번)
+      - name: Download system image
+        run: |
+          DIR="$ANDROID_HOME/system-images/android-${{ matrix.api-level }}/google_apis/x86_64"
+          for i in 1 2 3; do
+            yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "system-images;android-${{ matrix.api-level }};google_apis;x86_64" > /dev/null || true
+            [ -f "$DIR/source.properties" ] && break
+            echo "retry $i"; sleep 10
+          done
+
       - uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.api-level }}
