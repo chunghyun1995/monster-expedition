@@ -1,0 +1,158 @@
+# 몬스터 원정대 안드로이드 APK
+#  - build: index.html(웹 게임)을 담은 APK 빌드 → Actions 아티팩트로 올림
+#  - emulator-test: Android 12 · 13 · 14 에뮬레이터에 설치해 실행 확인 (android/ci/emulator_test.py)
+#  - release: main 브랜치면 GitHub Releases에 APK 게시 (휴대폰에서 바로 내려받기)
+name: Android APK
+
+on:
+  push:
+    paths:
+      - 'index.html'
+      - 'android/**'
+      - '.github/workflows/android.yml'
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'android/**'
+      - '.github/workflows/android.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      # 저장소 시크릿에 개인 서명 키(ME_KEYSTORE_BASE64 등)가 있으면 그 키로, 없으면 저장소의 공용 키로 서명
+      - name: Private signing key (optional)
+        env:
+          KEYSTORE_B64: ${{ secrets.ME_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            echo "ME_KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+            echo "개인 서명 키 사용"
+          else
+            echo "공용 서명 키(android/app/monster-expedition.jks) 사용"
+          fi
+
+      - name: Build APK
+        working-directory: android
+        env:
+          ME_KEYSTORE_PASSWORD: ${{ secrets.ME_KEYSTORE_PASSWORD }}
+          ME_KEY_ALIAS: ${{ secrets.ME_KEY_ALIAS }}
+          ME_KEY_PASSWORD: ${{ secrets.ME_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon assembleRelease assembleDebug
+
+      - name: Collect APKs
+        run: |
+          mkdir -p dist
+          cp android/app/build/outputs/apk/release/app-release.apk dist/monster-expedition.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk dist/monster-expedition-debug.apk
+          AAPT="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)aapt"
+          "$AAPT" dump badging dist/monster-expedition.apk | head -3
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: monster-expedition-apk
+          path: dist/monster-expedition.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: monster-expedition-debug-apk
+          path: dist/monster-expedition-debug.apk
+
+  emulator-test:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - api-level: 31 # Android 12
+          - api-level: 33 # Android 13
+          - api-level: 34 # Android 14
+    name: emulator-test (API ${{ matrix.api-level }})
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: monster-expedition-*
+          path: dist
+          merge-multiple: true
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: pip install websocket-client
+
+      # 시스템 이미지 내려받기가 가끔 실패해서(ZipFile unknown archive) 미리 받아 둔다(최대 3번)
+      - name: Download system image
+        run: |
+          DIR="$ANDROID_HOME/system-images/android-${{ matrix.api-level }}/google_apis/x86_64"
+          for i in 1 2 3; do
+            yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "system-images;android-${{ matrix.api-level }};google_apis;x86_64" > /dev/null || true
+            [ -f "$DIR/source.properties" ] && break
+            echo "retry $i"; sleep 10
+          done
+
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: google_apis
+          arch: x86_64
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: python android/ci/emulator_test.py ${{ matrix.api-level }} dist/monster-expedition.apk dist/monster-expedition-debug.apk test-output
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emulator-api${{ matrix.api-level }}
+          path: test-output
+
+  release:
+    needs: [build, emulator-test]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: monster-expedition-apk
+          path: dist
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-${{ github.run_number }}
+          name: 몬스터 원정대 APK ${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          files: dist/monster-expedition.apk
+          body: |
+            안드로이드 휴대폰에서 아래 **monster-expedition.apk**를 내려받아 설치하세요.
+            (처음 설치할 때 "출처를 알 수 없는 앱 설치" 허용이 필요할 수 있어요.)
+
+            - 지원: Android 7.0 이상 (Android 12 · 13 · 14 에뮬레이터 테스트 통과)
+            - 이전 버전이 깔려 있으면 지우지 말고 그대로 덮어 설치하면 리포트(세이브)가 유지됩니다.
+            - 커밋: ${{ github.sha }}

@@ -19,6 +19,11 @@ function audioInit(){try{
 function applyVolume(){if(!AC)return;const t=AC.currentTime;master.gain.setValueAtTime(muted?0:1,t);
   bgmGain.gain.setValueAtTime([0,.028,.045,.065,.09,.12][SET.bgm]||0,t);sfxGain.gain.setValueAtTime(SET.sfx?.17:0,t);}
 function toggleMute(){muted=!muted;applyVolume();if(typeof toast==='function')toast(muted?'소리 꺼짐':'소리 켜짐');}
+// 다른 앱·탭으로 가면 소리를 멈추고, 돌아오면 다시 재생 (안드로이드 앱도 이 함수를 부름)
+let bgPaused=false;
+function audioPause(){try{if(AC&&AC.state==='running'){bgPaused=true;AC.suspend();}}catch(e){}}
+function audioResume(){try{if(AC&&bgPaused){bgPaused=false;AC.resume();}}catch(e){}}
+document.addEventListener('visibilitychange',()=>document.hidden?audioPause():audioResume());
 
 /* ---------- 효과음 ---------- */
 function osc(f,d,{type='square',duty=0,v=.5,slide=0,delay=0,dest=null,attack=.012}={}){if(!AC)return;const t=AC.currentTime+delay,o=AC.createOscillator(),g=AC.createGain();

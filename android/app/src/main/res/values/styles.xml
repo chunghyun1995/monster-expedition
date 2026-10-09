@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 게임 배경색(#14161f)으로 시작 화면부터 어둡게, 제목 표시줄 없이 -->
+    <style name="GameTheme" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/game_bg</item>
+        <item name="android:colorBackground">@color/game_bg</item>
+        <item name="android:statusBarColor">@color/game_bg</item>
+        <item name="android:navigationBarColor">@color/game_bg</item>
+    </style>
+    <color name="game_bg">#14161f</color>
+</resources>
