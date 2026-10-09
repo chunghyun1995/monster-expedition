@@ -87,7 +87,7 @@ document.querySelectorAll('#pad button').forEach(b=>{const k=b.dataset.k;
 $('#scrTop').addEventListener('click',()=>{const h=topH();if(h&&h.tapA)press('a');});
 $('#botUI').addEventListener('click',e=>{if(e.target!==$('#botUI')&&!e.target.classList.contains('backdrop'))return;const h=topH();if(h&&h.tapA)press('a');});
 
-/* ---------- 화면 크기 (DS 2화면) ---------- */
+/* ---------- 화면 크기 (2화면) ---------- */
 function layout(){const coarse=matchMedia('(pointer:coarse)').matches;
   const land=coarse&&innerWidth>innerHeight*1.15; // 휴대폰 가로: 패드를 화면 양옆에
   const pbMax=land?Math.min(innerHeight/4.2,58):Math.min((innerWidth-12)/5.4,62);

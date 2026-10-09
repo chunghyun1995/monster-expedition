@@ -1,7 +1,7 @@
 /* =========================================================
    maps.js — 지도 데이터와 이벤트 스크립트
    바깥 타일: # 나무 . 땅 , 풀숲 = 길 ~ 물 f 꽃 s 표지판 r 바위 F 울타리 L 턱 Q 다리 D 문
-             H/K 집 B 연구소 C 몬스터센터 M 상점 G 체육관
+             H/K 집 B 연구소 C 몬스터 쉼터 M 상점 G 체육관
    실내 타일: w 벽 . 바닥 m 출구매트 c 카펫 T 탁자 K 카운터 S 책장 P PC h 회복기 v TV b 침대 p 화분 R 바위 Y 석상 ~ 물 x 빈공간
    ========================================================= */
 const RIVAL='도윤';
@@ -71,7 +71,7 @@ defMap('lab',{name:'한결 연구소',music:'town',bg:'lab',floor:'lab',wall:'#d
      await say(c>=20?'정말 대단하구나! 너는 진정한 몬스터 박사가 될 수 있겠어!':c>=10?'좋아, 그 기세로 계속 가 보렴!':'아직 갈 길이 멀구나. 풀숲 곳곳을 찾아보렴!',o);}},
    {id:'rival_lab',x:8,y:5,dir:'left',look:'rival',name:RIVAL,cond:()=>!G.flags.rival1,talk:async()=>{await say(`늦었잖아, ${nm()}! 나는 네가 먼저 고르게 해 줄게. 대인배니까!`,{name:RIVAL});}},
    {id:'aide1',x:2,y:9,dir:'down',look:'aide',name:'연구원',text:['박사님은 젊었을 때 몬스터 원정대의 대장이셨대요.','몬스터는 레벨이 오르면 모습이 바뀌기도 해요. 이걸 "진화"라고 하죠.']},
-   {id:'aide2',x:9,y:9,dir:'down',look:'aide',name:'연구원',wander:1,text:['몬스터 센터의 PC로 보관함을 이용할 수 있어요.','파티에는 6마리까지 데리고 다닐 수 있답니다.']}],
+   {id:'aide2',x:9,y:9,dir:'down',look:'aide',name:'연구원',wander:1,text:['몬스터 쉼터의 PC로 보관함을 이용할 수 있어요.','파티에는 6마리까지 데리고 다닐 수 있답니다.']}],
  trig:[{x:4,y:9,w:4,h:2,cond:()=>!G.flags.labIntro,run:labIntro}]});
 async function labIntro(){G.flags.labIntro=1;const prof=npcById('prof'),o={name:'한결 박사'};
   await emoteOn(prof,'!');await say(`오, 왔구나 ${nm()}! 기다리고 있었단다.`,o);
@@ -89,7 +89,7 @@ async function pickStarter(i){const[x,y,sid]=STARTERS[i];
     if(G.flags.dec===7&&!G.flags.decHint){G.flags.decHint=1;const prof=npcById('prof');await emoteOn(prof,'?');await say('흐음… 셋 다 마음에 안 드는 눈치로구나. 잠깐 나한테 와 보겠니?',{name:'한결 박사'});}
     return;}
   await giveStarter(sid);}
-/* 이스터에그: 세 캡슐을 모두 거절하면 박사의 비밀 몬스터(찌릿쥐) */
+/* 이스터에그: 세 캡슐을 모두 거절하면 박사의 비밀 몬스터(찌릿냥) */
 async function secretStarter(){const o={name:'한결 박사'},sid=17,s=SP[sid],prof=npcById('prof');
   await say('허허, 고집 센 녀석이로구나. 사실 오늘 아침 연구소 뒷마당에서 이 녀석이 전선 줄을 갉아 먹고 있었단다.',o);
   await say('캡슐에 들어가는 걸 질색해서 아직 아무에게도 맡기지 못했는데… 어쩐지 너랑은 잘 맞을 것 같구나.',o);
@@ -101,7 +101,7 @@ async function secretStarter(){const o={name:'한결 박사'},sid=17,s=SP[sid],p
   if(r!==0){G.flags.dec=0;await say('그래, 천천히 다시 골라 보렴.',o);return;}
   await giveStarter(sid,{secret:1});
   await say('아, 그리고 하나만 말해 두마. 전기 기술은 땅 타입에게 전혀 통하지 않는단다.',o);
-  await say('바위시티 체육관은 꽤 고생할 거야. 풀숲에서 동료를 모으거나, 몬스터 센터의 합성 연구원을 찾아가 보렴.',o);}
+  await say('바위시티 체육관은 꽤 고생할 거야. 풀숲에서 동료를 모으거나, 몬스터 쉼터의 합성 연구원을 찾아가 보렴.',o);}
 async function giveStarter(sid,opt={}){const s=SP[sid];
   G.starter=sid;G.rivalStarter=COUNTER[sid];G.flags.starter=1;if(opt.secret)G.flags.secretStarter=1;
   const m=makeMon(sid,5,{met:{map:'한결 연구소',lv:5},ot:G.name,shiny:false});addMon(m);G.seen[sid]=G.caught[sid]=1;
@@ -195,9 +195,9 @@ defMap('city',{name:'바위시티',out:1,music:'city',bg:'city',region:'city',
  links:{s:'route1',e:'route2'},
  warps:{'12,5':['gym1',6,14,'up'],'5,10':['center1',6,8,'up'],'19,10':['mart1',5,7,'up'],'3,16':['chouse',4,6,'up']},
  signs:{'4,3':['바위시티','단단한 의지가 모이는 바위의 도시']},
- npcs:[{id:'c_old',x:8,y:6,dir:'down',look:'old',name:'할아버지',text:['체육관 관장 단단은 바위 타입 몬스터를 쓴다네.','바위에는 물이나 풀 기술이 잘 통하지. 불꽃과 비행은 고전할 게야.']},
+ npcs:[{id:'c_old',x:8,y:6,dir:'down',look:'old',name:'할아버지',text:['체육관 관장 단단은 바위 타입 몬스터를 쓴다네.','바위에는 물이나 풀 기술이 잘 통하지. 불꽃과 바람은 고전할 게야.']},
    {id:'c_girl',x:16,y:13,dir:'left',look:'lady',name:'아가씨',wander:1,text:['동쪽 2번 도로 숲에는 여러 타입의 몬스터가 살아요.','상점에서 상태 이상 치료약도 꼭 챙기세요!']},
-   {id:'c_kid',x:7,y:12,dir:'up',look:'kid',name:'꼬마',wander:1,text:['몬스터 센터에서는 공짜로 몬스터를 회복시켜 줘!','몬스터 두 마리를 합성하면 더 높은 등급의 몬스터가 된대! 메뉴의 몬스터 화면에서도 할 수 있어.']},
+   {id:'c_kid',x:7,y:12,dir:'up',look:'kid',name:'꼬마',wander:1,text:['몬스터 쉼터에서는 공짜로 몬스터를 회복시켜 줘!','몬스터 두 마리를 합성하면 더 높은 등급의 몬스터가 된대! 메뉴의 몬스터 화면에서도 할 수 있어.']},
    {id:'c_guard',x:22,y:9,dir:'down',look:'guide',name:'경비원',text:['여기서부터 2번 도로야. 숲에는 강한 몬스터가 많으니 조심하렴.']}],
  trig:[{x:22,y:10,w:2,h:2,cond:()=>!G.flags.badge0,run:async()=>{const g=npcById('c_guard');g.dir='down';await emoteOn(g,'!');
    await say('잠깐! 이 앞 2번 도로 숲은 아주 위험해.',{name:'경비원'});await say('바위시티 체육관의 배지를 얻은 트레이너만 지나갈 수 있단다.',{name:'경비원'});await walkPlayer(['left']);}}]});
@@ -207,18 +207,18 @@ defMap('chouse',{name:'바위시티 민가',music:'city',bg:'lab',floor:'wood',w
  npcs:[{id:'granny',x:6,y:4,dir:'left',look:'granny',name:'할머니',talk:async()=>{const o={name:'할머니'};
    if(!G.flags.badge0){await say('젊은이, 체육관에 도전하려고? 관장 단단은 내 손자란다.',o);await say('배지를 얻어 오면 좋은 걸 주마. 호호.',o);return;}
    if(!G.flags.gift2){await say('어머나, 단단을 이겼구나! 약속대로 이걸 주마.',o);await giveItem('great',3);G.flags.gift2=1;return;}
-   await say('슈퍼캡슐은 보통 캡슐보다 훨씬 잘 붙잡힌단다.',o);}},
+   await say('은빛캡슐은 보통 캡슐보다 훨씬 잘 붙잡힌단다.',o);}},
    {id:'ch_kid',x:2,y:5,dir:'right',look:'kid',name:'꼬마',text:['우리 형은 바위시티 체육관 관장이야! 엄청 세다구!']}]});
 
-/* ---- 공용: 몬스터 센터 / 상점 ---- */
-function centerMap(id,out,ox,oy,region,music){defMap(id,{name:'몬스터 센터',music:'center',bg:'lab',floor:'tile',wall:'#fbe4e8',region,
+/* ---- 공용: 몬스터 쉼터 / 상점 ---- */
+function centerMap(id,out,ox,oy,region,music){defMap(id,{name:'몬스터 쉼터',music:'center',bg:'lab',floor:'tile',wall:'#fbe4e8',region,
  rows:['wwwwwwwwwwwww','wwwwwwwwwwwww','p...h.......p','...KKKKKKK..P','.............','.TT.......TT.','.TT.......TT.','.............','p...........p','......m......'],
  warps:{'6,9':[out,ox,oy,'down']},
  obj:{'12,3':()=>pcMenu(),'4,2':['회복 장치가 반짝이고 있다.']},
  npcs:[{id:'nurse_'+id,x:6,y:2,dir:'down',look:'nurse',name:'간호사',talk:()=>nurse(out,ox,oy)},
    {id:'fuse_'+id,x:10,y:7,dir:'left',look:'aide',name:'합성 연구원',talk:()=>fusionLab()},
    {id:'cg_'+id,x:2,y:7,dir:'right',look:id==='center1'?'old':'lady',name:id==='center1'?'할아버지':'아가씨',wander:1,
-    text:id==='center1'?['몬스터가 쓰러지면 몬스터 센터로 데려오게나.','그리고 항상 회복약을 넉넉히 챙겨 두게!']:['물결마을 체육관 관장 하라 씨는 물 타입의 달인이에요.','전기 타입과 풀 타입 몬스터가 있으면 든든하겠죠!']}]});}
+    text:id==='center1'?['몬스터가 쓰러지면 몬스터 쉼터로 데려오게나.','그리고 항상 회복약을 넉넉히 챙겨 두게!']:['물결마을 체육관 관장 하라 씨는 물 타입의 달인이에요.','전기 타입과 풀 타입 몬스터가 있으면 든든하겠죠!']}]});}
 centerMap('center1','city',5,11,'city');
 function martMap(id,out,ox,oy,region){defMap(id,{name:'몬스터 상점',music:'center',bg:'lab',floor:'tile',wall:'#e4ecfb',region,
  rows:['wwwwwwwwwww','wwwwwwwwwww','..K.....SSS','..K........','..K..SS.SS.','...........','....SS.SS..','p.........p','.....m.....'],
@@ -234,7 +234,7 @@ defMap('gym1',{name:'바위시티 체육관',music:'gym',bg:'rock',floor:'stone'
  rows:['wwwwwwwwwwwww','wwwwwwwwwwwww','R....ccc....R','R...........R','RRRR..R..RRRR','R...........R','R..RRR.RRR..R','R...........R','RRR..RRR..RRR','R...........R','R.RRR...RRR.R','R...........R','R...........R','R....Y.Y....R','R...........R','R.....m.....R'],
  warps:{'6,15':['city',12,6,'down']},
  obj:{'5,13':()=>statue(0),'7,13':()=>statue(0)},
- npcs:[{id:'g1_guide',x:4,y:14,dir:'right',look:'guide',name:'체육관 안내원',text:['어이, 도전자! 이곳 관장 단단은 바위 타입 전문이야.','바위 타입에는 물과 풀 기술이 효과가 굉장하지! 반대로 불꽃이나 비행은 별로야.','관장의 몬스터는 땅 타입이기도 해서 전기 기술이 통하지 않으니 조심해!']},
+ npcs:[{id:'g1_guide',x:4,y:14,dir:'right',look:'guide',name:'체육관 안내원',text:['어이, 도전자! 이곳 관장 단단은 바위 타입 전문이야.','바위 타입에는 물과 풀 기술이 효과가 굉장하지! 반대로 불꽃이나 바람은 별로야.','관장의 몬스터는 땅 타입이기도 해서 전기 기술이 통하지 않으니 조심해!']},
    {id:'tr_cheolsu',x:2,y:9,dir:'right',look:'hiker',trainer:{cls:'hiker',name:'철수',team:[[23,10]],intro:['관장님께 도전하려면 나부터 넘어서라!'],lose:'으음, 단단하지 못했군...',after:['관장님의 바위거북은 방어가 엄청나다고.']}},
    {id:'tr_yeongho',x:10,y:5,dir:'left',look:'hiker',trainer:{cls:'hiker',name:'영호',team:[[27,9],[23,10]],intro:['산에서 단련한 내 몬스터들을 보아라!'],lose:'산사태 같은 공격이었다...',after:['특수 기술로 공격하면 바위 타입의 단단한 방어를 피할 수 있지.']}},
    {id:'leader1',x:6,y:2,dir:'down',look:'leaderRock',name:'관장 단단',talk:leaderRock}]});
@@ -276,7 +276,7 @@ defMap('route2',{name:'2번 도로',out:1,music:'route',bg:'forest',region:'rout
  signs:{'3,9':['2번 도로','→ 물결마을 · ← 바위시티']},
  items:[{x:27,y:12,item:'super',n:1,flag:'i_r2a'},{x:2,y:14,item:'ball',n:3,flag:'i_r2b'},{x:28,y:2,item:'revive',n:1,flag:'i_r2c'},{x:22,y:2,item:'parheal',n:1,flag:'i_r2d'}],
  npcs:[{id:'tr_donghun',x:12,y:6,dir:'down',look:'camper',trainer:{cls:'camper',name:'동훈',team:[[21,10],[23,10]],intro:['숲에서 단련한 내 몬스터를 받아라!'],lose:'캠프파이어가 꺼져 버렸어...',after:['물결마을 관장은 물 타입을 써. 전기나 풀 타입이 있으면 좋을 거야.']}},
-   {id:'tr_haneul',x:5,y:12,dir:'up',look:'bug',trainer:{cls:'bugboy',name:'하늘',team:[[13,9],[14,11]],intro:['벌레 몬스터의 진가를 보여 주지!'],lose:'나풀나비가 날아가 버렸다...',after:['꼬물이는 금방 진화해. 레벨 10이면 나풀나비가 된다구!']}},
+   {id:'tr_haneul',x:5,y:12,dir:'up',look:'bug',trainer:{cls:'bugboy',name:'하늘',team:[[13,9],[14,11]],intro:['곤충 몬스터의 진가를 보여 주지!'],lose:'나풀나비가 날아가 버렸다...',after:['꼬물이는 금방 진화해. 레벨 10이면 나풀나비가 된다구!']}},
    {id:'tr_sera',x:24,y:9,dir:'left',look:'lady',trainer:{cls:'lass',name:'세라',team:[[17,11]],intro:['찌릿찌릿한 승부, 어때요?'],lose:'찌릿... 내가 감전된 기분이에요.',after:['전기 타입은 땅 타입에게는 전혀 통하지 않아요.']}},
    {id:'tr_gildong',x:24,y:5,dir:'down',look:'fisher',trainer:{cls:'fisher',name:'길동',team:[[19,11],[29,10]],intro:['오늘은 고기 대신 트레이너를 낚아 볼까!'],lose:'놓친 고기가 크다더니...',after:['물파리는 독이 있어. 해독약을 챙기라고.']}},
    {id:'r2_girl',x:20,y:14,dir:'left',look:'girl',name:'소녀',wander:1,text:['숲 깊은 곳에는 연못이 있어. 개굴물을 본 적 있니?']}],

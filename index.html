@@ -292,7 +292,7 @@ body.land #pad .mid{left:auto;right:8px;top:8px;transform:none}
   <div id="help"><b>방향키</b> 이동 · <b>Z</b> 확인 · <b>X</b> 취소(누른 채 이동하면 달리기) · <b>Enter</b> 메뉴 · <b>Q</b>/<b>E</b> 패드 앱 전환 · <b>M</b> 소리</div>
 </div>
 <script>
-const BUILD='454d00ab';
+const BUILD='1e2a4b63';
 // Copyright (c) 2009 Kazuhiko Arase
 // Licensed under the MIT license:
 // The word 'QR Code' is registered trademark of
@@ -386,7 +386,7 @@ document.querySelectorAll('#pad button').forEach(b=>{const k=b.dataset.k;
 $('#scrTop').addEventListener('click',()=>{const h=topH();if(h&&h.tapA)press('a');});
 $('#botUI').addEventListener('click',e=>{if(e.target!==$('#botUI')&&!e.target.classList.contains('backdrop'))return;const h=topH();if(h&&h.tapA)press('a');});
 
-/* ---------- 화면 크기 (DS 2화면) ---------- */
+/* ---------- 화면 크기 (2화면) ---------- */
 function layout(){const coarse=matchMedia('(pointer:coarse)').matches;
   const land=coarse&&innerWidth>innerHeight*1.15; // 휴대폰 가로: 패드를 화면 양옆에
   const pbMax=land?Math.min(innerHeight/4.2,58):Math.min((innerWidth-12)/5.4,62);
@@ -601,8 +601,8 @@ const Music={cur:null,want:null,song:null,pos:0,next:0,timer:null,nodes:[],jingl
 /* =========================================================
    data.js — 타입, 기술, 몬스터, 도구, 성격, 트레이너 (모두 오리지널)
    ========================================================= */
-const TYPES={normal:{n:'노말',c:'#a8a878'},fire:{n:'불꽃',c:'#f08030'},water:{n:'물',c:'#6890f0'},grass:{n:'풀',c:'#78c850'},
-  elec:{n:'전기',c:'#f0c418'},rock:{n:'바위',c:'#b8a038'},ground:{n:'땅',c:'#d8a858'},fly:{n:'비행',c:'#a890f0'},bug:{n:'벌레',c:'#98b020'},poison:{n:'독',c:'#a040a0'}};
+const TYPES={normal:{n:'보통',c:'#a5a080'},fire:{n:'불꽃',c:'#ec7a2e'},water:{n:'물',c:'#6488ea'},grass:{n:'풀',c:'#70c24e'},
+  elec:{n:'전기',c:'#ecc01c'},rock:{n:'바위',c:'#b39c3c'},ground:{n:'땅',c:'#d6a456'},fly:{n:'바람',c:'#79b4e4'},bug:{n:'곤충',c:'#93ac22'},poison:{n:'독',c:'#9b45a6'}};
 const CHART={normal:{rock:.5},
   fire:{grass:2,bug:2,fire:.5,water:.5,rock:.5},
   water:{fire:2,rock:2,ground:2,water:.5,grass:.5},
@@ -616,8 +616,8 @@ const CHART={normal:{rock:.5},
 const eff1=(a,d)=>{const r=CHART[a]&&CHART[a][d];return r===undefined?1:r;};
 const effT=(a,ts)=>ts.reduce((m,t)=>m*eff1(a,t),1);
 const tb=t=>`<span class="tb" style="background:${TYPES[t].c}">${TYPES[t].n}</span>`;
-const STN=['HP','공격','방어','특수공격','특수방어','스피드'];
-const STATUS={psn:{n:'독',c:'#a040a0'},brn:{n:'화상',c:'#e8622c'},par:{n:'마비',c:'#d8b020'},slp:{n:'잠듦',c:'#8a8aa0'}};
+const STN=['체력','공격','방어','원소공격','원소방어','속도'];
+const STATUS={psn:{n:'독',c:'#9b45a6'},brn:{n:'화상',c:'#e8622c'},par:{n:'마비',c:'#d8b020'},slp:{n:'잠듦',c:'#8a8aa0'}};
 const stb=s=>s?`<span class="stb" style="background:${STATUS[s].c}">${STATUS[s].n}</span>`:'';
 
 /* 기술: [id, 이름, 타입, 분류(p 물리/s 특수/x 변화), 위력, 명중(0=필중), PP, 효과, 설명] */
@@ -632,46 +632,46 @@ const MV={};
  ['focus','기합모으기','normal','x',0,0,20,{self:[[1,2]]},'기합을 모아 자신의 공격을 크게 올린다.'],
  ['sing','자장노래','normal','x',0,55,15,{status:'slp'},'포근한 노래로 상대를 잠재운다.'],
  ['takedown','무모한돌진','normal','p',90,85,20,{recoil:25},'맹렬하게 부딪친다. 자신도 반동 데미지를 입는다.'],
- ['struggle','발버둥','normal','p',50,0,1,{recoil:25},'쓸 수 있는 기술이 없을 때 쓰는 마지막 수단.'],
+ ['struggle','안간힘','normal','p',50,0,1,{recoil:25},'쓸 수 있는 기술이 없을 때 쓰는 마지막 수단.'],
  ['ember','불씨뿌리기','fire','s',40,100,25,{st:['brn',10]},'작은 불꽃을 뿌린다. 화상을 입힐 때가 있다.'],
  ['flamewheel','화염구르기','fire','p',60,100,25,{st:['brn',10]},'불꽃을 두르고 구르며 돌진한다. 화상을 입힐 때가 있다.'],
  ['willo','도깨비불꽃','fire','x',0,85,15,{status:'brn'},'불길한 불꽃을 날려 상대에게 화상을 입힌다.'],
- ['firefang','불꽃엄니','fire','p',65,95,15,{st:['brn',10],flinch:10},'불꽃을 머금은 이빨로 문다.'],
+ ['firefang','불송곳니','fire','p',65,95,15,{st:['brn',10],flinch:10},'불꽃을 머금은 이빨로 문다.'],
  ['flameburst','업화폭발','fire','s',90,100,15,{st:['brn',10]},'거센 불꽃을 터뜨린다. 화상을 입힐 때가 있다.'],
- ['bubble','물방울총','water','s',40,100,30,{stat:['foe',5,-1,10]},'거품을 쏘아 공격한다. 스피드를 떨어뜨릴 때가 있다.'],
+ ['bubble','물방울총','water','s',40,100,30,{stat:['foe',5,-1,10]},'거품을 쏘아 공격한다. 속도를 떨어뜨릴 때가 있다.'],
  ['watergun','물줄기','water','s',60,100,25,null,'강한 물줄기를 뿜어 공격한다.'],
- ['withdraw','껍질숨기','water','x',0,0,40,{self:[[2,1]]},'몸을 웅크려 자신의 방어를 올린다.'],
+ ['withdraw','껍질닫기','water','x',0,0,40,{self:[[2,1]]},'몸을 웅크려 자신의 방어를 올린다.'],
  ['aquatail','물꼬리치기','water','p',80,90,10,null,'물결처럼 꼬리를 휘둘러 공격한다.'],
  ['wave','해일','water','s',90,100,10,null,'거대한 파도로 상대를 덮친다.'],
  ['vine','덩굴때리기','grass','p',45,100,25,null,'채찍 같은 덩굴로 때린다.'],
  ['absorb','뿌리흡수','grass','s',40,100,25,{drain:50},'상대의 양분을 빨아들여 준 데미지의 절반만큼 회복한다.'],
  ['leaf','잎사귀칼날','grass','p',60,95,25,{crit:1},'날카로운 잎사귀로 벤다. 급소에 맞기 쉽다.'],
  ['sleeppowder','잠가루','grass','x',0,75,15,{status:'slp'},'졸음이 오는 가루를 뿌려 상대를 잠재운다.'],
- ['growth','광합성','grass','x',0,0,20,{self:[[1,1],[3,1]]},'햇빛을 모아 공격과 특수공격을 올린다.'],
+ ['growth','햇볕쬐기','grass','x',0,0,20,{self:[[1,1],[3,1]]},'햇빛을 모아 공격과 원소공격을 올린다.'],
  ['petal','꽃잎폭풍','grass','s',90,100,10,null,'꽃잎을 폭풍처럼 흩날려 공격한다.'],
  ['thundershock','전기충격','elec','s',40,100,30,{st:['par',10]},'전기를 흘려 공격한다. 마비시킬 때가 있다.'],
  ['spark','찌릿돌진','elec','p',65,100,20,{st:['par',30]},'전기를 두르고 돌진한다. 마비시킬 때가 있다.'],
  ['thunderwave','마비파동','elec','x',0,90,20,{status:'par'},'약한 전기를 흘려 상대를 마비시킨다.'],
  ['thunder','천둥벼락','elec','s',90,100,15,{st:['par',10]},'강한 번개를 떨어뜨린다. 마비시킬 때가 있다.'],
  ['rockthrow','돌던지기','rock','p',50,90,15,null,'작은 바위를 들어 던진다.'],
- ['rocktomb','바위감옥','rock','p',60,95,15,{stat:['foe',5,-1,100]},'바위로 가둬 상대의 스피드를 떨어뜨린다.'],
+ ['rocktomb','바위감옥','rock','p',60,95,15,{stat:['foe',5,-1,100]},'바위로 가둬 상대의 속도를 떨어뜨린다.'],
  ['rockslide','바위사태','rock','p',75,90,10,{flinch:30},'큰 바위들을 쏟아붓는다. 풀죽게 할 때가 있다.'],
  ['defcurl','바위껍질','rock','x',0,0,20,{self:[[2,2]]},'몸을 바위처럼 굳혀 방어를 크게 올린다.'],
- ['mudslap','진흙뿌리기','ground','s',20,100,10,{stat:['foe',5,-1,100]},'진흙을 뿌려 상대의 스피드를 떨어뜨린다.'],
+ ['mudslap','진흙던지기','ground','s',20,100,10,{stat:['foe',5,-1,100]},'진흙을 뿌려 상대의 속도를 떨어뜨린다.'],
  ['dig','땅흔들기','ground','p',60,100,20,null,'땅을 흔들어 상대를 공격한다.'],
  ['bulldoze','대지가르기','ground','p',90,100,10,null,'대지를 갈라 엄청난 힘으로 공격한다.'],
  ['gust','돌풍','fly','s',40,100,35,null,'날개로 돌풍을 일으켜 공격한다.'],
  ['wing','날갯짓','fly','p',60,100,35,null,'커다란 날개로 상대를 친다.'],
  ['aerial','급강하','fly','p',80,95,15,null,'높은 곳에서 급강하하며 들이받는다.'],
- ['stringshot','끈적실','bug','x',0,95,40,{foe:[[5,-2]]},'끈적한 실을 감아 상대의 스피드를 크게 떨어뜨린다.'],
+ ['stringshot','끈적실','bug','x',0,95,40,{foe:[[5,-2]]},'끈적한 실을 감아 상대의 속도를 크게 떨어뜨린다.'],
  ['bite','물어뜯기','bug','p',45,100,25,null,'튼튼한 턱으로 물어뜯는다.'],
- ['silver','반짝가루','bug','s',60,100,15,{stat:['self',3,1,30]},'반짝이는 가루를 날린다. 특수공격이 오를 때가 있다.'],
+ ['silver','반짝가루','bug','s',60,100,15,{stat:['self',3,1,30]},'반짝이는 가루를 날린다. 원소공격이 오를 때가 있다.'],
  ['leechsting','흡혈침','bug','p',40,100,20,{drain:50},'침을 꽂아 데미지의 절반만큼 회복한다.'],
  ['poisonsting','독바늘','poison','p',20,100,35,{st:['psn',30]},'독바늘로 찌른다. 독에 걸리게 할 때가 있다.'],
  ['acid','독액분사','poison','s',65,100,20,{st:['psn',30]},'독액을 뿜는다. 독에 걸리게 할 때가 있다.'],
  ['toxspore','독포자','poison','x',0,75,35,{status:'psn'},'독이 든 포자를 뿌려 상대를 독에 걸리게 한다.'],
 ].forEach(([id,n,t,c,p,a,pp,fx,d])=>MV[id]={id,n,t,c,p,a,pp,fx:fx||{},d});
-const CATN={p:'물리',s:'특수',x:'변화'};
+const CATN={p:'물리',s:'원소',x:'보조'};
 
 /* 습득 기술 (진화 계열 공용) */
 const LS={
@@ -693,42 +693,42 @@ const LS={
  legSky:[[1,'quick'],[1,'gust'],[30,'headbutt'],[40,'aerial'],[55,'petal'],[60,'thunder'],[70,'takedown']],
  jelly:[[1,'poisonsting'],[1,'bubble'],[7,'withdraw'],[12,'acid'],[17,'watergun'],[23,'toxspore'],[30,'wave']]};
 
-/* 몬스터: t 타입, b [HP,공격,방어,특공,특방,스피드], x 경험치, c 포획률, ev [진화Lv, 번호], st 단계, cat 분류, h 키(m), w 몸무게(kg) */
+/* 몬스터: t 타입, b [체력,공격,방어,원소공격,원소방어,속도], x 경험치, c 포획률, ev [진화Lv, 번호], st 단계, cat 분류, h 키(m), w 몸무게(kg) */
 const SP={
- 1:{n:'불똥이',t:['fire'],b:[39,52,43,60,50,65],x:62,c:45,ls:LS.fire,ev:[16,2],st:0,line:1,cat:'불씨',h:.6,w:8.5,d:'꼬리 끝의 불씨로 기분을 나타낸다. 신이 나면 불꽃이 커진다.'},
- 2:{n:'화르릉',t:['fire'],b:[58,64,58,80,65,80],x:142,c:45,ls:LS.fire,ev:[34,3],st:1,line:1,cat:'화염',h:1.1,w:19,d:'온몸에 열기를 두르고 있다. 화가 나면 주변 공기가 일렁인다.'},
- 3:{n:'폭염수',t:['fire','ground'],b:[78,94,78,100,80,95],x:240,c:45,ls:LS.fire,st:2,line:1,cat:'폭염',h:1.8,w:90.5,d:'발걸음마다 땅이 녹아내린다. 화산 지대를 영역으로 삼는다.'},
- 4:{n:'물방울',t:['water'],b:[44,48,65,50,64,43],x:63,c:45,ls:LS.water,ev:[16,5],st:0,line:4,cat:'물방울',h:.5,w:9,d:'몸이 말랑한 물로 되어 있다. 햇볕이 강하면 조금 작아진다.'},
- 5:{n:'물결군',t:['water'],b:[59,63,80,65,80,58],x:142,c:45,ls:LS.water,ev:[34,6],st:1,line:4,cat:'물결',h:1,w:22.5,d:'등지느러미로 파도를 일으킨다. 바다의 수호자라 불린다.'},
- 6:{n:'해일왕',t:['water','rock'],b:[79,83,100,85,105,78],x:239,c:45,ls:LS.water,st:2,line:4,cat:'해일',h:1.6,w:85.5,d:'바위 갑옷을 두른 바다의 왕. 한 번 울면 해일이 일어난다고 한다.'},
- 7:{n:'새싹콩',t:['grass'],b:[45,49,49,65,65,45],x:64,c:45,ls:LS.grass,ev:[16,8],st:0,line:7,cat:'새싹',h:.7,w:6.9,d:'머리의 새싹으로 햇빛을 모은다. 비 오는 날을 좋아한다.'},
- 8:{n:'덩굴콩',t:['grass','poison'],b:[60,62,63,80,80,60],x:141,c:45,ls:LS.grass,ev:[32,9],st:1,line:7,cat:'덩굴',h:1,w:13,d:'튼튼한 덩굴로 적을 붙잡는다. 덩굴 끝에는 약한 독이 있다.'},
- 9:{n:'숲거목',t:['grass','poison'],b:[80,82,83,100,100,80],x:236,c:45,ls:LS.grass,st:2,line:7,cat:'거목',h:2,w:100,d:'등의 거목에서 독꽃이 핀다. 숲 전체의 나무와 대화한다고 한다.'},
- 10:{n:'짹짹이',t:['normal','fly'],b:[40,45,40,35,35,56],x:50,c:255,ls:LS.bird,ev:[14,11],st:0,line:10,cat:'꼬마새',h:.3,w:1.8,d:'아침마다 시끄럽게 지저귄다. 무리 지어 날아다닌다.'},
- 11:{n:'날쌘매',t:['normal','fly'],b:[63,60,55,50,50,71],x:122,c:120,ls:LS.bird,st:1,line:10,cat:'맹금',h:1.1,w:30,d:'눈 깜짝할 새에 먹잇감을 낚아챈다. 시력이 매우 좋다.'},
- 12:{n:'꼬물이',t:['bug'],b:[45,30,35,20,20,45],x:39,c:255,ls:LS.bug,ev:[7,13],st:0,line:12,cat:'애벌레',h:.3,w:2.9,d:'나뭇잎을 갉아 먹으며 자란다. 금방 진화하는 편이다.'},
- 13:{n:'단단고치',t:['bug'],b:[50,20,55,25,25,30],x:72,c:120,ls:LS.bug,ev:[10,14],st:1,line:12,cat:'고치',h:.7,w:9.9,d:'단단한 껍질 속에서 진화를 기다린다. 거의 움직이지 않는다.'},
- 14:{n:'나풀나비',t:['bug','fly'],b:[60,45,50,90,80,70],x:160,c:45,ls:LS.bug,st:2,line:12,cat:'나비',h:1.1,w:32,d:'날개의 가루가 반짝인다. 꽃밭 위를 우아하게 난다.'},
- 15:{n:'들쥐롱',t:['normal'],b:[30,56,35,25,35,72],x:51,c:255,ls:LS.rat,ev:[20,16],st:0,line:15,cat:'들쥐',h:.3,w:3.5,d:'어디에나 사는 흔한 몬스터. 앞니가 평생 자란다.'},
- 16:{n:'큰쥐롱',t:['normal'],b:[55,81,60,50,70,97],x:145,c:127,ls:LS.rat,st:1,line:15,cat:'들쥐',h:.7,w:18.5,d:'튼튼한 앞니로 통나무도 갉아 버린다. 무리의 대장이다.'},
- 17:{n:'찌릿쥐',t:['elec'],b:[35,55,40,50,50,90],x:82,c:190,ls:LS.elec,ev:[22,18],st:0,line:17,cat:'찌릿',h:.4,w:6,d:'볼에 전기를 모아 둔다. 함부로 만지면 찌릿하다.'},
- 18:{n:'번개냥',t:['elec'],b:[60,85,55,90,80,110],x:160,c:75,ls:LS.elec,st:1,line:17,cat:'번개',h:.9,w:30,d:'번개처럼 빠르게 움직인다. 털이 항상 곤두서 있다.'},
- 19:{n:'개굴물',t:['water'],b:[40,50,40,40,40,90],x:77,c:190,ls:LS.frog,ev:[22,20],st:0,line:19,cat:'개구리',h:.5,w:5.5,d:'숲속 연못에 산다. 혀를 쭉 뻗어 벌레를 잡는다.'},
- 20:{n:'개굴왕',t:['water'],b:[65,70,65,75,75,95],x:165,c:75,ls:LS.frog,st:1,line:19,cat:'개구리',h:1.1,w:32,d:'연못의 우두머리. 굵은 울음소리로 비를 부른다.'},
- 21:{n:'불여우',t:['fire'],b:[38,41,40,50,65,65],x:60,c:190,ls:LS.fox,ev:[24,22],st:0,line:21,cat:'여우',h:.6,w:9.9,d:'작은 불꽃을 뿜으며 장난치기를 좋아한다.'},
- 22:{n:'구미염',t:['fire'],b:[73,76,75,81,100,100],x:177,c:75,ls:LS.fox,st:1,line:21,cat:'여우',h:1.1,w:19.9,d:'여러 갈래의 꼬리에 불꽃을 품고 있다. 매우 영리하다.'},
- 23:{n:'돌돌이',t:['rock','ground'],b:[40,80,100,30,30,20],x:60,c:190,ls:LS.rock,ev:[25,24],st:0,line:23,cat:'돌',h:.4,w:20,d:'바위에 섞여 낮잠을 잔다. 모르고 밟으면 화를 낸다.'},
- 24:{n:'바위거북',t:['rock','ground'],b:[70,95,115,45,45,35],x:137,c:60,ls:LS.rock,st:1,line:23,cat:'바위',h:1,w:105,d:'등껍질이 바위보다 단단하다. 천 년을 산다는 소문이 있다.'},
- 25:{n:'독버섯',t:['poison','grass'],b:[35,70,55,45,55,25],x:60,c:190,ls:LS.shroom,ev:[24,26],st:0,line:25,cat:'버섯',h:.3,w:5.4,d:'축축한 숲 그늘에 산다. 갓의 무늬가 화려할수록 독이 강하다.'},
- 26:{n:'맹독버섯',t:['poison','grass'],b:[60,95,80,60,80,30],x:150,c:75,ls:LS.shroom,st:1,line:25,cat:'버섯',h:1,w:29.5,d:'포자 구름을 뿜어 숲 한 구역을 독으로 물들인다.'},
- 27:{n:'흙두더',t:['ground'],b:[35,55,45,35,45,80],x:58,c:190,ls:LS.mole,ev:[26,28],st:0,line:27,cat:'두더지',h:.3,w:4.5,d:'하루 종일 땅굴을 판다. 밭을 부드럽게 해 줘서 농부들이 반긴다.'},
- 28:{n:'굴착왕',t:['ground'],b:[60,90,65,50,70,100],x:149,c:75,ls:LS.mole,st:1,line:27,cat:'두더지',h:.7,w:33,d:'강철 같은 발톱으로 바위산도 순식간에 뚫는다.'},
- 29:{n:'물파리',t:['water','poison'],b:[40,40,35,50,100,70],x:67,c:190,ls:LS.jelly,ev:[30,30],st:0,line:29,cat:'해파리',h:.9,w:45.5,d:'투명한 몸으로 물속에 숨어 있다. 촉수에 독이 있다.'},
- 30:{n:'독물파리',t:['water','poison'],b:[80,70,65,80,120,100],x:180,c:60,ls:LS.jelly,st:1,line:29,cat:'해파리',h:1.6,w:55,d:'수십 개의 촉수를 자유롭게 다룬다. 바다의 무법자.'},
- 31:{n:'염화룡',t:['fire','rock'],b:[90,110,95,105,85,95],x:270,c:3,ls:LS.legFire,st:2,line:31,legend:1,cat:'화산',h:2.4,w:280,d:'붉은재 화산 깊은 곳에서 잠든 불의 수호신. 숨을 내쉬면 용암이 끓어오른다.'},
- 32:{n:'심해왕',t:['water'],b:[100,85,100,110,110,75],x:270,c:3,ls:LS.legWater,st:2,line:32,legend:1,cat:'수원',h:3.1,w:210,d:'모든 강물이 시작되는 수원에 산다는 물의 수호신. 한 번 울면 사흘 동안 비가 내린다.'},
- 33:{n:'뇌명조',t:['elec','fly'],b:[85,90,80,115,90,120],x:270,c:3,ls:LS.legElec,st:2,line:33,legend:1,cat:'뇌운',h:2,w:52,d:'폭풍 봉우리의 먹구름 속을 나는 번개의 수호신. 날갯짓마다 천둥이 친다.'},
- 34:{n:'천공신',t:['normal','fly'],b:[110,110,100,110,110,100],x:320,c:3,ls:LS.legSky,st:2,line:34,legend:1,cat:'하늘',h:4.2,w:350,d:'세 수호신이 깨어날 때 구름 위에 모습을 드러낸다는 하늘의 신. 이 지방을 처음 만들었다고 전해진다.'}};
+ 1:{n:'불똥이',t:['fire'],b:[42,54,38,58,46,72],x:66,c:50,ls:LS.fire,ev:[16,2],st:0,line:1,cat:'불씨',h:.5,w:7.2,d:'머리 위 불씨가 꺼지지 않도록 늘 따뜻한 곳을 찾아다닌다. 새싹마을 아이들의 단짝.'},
+ 2:{n:'화르릉',t:['fire'],b:[60,68,54,77,62,84],x:138,c:50,ls:LS.fire,ev:[34,3],st:1,line:1,cat:'화염',h:1.2,w:24,d:'두 팔에 불꽃 고리를 두르고 다닌다. 기분이 좋으면 콧김으로 작은 불꽃놀이를 한다.'},
+ 3:{n:'폭염수',t:['fire','ground'],b:[84,98,82,92,76,93],x:232,c:50,ls:LS.fire,st:2,line:1,cat:'폭염',h:1.9,w:104,d:'화산재 속을 헤엄치듯 파고든다. 등의 작은 분화구에서 뜨거운 김이 솟는다.'},
+ 4:{n:'물방울',t:['water'],b:[48,44,62,52,60,42],x:65,c:50,ls:LS.water,ev:[16,5],st:0,line:4,cat:'물방울',h:.4,w:6.3,d:'비 오는 날 웅덩이에서 태어난다는 말이 있다. 몸을 흔들면 물방울이 사방으로 튄다.'},
+ 5:{n:'물결군',t:['water'],b:[63,58,78,66,77,62],x:139,c:50,ls:LS.water,ev:[34,6],st:1,line:4,cat:'물결',h:1.1,w:27,d:'강어귀에서 무리를 지킨다. 꼬리로 수면을 두드려 동료에게 신호를 보낸다.'},
+ 6:{n:'해일왕',t:['water','rock'],b:[86,80,104,80,98,82],x:233,c:50,ls:LS.water,st:2,line:4,cat:'해일',h:1.7,w:118,d:'산호와 바위로 된 갑옷을 입고 깊은 바다 밑을 걷는다. 한 걸음마다 물결이 인다.'},
+ 7:{n:'새싹콩',t:['grass'],b:[47,46,52,62,63,48],x:67,c:50,ls:LS.grass,ev:[16,8],st:0,line:7,cat:'새싹',h:.5,w:4.8,d:'흙에 발을 묻고 햇볕을 쬐며 낮잠을 잔다. 푹 자고 나면 머리의 떡잎이 한 장 는다.'},
+ 8:{n:'덩굴콩',t:['grass','poison'],b:[62,60,66,78,76,63],x:137,c:50,ls:LS.grass,ev:[32,9],st:1,line:7,cat:'덩굴',h:1.1,w:17,d:'덩굴을 밧줄처럼 써서 나무 사이를 건너다닌다. 덩굴 가시에는 약한 독이 있다.'},
+ 9:{n:'숲거목',t:['grass','poison'],b:[84,78,86,97,98,82],x:230,c:50,ls:LS.grass,st:2,line:7,cat:'거목',h:2.3,w:128,d:'걸어 다니는 작은 숲. 몸에 둥지를 튼 새와 벌레들을 끝까지 지켜 준다.'},
+ 10:{n:'짹짹이',t:['normal','fly'],b:[38,42,36,34,36,62],x:54,c:230,ls:LS.bird,ev:[14,11],st:0,line:10,cat:'꼬마새',h:.2,w:1.1,d:'새벽마다 마을 지붕에 모여 노래 경연을 한다. 가장 큰 소리를 낸 녀석이 대장이 된다.'},
+ 11:{n:'날쌘매',t:['normal','fly'],b:[60,64,52,46,48,78],x:118,c:110,ls:LS.bird,st:1,line:10,cat:'맹금',h:1,w:22,d:'골짜기 바람을 타고 하루 종일 미끄러지듯 난다. 깃털 끝이 칼처럼 날카롭다.'},
+ 12:{n:'꼬물이',t:['bug'],b:[48,28,38,18,24,42],x:42,c:230,ls:LS.bug,ev:[7,13],st:0,line:12,cat:'애벌레',h:.4,w:1.7,d:'이슬 맺힌 풀잎만 골라 먹는 까다로운 입맛. 몸의 줄무늬 색으로 기분이 드러난다.'},
+ 13:{n:'단단고치',t:['bug'],b:[52,22,60,22,28,26],x:68,c:110,ls:LS.bug,ev:[10,14],st:1,line:12,cat:'고치',h:.6,w:7.4,d:'나뭇가지에 매달려 꿈을 꾸는 중이다. 껍질을 톡톡 두드리면 안에서 콩콩 대답한다.'},
+ 14:{n:'나풀나비',t:['bug','fly'],b:[62,40,52,86,78,76],x:156,c:50,ls:LS.bug,st:2,line:12,cat:'나비',h:1.2,w:26,d:'밤이면 날개가 은은하게 빛나 길 잃은 여행자를 마을까지 이끈다고 한다.'},
+ 15:{n:'들쥐롱',t:['normal'],b:[34,58,32,22,32,74],x:55,c:230,ls:LS.rat,ev:[20,16],st:0,line:15,cat:'들쥐',h:.2,w:2.6,d:'곡식 창고 근처에 굴을 파고 산다. 먹이를 볼에 잔뜩 넣고 종종걸음으로 나른다.'},
+ 16:{n:'큰쥐롱',t:['normal'],b:[58,84,56,46,66,101],x:141,c:115,ls:LS.rat,st:1,line:15,cat:'들쥐',h:.8,w:14,d:'무리의 짐꾼. 등에 먹이를 산더미처럼 지고도 지칠 줄 모른다.'},
+ 17:{n:'찌릿냥',t:['elec'],b:[38,52,36,56,46,94],x:86,c:170,ls:LS.elec,ev:[22,18],st:0,line:17,cat:'찌릿',h:.3,w:3.4,d:'털을 비비면 작은 번개가 튄다. 겨울에는 정전기 때문에 아무도 안아 주지 않아 시무룩하다.'},
+ 18:{n:'번개냥',t:['elec'],b:[62,82,58,94,76,112],x:156,c:70,ls:LS.elec,st:1,line:17,cat:'번개',h:1,w:24,d:'번개가 치는 밤이면 지붕 위로 올라가 하늘을 올려다본다. 꼬리 끝에 전기가 모여 있다.'},
+ 19:{n:'개굴물',t:['water'],b:[44,48,42,44,38,86],x:74,c:170,ls:LS.frog,ev:[22,20],st:0,line:19,cat:'개구리',h:.4,w:3.9,d:'연못 수련잎 위에서 하루를 보낸다. 울음소리만으로 비가 올 날을 알아맞힌다.'},
+ 20:{n:'개굴왕',t:['water'],b:[70,72,68,72,70,96],x:168,c:70,ls:LS.frog,st:1,line:19,cat:'개구리',h:1.2,w:38,d:'연못 합창단의 지휘자. 우렁찬 목소리로 물결을 일으킨다.'},
+ 21:{n:'불여우',t:['fire'],b:[40,44,38,54,62,66],x:63,c:170,ls:LS.fox,ev:[24,22],st:0,line:21,cat:'여우',h:.5,w:7.6,d:'꼬리 끝의 작은 불로 몸을 데우며 겨울을 난다. 사람을 깜짝 놀래 주는 장난을 좋아한다.'},
+ 22:{n:'구미염',t:['fire'],b:[76,72,72,86,96,104],x:172,c:70,ls:LS.fox,st:1,line:21,cat:'여우',h:1.3,w:24,d:'옛이야기 속 구미호에서 이름을 땄다. 꼬리를 흔들 때마다 도깨비불이 춤춘다.'},
+ 23:{n:'돌돌이',t:['rock','ground'],b:[44,78,96,28,34,22],x:63,c:170,ls:LS.rock,ev:[25,24],st:0,line:23,cat:'돌',h:.5,w:26,d:'바위를 핥아 광물을 먹고 자란다. 많이 먹은 날은 몸이 반짝반짝 빛난다.'},
+ 24:{n:'바위거북',t:['rock','ground'],b:[74,92,112,48,48,36],x:134,c:58,ls:LS.rock,st:1,line:23,cat:'바위',h:1.2,w:132,d:'등딱지는 오래된 바위산 조각이다. 한번 자리를 잡으면 몇 달씩 움직이지 않는다.'},
+ 25:{n:'독버섯',t:['poison','grass'],b:[38,68,52,48,58,28],x:63,c:170,ls:LS.shroom,ev:[24,26],st:0,line:25,cat:'버섯',h:.4,w:3.8,d:'비 온 다음 날 숲 바닥에 불쑥 솟아난다. 갓을 건드리면 매운 가루를 뿜는다.'},
+ 26:{n:'맹독버섯',t:['poison','grass'],b:[64,92,78,64,82,34],x:146,c:70,ls:LS.shroom,st:1,line:25,cat:'버섯',h:1.1,w:24,d:'갓의 물방울 무늬가 많을수록 오래 산 것이다. 숲을 지키는 버섯들의 우두머리.'},
+ 27:{n:'흙두더',t:['ground'],b:[38,58,42,32,42,84],x:61,c:170,ls:LS.mole,ev:[26,28],st:0,line:27,cat:'두더지',h:.4,w:5.2,d:'어두운 굴속에서 지내 눈이 거의 감겨 있다. 대신 수염으로 땅속 소리를 듣는다.'},
+ 28:{n:'굴착왕',t:['ground'],b:[62,94,62,46,68,104],x:152,c:70,ls:LS.mole,st:1,line:27,cat:'두더지',h:.9,w:41,d:'삽처럼 넓은 앞발로 하루에 산 하나를 꿰뚫는다는 소문이 있다.'},
+ 29:{n:'물파리',t:['water','poison'],b:[44,38,38,52,96,72],x:70,c:170,ls:LS.jelly,ev:[30,30],st:0,line:29,cat:'해파리',h:.8,w:31,d:'물결 따라 둥둥 떠다니며 낮잠을 잔다. 우산 같은 머리를 접었다 폈다 하며 나아간다.'},
+ 30:{n:'독물파리',t:['water','poison'],b:[82,68,68,82,116,98],x:176,c:58,ls:LS.jelly,st:1,line:29,cat:'해파리',h:1.8,w:63,d:'달 밝은 밤이면 무리 지어 수면 위로 떠올라 푸른빛을 낸다. 가까이 가면 따끔하다.'},
+ 31:{n:'염화룡',t:['fire','rock'],b:[94,112,98,102,84,90],x:268,c:4,ls:LS.legFire,st:2,line:31,legend:1,cat:'화산',h:2.6,w:296,d:'붉은재 화산 깊은 곳에서 잠든 불의 수호신. 숨을 내쉬면 용암이 끓어오른다.'},
+ 32:{n:'심해왕',t:['water'],b:[104,82,102,112,108,72],x:268,c:4,ls:LS.legWater,st:2,line:32,legend:1,cat:'수원',h:3.3,w:226,d:'모든 강물이 시작되는 수원에 산다는 물의 수호신. 한 번 울면 사흘 동안 비가 내린다.'},
+ 33:{n:'뇌명조',t:['elec','fly'],b:[88,86,78,118,92,118],x:268,c:4,ls:LS.legElec,st:2,line:33,legend:1,cat:'뇌운',h:2.2,w:58,d:'폭풍 봉우리의 먹구름 속을 나는 번개의 수호신. 날갯짓마다 천둥이 친다.'},
+ 34:{n:'천공신',t:['normal','fly'],b:[112,106,104,108,112,98],x:318,c:4,ls:LS.legSky,st:2,line:34,legend:1,cat:'하늘',h:4.4,w:372,d:'세 수호신이 깨어날 때 구름 위에 모습을 드러낸다는 하늘의 신. 이 지방을 처음 만들었다고 전해진다.'}};
 const DEX_N=Object.keys(SP).length;
 
 /* 성격 [이름, 오르는 능력, 내려가는 능력] (인덱스 1~5) */
@@ -737,8 +737,8 @@ const NATURES=[['씩씩함',1,5],['고집셈',1,3],['듬직함',2,1],['꼼꼼함
 /* 도구 */
 const ITEMS={
  ball:{n:'포획캡슐',p:'ball',price:200,ball:1,d:'야생 몬스터에게 던져서 붙잡는 캡슐.'},
- hyper:{n:'하이퍼캡슐',p:'ball',price:1200,ball:2.5,d:'전설의 몬스터도 노려볼 수 있는 최고급 캡슐.'},
- great:{n:'슈퍼캡슐',p:'ball',price:600,ball:1.5,d:'포획캡슐보다 몬스터를 더 잘 붙잡을 수 있는 캡슐.'},
+ hyper:{n:'황금캡슐',p:'ball',price:1200,ball:2.5,d:'전설의 몬스터도 노려볼 수 있는 최고급 캡슐.'},
+ great:{n:'은빛캡슐',p:'ball',price:600,ball:1.5,d:'포획캡슐보다 몬스터를 더 잘 붙잡을 수 있는 캡슐.'},
  potion:{n:'회복약',p:'heal',price:300,heal:20,d:'몬스터 1마리의 HP를 20 회복한다.'},
  super:{n:'고급회복약',p:'heal',price:700,heal:60,d:'몬스터 1마리의 HP를 60 회복한다.'},
  antidote:{n:'해독약',p:'heal',price:100,cure:'psn',d:'몬스터 1마리의 독 상태를 치료한다.'},
@@ -759,7 +759,7 @@ const TCLASS={kid:{n:'꼬마',m:16,look:'kid'},girl:{n:'소녀',m:20,look:'girl'
   leader:{n:'관장',m:100},rival:{n:'라이벌',m:35,look:'rival'},grunt:{n:'검은안개단원',m:26,look:'villain'},boss:{n:'검은안개단 두목',m:60,look:'boss'},
   birdkeeper:{n:'새조련사',m:24,look:'camper'},engineer:{n:'정비공',m:28,look:'man'},ranger:{n:'산악구조대',m:32,look:'hiker'},tower:{n:'탑의 수호자',m:12,look:'man'}};
 /* 라이벌 파티: 라이벌은 주인공의 스타터에 유리한 몬스터를 고른다 */
-const COUNTER={1:4,4:7,7:1,17:27}; // 17 찌릿쥐(이스터에그) → 라이벌은 흙두더
+const COUNTER={1:4,4:7,7:1,17:27}; // 17 찌릿냥(이스터에그) → 라이벌은 흙두더
 function rivalTeam(stage){const r=G.rivalStarter;
   if(stage===1)return[[r,5]];
   if(stage===2)return[[10,9],[15,9],[r,12]];
@@ -834,8 +834,9 @@ function monCanvas(sid,back=false,shiny=false){const key=sid+(back?'b':'f')+(shi
       set(CX-headRx-.8,faceY,3);set(CX-headRx-1.6,faceY-1,3);}
     else if(t==='grass'){if(st<2){set(11,top-1,13);set(11,top-2,13);set(10,top-2,14);set(9,top-3,14);set(10,top-3,14);if(st)set(8,top-4,14),set(9,top-4,14);}
       else{ell(CX,top-1.5,7,3.8,14,(x,y,v)=>v===0);ell(CX,top-1.5,4,2.2,13,(x,y,v)=>v===14);}}
-    else if(t==='elec'){const x0=CX-headRx*.65;[[0,-1],[-1,-2],[0,-3],[-1,-4],[-1,-5]].slice(0,3+st).forEach(([dx,dy],i,a)=>set(x0+dx,top+dy,i===a.length-1?6:1));
-      if(!back){set(CX-headRx*.78,faceY+headR*.35,8);set(CX-headRx*.78+1,faceY+headR*.35,8);}}
+    else if(t==='elec'){const x0=CX-headRx*.65;[[0,-1],[-1,-2],[0,-3],[-1,-4],[-1,-5]].slice(0,3+st).forEach(([dx,dy],i,a)=>set(x0+dx,top+dy,i===a.length-1?4:1));
+      // 가슴의 번개 무늬(좌우 대칭으로 펼쳐진다)
+      if(!back){const bx=CX-2,by=Math.floor(cy-bodyRy*.25);[[1,0],[0,1],[1,2],[0,3]].forEach(([dx,dy])=>{const v=get(bx+dx,by+dy);if(v===1||v===2)set(bx+dx,by+dy,4);});}}
     else if(t==='rock'){for(let k=0;k<5+st*3;k++){const x=Math.floor(CX-bodyRx*Rs()),y=Math.floor(cy-bodyRy*.6+Rs()*bodyRy*1.4);if(get(x,y)===1)set(x,y,7);}
       if(st>=1){set(CX-bodyRx*.75,cy-bodyRy*.85,7);set(CX-bodyRx*.75,cy-bodyRy*.85-1,7);set(CX-bodyRx*.95,cy-bodyRy*.6,7);}}
     else if(t==='ground'){set(CX-headRx*.7,top,1);set(CX-headRx*.8,top-1,3);}
@@ -1573,7 +1574,7 @@ function guideSoon(id,target,text,o){if(guideSeen(id))return;setTimeout(()=>guid
 /* =========================================================
    maps.js — 지도 데이터와 이벤트 스크립트
    바깥 타일: # 나무 . 땅 , 풀숲 = 길 ~ 물 f 꽃 s 표지판 r 바위 F 울타리 L 턱 Q 다리 D 문
-             H/K 집 B 연구소 C 몬스터센터 M 상점 G 체육관
+             H/K 집 B 연구소 C 몬스터 쉼터 M 상점 G 체육관
    실내 타일: w 벽 . 바닥 m 출구매트 c 카펫 T 탁자 K 카운터 S 책장 P PC h 회복기 v TV b 침대 p 화분 R 바위 Y 석상 ~ 물 x 빈공간
    ========================================================= */
 const RIVAL='도윤';
@@ -1643,7 +1644,7 @@ defMap('lab',{name:'한결 연구소',music:'town',bg:'lab',floor:'lab',wall:'#d
      await say(c>=20?'정말 대단하구나! 너는 진정한 몬스터 박사가 될 수 있겠어!':c>=10?'좋아, 그 기세로 계속 가 보렴!':'아직 갈 길이 멀구나. 풀숲 곳곳을 찾아보렴!',o);}},
    {id:'rival_lab',x:8,y:5,dir:'left',look:'rival',name:RIVAL,cond:()=>!G.flags.rival1,talk:async()=>{await say(`늦었잖아, ${nm()}! 나는 네가 먼저 고르게 해 줄게. 대인배니까!`,{name:RIVAL});}},
    {id:'aide1',x:2,y:9,dir:'down',look:'aide',name:'연구원',text:['박사님은 젊었을 때 몬스터 원정대의 대장이셨대요.','몬스터는 레벨이 오르면 모습이 바뀌기도 해요. 이걸 "진화"라고 하죠.']},
-   {id:'aide2',x:9,y:9,dir:'down',look:'aide',name:'연구원',wander:1,text:['몬스터 센터의 PC로 보관함을 이용할 수 있어요.','파티에는 6마리까지 데리고 다닐 수 있답니다.']}],
+   {id:'aide2',x:9,y:9,dir:'down',look:'aide',name:'연구원',wander:1,text:['몬스터 쉼터의 PC로 보관함을 이용할 수 있어요.','파티에는 6마리까지 데리고 다닐 수 있답니다.']}],
  trig:[{x:4,y:9,w:4,h:2,cond:()=>!G.flags.labIntro,run:labIntro}]});
 async function labIntro(){G.flags.labIntro=1;const prof=npcById('prof'),o={name:'한결 박사'};
   await emoteOn(prof,'!');await say(`오, 왔구나 ${nm()}! 기다리고 있었단다.`,o);
@@ -1661,7 +1662,7 @@ async function pickStarter(i){const[x,y,sid]=STARTERS[i];
     if(G.flags.dec===7&&!G.flags.decHint){G.flags.decHint=1;const prof=npcById('prof');await emoteOn(prof,'?');await say('흐음… 셋 다 마음에 안 드는 눈치로구나. 잠깐 나한테 와 보겠니?',{name:'한결 박사'});}
     return;}
   await giveStarter(sid);}
-/* 이스터에그: 세 캡슐을 모두 거절하면 박사의 비밀 몬스터(찌릿쥐) */
+/* 이스터에그: 세 캡슐을 모두 거절하면 박사의 비밀 몬스터(찌릿냥) */
 async function secretStarter(){const o={name:'한결 박사'},sid=17,s=SP[sid],prof=npcById('prof');
   await say('허허, 고집 센 녀석이로구나. 사실 오늘 아침 연구소 뒷마당에서 이 녀석이 전선 줄을 갉아 먹고 있었단다.',o);
   await say('캡슐에 들어가는 걸 질색해서 아직 아무에게도 맡기지 못했는데… 어쩐지 너랑은 잘 맞을 것 같구나.',o);
@@ -1673,7 +1674,7 @@ async function secretStarter(){const o={name:'한결 박사'},sid=17,s=SP[sid],p
   if(r!==0){G.flags.dec=0;await say('그래, 천천히 다시 골라 보렴.',o);return;}
   await giveStarter(sid,{secret:1});
   await say('아, 그리고 하나만 말해 두마. 전기 기술은 땅 타입에게 전혀 통하지 않는단다.',o);
-  await say('바위시티 체육관은 꽤 고생할 거야. 풀숲에서 동료를 모으거나, 몬스터 센터의 합성 연구원을 찾아가 보렴.',o);}
+  await say('바위시티 체육관은 꽤 고생할 거야. 풀숲에서 동료를 모으거나, 몬스터 쉼터의 합성 연구원을 찾아가 보렴.',o);}
 async function giveStarter(sid,opt={}){const s=SP[sid];
   G.starter=sid;G.rivalStarter=COUNTER[sid];G.flags.starter=1;if(opt.secret)G.flags.secretStarter=1;
   const m=makeMon(sid,5,{met:{map:'한결 연구소',lv:5},ot:G.name,shiny:false});addMon(m);G.seen[sid]=G.caught[sid]=1;
@@ -1767,9 +1768,9 @@ defMap('city',{name:'바위시티',out:1,music:'city',bg:'city',region:'city',
  links:{s:'route1',e:'route2'},
  warps:{'12,5':['gym1',6,14,'up'],'5,10':['center1',6,8,'up'],'19,10':['mart1',5,7,'up'],'3,16':['chouse',4,6,'up']},
  signs:{'4,3':['바위시티','단단한 의지가 모이는 바위의 도시']},
- npcs:[{id:'c_old',x:8,y:6,dir:'down',look:'old',name:'할아버지',text:['체육관 관장 단단은 바위 타입 몬스터를 쓴다네.','바위에는 물이나 풀 기술이 잘 통하지. 불꽃과 비행은 고전할 게야.']},
+ npcs:[{id:'c_old',x:8,y:6,dir:'down',look:'old',name:'할아버지',text:['체육관 관장 단단은 바위 타입 몬스터를 쓴다네.','바위에는 물이나 풀 기술이 잘 통하지. 불꽃과 바람은 고전할 게야.']},
    {id:'c_girl',x:16,y:13,dir:'left',look:'lady',name:'아가씨',wander:1,text:['동쪽 2번 도로 숲에는 여러 타입의 몬스터가 살아요.','상점에서 상태 이상 치료약도 꼭 챙기세요!']},
-   {id:'c_kid',x:7,y:12,dir:'up',look:'kid',name:'꼬마',wander:1,text:['몬스터 센터에서는 공짜로 몬스터를 회복시켜 줘!','몬스터 두 마리를 합성하면 더 높은 등급의 몬스터가 된대! 메뉴의 몬스터 화면에서도 할 수 있어.']},
+   {id:'c_kid',x:7,y:12,dir:'up',look:'kid',name:'꼬마',wander:1,text:['몬스터 쉼터에서는 공짜로 몬스터를 회복시켜 줘!','몬스터 두 마리를 합성하면 더 높은 등급의 몬스터가 된대! 메뉴의 몬스터 화면에서도 할 수 있어.']},
    {id:'c_guard',x:22,y:9,dir:'down',look:'guide',name:'경비원',text:['여기서부터 2번 도로야. 숲에는 강한 몬스터가 많으니 조심하렴.']}],
  trig:[{x:22,y:10,w:2,h:2,cond:()=>!G.flags.badge0,run:async()=>{const g=npcById('c_guard');g.dir='down';await emoteOn(g,'!');
    await say('잠깐! 이 앞 2번 도로 숲은 아주 위험해.',{name:'경비원'});await say('바위시티 체육관의 배지를 얻은 트레이너만 지나갈 수 있단다.',{name:'경비원'});await walkPlayer(['left']);}}]});
@@ -1779,18 +1780,18 @@ defMap('chouse',{name:'바위시티 민가',music:'city',bg:'lab',floor:'wood',w
  npcs:[{id:'granny',x:6,y:4,dir:'left',look:'granny',name:'할머니',talk:async()=>{const o={name:'할머니'};
    if(!G.flags.badge0){await say('젊은이, 체육관에 도전하려고? 관장 단단은 내 손자란다.',o);await say('배지를 얻어 오면 좋은 걸 주마. 호호.',o);return;}
    if(!G.flags.gift2){await say('어머나, 단단을 이겼구나! 약속대로 이걸 주마.',o);await giveItem('great',3);G.flags.gift2=1;return;}
-   await say('슈퍼캡슐은 보통 캡슐보다 훨씬 잘 붙잡힌단다.',o);}},
+   await say('은빛캡슐은 보통 캡슐보다 훨씬 잘 붙잡힌단다.',o);}},
    {id:'ch_kid',x:2,y:5,dir:'right',look:'kid',name:'꼬마',text:['우리 형은 바위시티 체육관 관장이야! 엄청 세다구!']}]});
 
-/* ---- 공용: 몬스터 센터 / 상점 ---- */
-function centerMap(id,out,ox,oy,region,music){defMap(id,{name:'몬스터 센터',music:'center',bg:'lab',floor:'tile',wall:'#fbe4e8',region,
+/* ---- 공용: 몬스터 쉼터 / 상점 ---- */
+function centerMap(id,out,ox,oy,region,music){defMap(id,{name:'몬스터 쉼터',music:'center',bg:'lab',floor:'tile',wall:'#fbe4e8',region,
  rows:['wwwwwwwwwwwww','wwwwwwwwwwwww','p...h.......p','...KKKKKKK..P','.............','.TT.......TT.','.TT.......TT.','.............','p...........p','......m......'],
  warps:{'6,9':[out,ox,oy,'down']},
  obj:{'12,3':()=>pcMenu(),'4,2':['회복 장치가 반짝이고 있다.']},
  npcs:[{id:'nurse_'+id,x:6,y:2,dir:'down',look:'nurse',name:'간호사',talk:()=>nurse(out,ox,oy)},
    {id:'fuse_'+id,x:10,y:7,dir:'left',look:'aide',name:'합성 연구원',talk:()=>fusionLab()},
    {id:'cg_'+id,x:2,y:7,dir:'right',look:id==='center1'?'old':'lady',name:id==='center1'?'할아버지':'아가씨',wander:1,
-    text:id==='center1'?['몬스터가 쓰러지면 몬스터 센터로 데려오게나.','그리고 항상 회복약을 넉넉히 챙겨 두게!']:['물결마을 체육관 관장 하라 씨는 물 타입의 달인이에요.','전기 타입과 풀 타입 몬스터가 있으면 든든하겠죠!']}]});}
+    text:id==='center1'?['몬스터가 쓰러지면 몬스터 쉼터로 데려오게나.','그리고 항상 회복약을 넉넉히 챙겨 두게!']:['물결마을 체육관 관장 하라 씨는 물 타입의 달인이에요.','전기 타입과 풀 타입 몬스터가 있으면 든든하겠죠!']}]});}
 centerMap('center1','city',5,11,'city');
 function martMap(id,out,ox,oy,region){defMap(id,{name:'몬스터 상점',music:'center',bg:'lab',floor:'tile',wall:'#e4ecfb',region,
  rows:['wwwwwwwwwww','wwwwwwwwwww','..K.....SSS','..K........','..K..SS.SS.','...........','....SS.SS..','p.........p','.....m.....'],
@@ -1806,7 +1807,7 @@ defMap('gym1',{name:'바위시티 체육관',music:'gym',bg:'rock',floor:'stone'
  rows:['wwwwwwwwwwwww','wwwwwwwwwwwww','R....ccc....R','R...........R','RRRR..R..RRRR','R...........R','R..RRR.RRR..R','R...........R','RRR..RRR..RRR','R...........R','R.RRR...RRR.R','R...........R','R...........R','R....Y.Y....R','R...........R','R.....m.....R'],
  warps:{'6,15':['city',12,6,'down']},
  obj:{'5,13':()=>statue(0),'7,13':()=>statue(0)},
- npcs:[{id:'g1_guide',x:4,y:14,dir:'right',look:'guide',name:'체육관 안내원',text:['어이, 도전자! 이곳 관장 단단은 바위 타입 전문이야.','바위 타입에는 물과 풀 기술이 효과가 굉장하지! 반대로 불꽃이나 비행은 별로야.','관장의 몬스터는 땅 타입이기도 해서 전기 기술이 통하지 않으니 조심해!']},
+ npcs:[{id:'g1_guide',x:4,y:14,dir:'right',look:'guide',name:'체육관 안내원',text:['어이, 도전자! 이곳 관장 단단은 바위 타입 전문이야.','바위 타입에는 물과 풀 기술이 효과가 굉장하지! 반대로 불꽃이나 바람은 별로야.','관장의 몬스터는 땅 타입이기도 해서 전기 기술이 통하지 않으니 조심해!']},
    {id:'tr_cheolsu',x:2,y:9,dir:'right',look:'hiker',trainer:{cls:'hiker',name:'철수',team:[[23,10]],intro:['관장님께 도전하려면 나부터 넘어서라!'],lose:'으음, 단단하지 못했군...',after:['관장님의 바위거북은 방어가 엄청나다고.']}},
    {id:'tr_yeongho',x:10,y:5,dir:'left',look:'hiker',trainer:{cls:'hiker',name:'영호',team:[[27,9],[23,10]],intro:['산에서 단련한 내 몬스터들을 보아라!'],lose:'산사태 같은 공격이었다...',after:['특수 기술로 공격하면 바위 타입의 단단한 방어를 피할 수 있지.']}},
    {id:'leader1',x:6,y:2,dir:'down',look:'leaderRock',name:'관장 단단',talk:leaderRock}]});
@@ -1848,7 +1849,7 @@ defMap('route2',{name:'2번 도로',out:1,music:'route',bg:'forest',region:'rout
  signs:{'3,9':['2번 도로','→ 물결마을 · ← 바위시티']},
  items:[{x:27,y:12,item:'super',n:1,flag:'i_r2a'},{x:2,y:14,item:'ball',n:3,flag:'i_r2b'},{x:28,y:2,item:'revive',n:1,flag:'i_r2c'},{x:22,y:2,item:'parheal',n:1,flag:'i_r2d'}],
  npcs:[{id:'tr_donghun',x:12,y:6,dir:'down',look:'camper',trainer:{cls:'camper',name:'동훈',team:[[21,10],[23,10]],intro:['숲에서 단련한 내 몬스터를 받아라!'],lose:'캠프파이어가 꺼져 버렸어...',after:['물결마을 관장은 물 타입을 써. 전기나 풀 타입이 있으면 좋을 거야.']}},
-   {id:'tr_haneul',x:5,y:12,dir:'up',look:'bug',trainer:{cls:'bugboy',name:'하늘',team:[[13,9],[14,11]],intro:['벌레 몬스터의 진가를 보여 주지!'],lose:'나풀나비가 날아가 버렸다...',after:['꼬물이는 금방 진화해. 레벨 10이면 나풀나비가 된다구!']}},
+   {id:'tr_haneul',x:5,y:12,dir:'up',look:'bug',trainer:{cls:'bugboy',name:'하늘',team:[[13,9],[14,11]],intro:['곤충 몬스터의 진가를 보여 주지!'],lose:'나풀나비가 날아가 버렸다...',after:['꼬물이는 금방 진화해. 레벨 10이면 나풀나비가 된다구!']}},
    {id:'tr_sera',x:24,y:9,dir:'left',look:'lady',trainer:{cls:'lass',name:'세라',team:[[17,11]],intro:['찌릿찌릿한 승부, 어때요?'],lose:'찌릿... 내가 감전된 기분이에요.',after:['전기 타입은 땅 타입에게는 전혀 통하지 않아요.']}},
    {id:'tr_gildong',x:24,y:5,dir:'down',look:'fisher',trainer:{cls:'fisher',name:'길동',team:[[19,11],[29,10]],intro:['오늘은 고기 대신 트레이너를 낚아 볼까!'],lose:'놓친 고기가 크다더니...',after:['물파리는 독이 있어. 해독약을 챙기라고.']}},
    {id:'r2_girl',x:20,y:14,dir:'left',look:'girl',name:'소녀',wander:1,text:['숲 깊은 곳에는 연못이 있어. 개굴물을 본 적 있니?']}],
@@ -2027,7 +2028,7 @@ defMap('gym3',{name:'붉은재마을 체육관',music:'gym',bg:'rock',floor:'sto
  rows:['wwwwwwwwwwwww','wwwwwwwwwwwww','%%%..ccc..%%%','%...........%','%.%%%%.%%%%.%','%...........%','%%%.%%%%%.%%%','%...........%','%.%%%%.%%%%.%','%...........%','%%%%.%%%.%%%%','%...........%','%...........%','%...Y...Y...%','%...........%','%%%%%%m%%%%%%'],
  warps:{'6,15':['town3',18,6,'down']},
  obj:{'4,13':()=>statue(2),'8,13':()=>statue(2)},
- npcs:[{id:'g3_guide',x:3,y:14,dir:'right',look:'guide',name:'체육관 안내원',text:['여긴 정말 덥지? 관장 화련은 불꽃 타입의 달인이야.','불꽃에는 물·바위·땅 기술이 효과가 굉장해. 풀이나 벌레는 금방 타 버리지!']},
+ npcs:[{id:'g3_guide',x:3,y:14,dir:'right',look:'guide',name:'체육관 안내원',text:['여긴 정말 덥지? 관장 화련은 불꽃 타입의 달인이야.','불꽃에는 물·바위·땅 기술이 효과가 굉장해. 풀이나 곤충은 금방 타 버리지!']},
    {id:'tr_bulsoo',x:10,y:11,dir:'left',look:'camper',trainer:{cls:'camper',name:'불수',team:[[21,23],[22,24]],intro:['내 불꽃 여우들의 춤을 봐라!'],lose:'불씨가 꺼졌다...',after:['관장님의 화르릉은 불꽃을 두 번이나 뿜는다니까!']}},
    {id:'tr_hwaa',x:2,y:7,dir:'right',look:'girl',trainer:{cls:'girl',name:'화아',team:[[1,22],[2,24]],intro:['뜨거운 승부 좋아해?'],lose:'앗 뜨거워!',after:['물 타입 몬스터를 데려왔구나? 현명해!']}},
    {id:'leader3',x:6,y:2,dir:'down',look:'leaderFire',name:'관장 화련',talk:leaderFire}]});
@@ -2069,10 +2070,10 @@ defMap('route4',{name:'4번 도로',out:1,music:'route',bg:'grass',region:'route
  signs:{'3,6':['4번 도로','← 붉은재마을 · → 번개도시']},
  items:[{x:30,y:3,item:'lvup',n:2,flag:'i_r4a'},{x:2,y:12,item:'fullheal',n:1,flag:'i_r4b'},{x:31,y:15,item:'great',n:3,flag:'i_r4c'}],
  npcs:[{id:'tr_gicheol',x:9,y:5,dir:'down',look:'man',trainer:{cls:'engineer',name:'기철',team:[[17,23],[18,25]],intro:['이 전신주들은 내가 다 점검했다고! 근데 갑자기 전기가 끊겼어...'],lose:'합선이다...',after:['번개도시 발전소에 이상한 녀석들이 들어갔다는 얘기가 있어.']}},
-   {id:'tr_sol',x:17,y:12,dir:'up',look:'camper',trainer:{cls:'birdkeeper',name:'솔이',team:[[10,23],[11,25]],intro:['새들의 날갯짓을 봐!'],lose:'깃털이 다 빠졌어...',after:['하늘봉마을의 관장은 비행 타입을 아주 잘 다룬대.']}},
+   {id:'tr_sol',x:17,y:12,dir:'up',look:'camper',trainer:{cls:'birdkeeper',name:'솔이',team:[[10,23],[11,25]],intro:['새들의 날갯짓을 봐!'],lose:'깃털이 다 빠졌어...',after:['하늘봉마을의 관장은 바람 타입을 아주 잘 다룬대.']}},
    {id:'tr_grunt2',x:24,y:7,dir:'left',look:'villain',trainer:{cls:'grunt',name:'단원',team:[[26,24],[30,24]],intro:['여기서부턴 검은안개단의 구역이다! 썩 돌아가!'],lose:'이, 이럴 수가...',after:['두목님은 발전소에서 거대한 계획을 준비 중이시다!']}},
    {id:'tr_grunt3',x:29,y:10,dir:'up',look:'villain',trainer:{cls:'grunt',name:'단원',team:[[16,24],[28,25]],intro:['발전소에는 한 발짝도 못 들어간다!'],lose:'크윽, 꼬마 주제에...',after:['흥, 두목님께는 상대도 안 될걸!']}},
-   {id:'r4_kid',x:6,y:14,dir:'right',look:'kid',name:'꼬마',wander:1,text:['전기 타입은 물이랑 비행에 강해! 땅에는 하나도 안 통하고.']}]});
+   {id:'r4_kid',x:6,y:14,dir:'right',look:'kid',name:'꼬마',wander:1,text:['전기 타입은 물이랑 바람에 강해! 땅에는 하나도 안 통하고.']}]});
 
 /* ------------------------------ 번개도시 ------------------------------ */
 defMap('town4',{name:'번개도시',out:1,music:'city',bg:'city',region:'town4',
@@ -2220,7 +2221,7 @@ defMap('town5',{name:'하늘봉마을',out:1,music:'town',bg:'grass',region:'tow
  signs:{'14,10':['하늘봉마을','구름 위의 마을 · 정상까지 조금 더!']},
  npcs:[gate('t5_gate',12,5,()=>!G.flags.badge4,['이 위는 하늘봉 정상이야.','다섯 개의 배지를 모두 모은 트레이너만 오를 수 있지.']),
    {id:'t5_old',x:7,y:14,dir:'right',look:'old',name:'할아버지',wander:1,text:['이 마을은 구름보다 높은 곳에 있다네.','정상에서 보는 일출은 평생 잊지 못할 거야.']},
-   {id:'t5_girl',x:16,y:20,dir:'up',look:'girl',name:'소녀',wander:1,text:['하늬 관장님의 몬스터는 하늘을 춤추듯 날아!','바위나 전기 기술이 비행 타입에 잘 통한대.']},
+   {id:'t5_girl',x:16,y:20,dir:'up',look:'girl',name:'소녀',wander:1,text:['하늬 관장님의 몬스터는 하늘을 춤추듯 날아!','바위나 전기 기술이 바람 타입에 잘 통한대.']},
    {id:'t5_summit',x:12,y:2,dir:'down',look:'rival',name:RIVAL,cond:()=>G.flags.badge4&&!G.flags.clear2,talk:finalRival,sight:finalRival},
    {id:'t5_elder',x:14,y:3,dir:'left',look:'old',name:'하늘봉 장로',cond:()=>!!G.flags.clear2,talk:()=>elderTalk()},
    {id:'t5_sky',x:12,y:2,dir:'down',mon:34,name:'천공신',cond:()=>G.flags.legendQuest&&G.flags.awake31&&G.flags.awake32&&G.flags.awake33&&!G.flags.cap34,talk:()=>legendBattle(34,70,'grass')},
@@ -2232,7 +2233,7 @@ defMap('gym5',{name:'하늘봉마을 체육관',music:'gym',bg:'grass',floor:'sk
  rows:['wwwwwwwwwwwww','wwwwwwwwwwwww','p....ccc....p','.............','pp.ppp.ppp.pp','.............','..ppp...ppp..','.............','ppp..ppp..ppp','.............','.pp.ppppp.pp.','.............','.............','....Y...Y....','.............','......m......'],
  warps:{'6,15':['town5',21,12,'down']},
  obj:{'4,13':()=>statue(4),'8,13':()=>statue(4)},
- npcs:[{id:'g5_guide',x:3,y:14,dir:'right',look:'guide',name:'체육관 안내원',text:['드디어 마지막 체육관이야! 관장 하늬는 비행 타입의 달인.','비행 타입에는 전기·바위 기술이 효과가 굉장하지!']},
+ npcs:[{id:'g5_guide',x:3,y:14,dir:'right',look:'guide',name:'체육관 안내원',text:['드디어 마지막 체육관이야! 관장 하늬는 바람 타입의 달인.','바람 타입에는 전기·바위 기술이 효과가 굉장하지!']},
    {id:'tr_gureum',x:11,y:11,dir:'left',look:'camper',trainer:{cls:'birdkeeper',name:'구름',team:[[11,34],[14,34]],intro:['구름 위의 승부다!'],lose:'추락했다...',after:['관장님의 마지막 몬스터는 정말 강해!']}},
    {id:'tr_haeun',x:1,y:7,dir:'right',look:'lady',trainer:{cls:'lass',name:'하은',team:[[10,33],[11,35]],intro:['하늘처럼 맑은 승부를!'],lose:'흐려졌어요...',after:['바위 기술을 준비했나요?']}},
    {id:'leader5',x:6,y:2,dir:'down',look:'leaderSky',name:'관장 하늬',talk:leaderSky}]});
@@ -2281,7 +2282,7 @@ async function elderTalk(){const o={name:'하늘봉 장로'};const F=G.flags;
     await say('불의 염화룡, 물의 심해왕, 번개의 뇌명조... 세 수호신은 지금도 깊은 동굴에서 잠들어 있지.',o);
     await say('세 수호신을 모두 깨우면, 천공신이 이 정상에 다시 모습을 드러낸다고 전해진다네.',o);
     for(const L of LEGENDS)await say(`${SP[L.sid].n}: ${L.where}`,o);
-    await say('동굴 입구는 이제 자네에게 열릴 걸세. 수호신들은 아주 강하니, 하이퍼캡슐을 넉넉히 챙겨 가게.',o);
+    await say('동굴 입구는 이제 자네에게 열릴 걸세. 수호신들은 아주 강하니, 황금캡슐을 넉넉히 챙겨 가게.',o);
     F.legendQuest=1;await giveItem('hyper',3);sfx('sparkle');return;}
   const left=LEGENDS.filter(L=>!F['awake'+L.sid]);
   if(left.length){await say(`아직 깨어나지 않은 수호신이 ${left.length}마리 남았네.`,o);for(const L of left)await say(`${SP[L.sid].n}: ${L.where}`,o);return;}
@@ -2595,6 +2596,8 @@ async function trainerCard(){const tp=page(TOP,''),bp=el(BOT,'abs','',[0,0,256,1
 const SAVE_KEY='monster-expedition-save-v2';
 function saveGame(){G.x=P.x;G.y=P.y;G.dir=P.dir;G.savedAt=Date.now();try{localStorage.setItem(SAVE_KEY,JSON.stringify(G));return true;}catch(e){return false;}}
 function readSave(){try{const s=localStorage.getItem(SAVE_KEY);return s?JSON.parse(s):null;}catch(e){return null;}}
+// 몬스터 수치가 바뀐 버전에서 예전 리포트를 불러와도 HP가 최대치를 넘지 않게
+function fitHp(g){for(const m of[...(g.party||[]),...(g.box||[])])if(m&&SP[m.sid])m.hp=Math.min(m.hp,maxHp(m));return g;}
 /* ---------- 저장 코드 (다른 기기로 옮기기) ----------
    형식: ME2-<체크섬4>-<base64url(deflate(JSON))>  · 압축을 못 쓰는 브라우저는 ME2U-(무압축) */
 const b64u={enc:u8=>{let s='';for(let i=0;i<u8.length;i+=8192)s+=String.fromCharCode.apply(null,u8.subarray(i,i+8192));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');},
@@ -2710,7 +2713,7 @@ async function shopBuy(){const tp=page(TOP,'');let at=0;guideSoon('shop','bot','
     msg(`${J(it.n,'을')} 몇 개 사시겠어요?`,{name:'점원'});const n=await numberPick({max,price:it.price,title:it.n});hideMsg();if(!n)continue;
     const ok=await ask(`${it.n} ${n}개, 총 ${money(n*it.price)}입니다. 괜찮으시겠어요?`,['예','아니오'],{name:'점원'});if(ok!==0)continue;
     G.money-=n*it.price;G.bag[id]=(G.bag[id]||0)+n;sfx('save');tp.innerHTML=shopTop(id,'사기');await say('네, 여기 있습니다! 감사합니다!',{name:'점원'});
-    if(id==='ball'&&n>=10){G.bag.great=(G.bag.great||0)+1;await say('캡슐을 많이 사 주셔서 슈퍼캡슐을 하나 덤으로 드릴게요!',{name:'점원'});}}}
+    if(id==='ball'&&n>=10){G.bag.great=(G.bag.great||0)+1;await say('캡슐을 많이 사 주셔서 은빛캡슐을 하나 덤으로 드릴게요!',{name:'점원'});}}}
   finally{tp.remove();}}
 async function shopSell(){const tp=page(TOP,'');
   try{while(true){const ids=Object.keys(ITEMS).filter(k=>ITEMS[k].price&&G.bag[k]>0);
@@ -2722,9 +2725,9 @@ async function shopSell(){const tp=page(TOP,'');
     G.bag[id]-=n;G.money+=n*it.price/2;sfx('save');await say(`${money(n*it.price/2)}을 받았다!`);}}
   finally{tp.remove();}}
 
-/* ================= 몬스터 센터 ================= */
+/* ================= 몬스터 쉼터 ================= */
 async function nurse(out,ox,oy){const o={name:'간호사'},n=npcById('nurse_'+G.map);
-  await say('어서 오세요! 몬스터 센터입니다.',o);
+  await say('어서 오세요! 몬스터 쉼터입니다.',o);
   const r=await ask('몬스터의 체력을 회복시켜 드릴까요?',['예','아니오'],o);
   if(r!==0){await say('또 들러 주세요!',o);return;}
   await say('그럼 몬스터를 잠시 맡아 두겠습니다.',o);n.dir='left';const m=curMap();m.healAnim={n:G.party.length,f0:frame,on:true};
@@ -2771,7 +2774,7 @@ async function pcMenu(){sfx('menu');guideSoon('pc','top',`파티에는 6마리�
 
 /* ================= 몬스터 합성 =================
    아무 몬스터 두 마리 → 한 단계 위 등급(진화 단계)의 무작위 타입 몬스터 1마리.
-   등급 = min(2, 두 마리 중 높은 진화 단계 + 1). 레벨은 높은 쪽 +2. 둘 중 하나라도 이로치면 결과도 이로치. */
+   등급 = min(2, 두 마리 중 높은 진화 단계 + 1). 레벨은 높은 쪽 +2. 둘 중 하나라도 반짝이(★)면 결과도 반짝이. */
 const STAGE_N=['기본','1진화','최종진화'];
 function fusionStage(a,b){return Math.min(2,Math.max(SP[a.sid].st,SP[b.sid].st)+1);}
 function fusionPool(stage){return Object.keys(SP).map(Number).filter(s=>SP[s].st===stage&&s!==13&&!SP[s].legend&&(stage===2||SP[s].line>9));}
@@ -2811,7 +2814,7 @@ async function fusionFlow(first){const o={name:'합성 장치'};
     if(!G.party.includes(m))await say(`파티가 가득 차서 ${J(N(m),'은')} 보관함으로 보내졌다.`);}
   finally{fx.remove();botMode=prevBot;}
   return true;}
-/* 몬스터 센터 합성 연구원 */
+/* 몬스터 쉼터 합성 연구원 */
 async function fusionLab(){const o={name:'합성 연구원'};
   if(!G.flags.fuseIntro2){G.flags.fuseIntro2=1;
     await say('어서 오세요! 여기는 몬스터 합성 연구실이에요.',o);
@@ -2823,7 +2826,7 @@ async function fusionLab(){const o={name:'합성 연구원'};
   if(await fusionFlow())await say('소중히 키워 주세요!',o);else await say('또 오세요!',o);}
 
 /* =========================================================
-   battle.js — DS 스타일 턴제 배틀 + 진화 연출
+   battle.js — 2화면 턴제 배틀 + 진화 연출
    ========================================================= */
 let B=null,EV=null,hudE=null,hudP=null;
 const pm=()=>G.party[B.pi],fm=()=>B.foe[B.fi];
@@ -3049,7 +3052,7 @@ const AX={
   rings:async(c,col,n=3,at='T',grow=2)=>{for(let i=0;i<n;i++){FX.add({x:c[at].x,y:c[at].y,shape:'ring',c:col,s:5,life:18,grow});await sleep(110);}await sleep(160);},
   burst:(c,n,o,at='T')=>FX.burst(c[at].x,c[at].y,n,o)};
 const MOVE_FX={
- /* ----- 노말 ----- */
+ /* ----- 보통 ----- */
  tackle:async c=>{sfx('throw');await AX.dash(c,30,220);sfx('hit');AX.impact(c);await AX.knock(c);},
  scratch:async c=>{await AX.dash(c,14,160);sfx('hit');FX.add({x:c.T.x+4,y:c.T.y,shape:'claw',c:'#ff5a7a',s:18,life:14,fade:1});await AX.knock(c,6);await sleep(80);},
  growl:async c=>{sfx('bad');AX.wiggle(c,6,3,420);for(let i=0;i<4;i++){FX.add({x:c.U.x+c.d*16,y:c.U.y-4,vx:c.d*3.2,vy:(c.T.y-c.U.y)/40,shape:'crescent',c:'#ff8a5a',s:6+i,rot:c.d>0?0:Math.PI,life:36,fade:1});await sleep(90);}await sleep(260);AX.wiggle(c,4,3,300,'TS');await sleep(300);},
@@ -3112,14 +3115,14 @@ const MOVE_FX={
    for(let i=0;i<16;i++)FX.add({x:c.T.x-24+rnd(48),y:c.T.y+24,vy:-2-Math.random()*1.6,g:.12,shape:'sq',c:i%2?'#d8a858':'#a87a3a',s:3,life:30});await sleep(240);await AX.knock(c,10);},
  bulldoze:async c=>{await AX.hop(c,20,240);sfx('shake');AX.shake(8,520);const t=24;for(let i=0;i<=t;i+=2)setTimeout(()=>{const x=c.U.x+(c.T.x-c.U.x)*i/t,y=c.U.y+24+(c.T.y-c.U.y)*i/t;FX.add({x,y,vy:-2,g:.1,shape:'sq',c:'#c8985a',s:3,life:22});FX.add({x,y,shape:'crack',c:'#3a2a1a',s:8,life:30});},i*16);
    await sleep(t*16+100);AX.impact(c,'#d8a858',16);await AX.knock(c,14);},
- /* ----- 비행 ----- */
+ /* ----- 바람 ----- */
  gust:async c=>{sfx('wind');FX.add({x:c.T.x,y:c.T.y,shape:'spiral',c:'#ffffff',s:22,life:40,fade:1});for(let i=0;i<8;i++)FX.add({x:c.T.x-24,y:c.T.y-20+i*6,vx:3,shape:'line',c:'rgba(255,255,255,.8)',s:8,life:16});await sleep(520);await AX.knock(c,8);},
  wing:async c=>{sfx('wind');await AX.dash(c,24,200);for(const r of[-.5,.5]){FX.add({x:c.T.x,y:c.T.y,shape:'crescent',c:'#ffffff',s:16,life:12,rot:r+(c.d>0?0:Math.PI)});sfx('hit');await sleep(110);}
    AX.burst(c,8,{shape:'feather',c:'#f4f0e4',s:2.2,life:30,sp:1.6,g:.04,vr:.15});await AX.knock(c,8);},
  aerial:async c=>{sfx('wind');await tween(300,k=>{c.S.y=-k*140;c.S.alpha=1-k;});await sleep(200);c.S.x=(c.T.x-c.U.x)*.95;await tween(200,k=>{c.S.y=(c.T.y-c.U.y)-(1-k)*120;c.S.alpha=k;});
    sfx('super');AX.impact(c,'#ffffff',16);AX.shake(5,260);AX.burst(c,10,{shape:'feather',c:'#f4f0e4',s:2.2,life:30,sp:2,g:.04,vr:.15});await AX.knock(c,12);
    await tween(220,k=>{c.S.x=(c.T.x-c.U.x)*.95*(1-k);c.S.y=(c.T.y-c.U.y)*(1-k);});c.S.alpha=1;},
- /* ----- 벌레 ----- */
+ /* ----- 곤충 ----- */
  stringshot:async c=>{sfx('sparkle');for(let i=0;i<4;i++){FX.add({x:c.U.x,y:c.U.y,x2:c.T.x+(i-1.5)*8,y2:c.T.y+(i%2?6:-6),shape:'beam',c:'#ffffff',c2:'#e8e8e8',s:1.4,life:20,fade:0});await sleep(70);}
    FX.add({x:c.T.x,y:c.T.y,shape:'web',c:'rgba(255,255,255,.9)',s:24,life:40,fade:1});await sleep(520);},
  bite:async c=>{await AX.dash(c,22,180);sfx('hit');FX.add({x:c.T.x,y:c.T.y,shape:'fang',s:11,life:22,fade:0});await sleep(220);AX.impact(c,'#ffffff',8);await AX.knock(c,8);},
@@ -3526,7 +3529,7 @@ function loop(now){const dt=Math.min(.05,(now-lastT)/1000);lastT=now;frame++;
   if(state==='world')updateWorld(dt);updFloat();FX.step();render();renderBot();requestAnimationFrame(loop);}
 
 async function startFromCode(g,lg){try{localStorage.setItem(SAVE_KEY,JSON.stringify(g));}catch(e){}
-  lg.remove();hideMsg();await fadeTo(1);G=g;G.flags=G.flags||{};G.badges=G.badges||[0,0];G.box=G.box||[];busy=true;state='world';enterMap(G.map,G.x,G.y,G.dir||'down',{sign:1});Pad.show();await fadeTo(0);busy=false;
+  lg.remove();hideMsg();await fadeTo(1);G=fitHp(g);G.flags=G.flags||{};G.badges=G.badges||[0,0];G.box=G.box||[];busy=true;state='world';enterMap(G.map,G.x,G.y,G.dir||'down',{sign:1});Pad.show();await fadeTo(0);busy=false;
   await say(`저장 코드를 불러왔다! ${G.name}의 모험을 이어서 시작한다.`);}
 /* 새 버전 확인: 서버의 index.html이 지금 실행 중인 것과 다르면 새로고침 안내 */
 async function checkUpdate(){if(!/^https?:$/.test(location.protocol))return;
@@ -3558,7 +3561,7 @@ async function titleScreen(){checkUpdate();state='title';botMode='title';Music.p
       await startFromCode(g,lg);return;}
     if(i===1&&sv){const c=await ask('기존 리포트가 있습니다. 처음부터 시작하면 리포트를 저장할 때 덮어쓰게 됩니다. 괜찮습니까?',['처음부터 시작','돌아가기'],{start:1});if(c!==0)continue;}
     lg.remove();await fadeTo(1);
-    if(i===0){G=sv;G.flags=G.flags||{};G.badges=G.badges||[0,0];busy=true;state='world';enterMap(G.map,G.x,G.y,G.dir||'down',{sign:1});Pad.show();await fadeTo(0);busy=false;return;}
+    if(i===0){G=fitHp(sv);G.flags=G.flags||{};G.badges=G.badges||[0,0];busy=true;state='world';enterMap(G.map,G.x,G.y,G.dir||'down',{sign:1});Pad.show();await fadeTo(0);busy=false;return;}
     await intro();return;}}
 
 Pad.init();requestAnimationFrame(loop);titleScreen();
@@ -3569,7 +3572,7 @@ function worldGuides(){const touch=matchMedia('(pointer:coarse)').matches;
   if(G.flags.pad&&!guideSeen('menu')&&document.querySelector('#padUI .btn.red'))return guide('menu','#padUI .btn.red',`여기서 <b>메뉴</b>를 열어요. 도감·몬스터·가방·리포트(저장)·설정이 들어 있어요.${touch?'':' 키보드는 <b>Enter</b>.'}`,{title:'메뉴'});
   if(G.flags.pad&&!guideSeen('padapp')&&document.querySelector('#padUI .nav'))return guide('padapp','#padUI .lcd',`원정패드의 <b>◀ ▶</b>로 시계 · 파티 · 지도 · 만보기 앱을 바꿔 볼 수 있어요.${touch?'':' 키보드는 <b>Q / E</b>.'}`,{title:'원정패드'});
   if(G.flags.shoes&&!guideSeen('run'))return guide('run','top',`<b>B${touch?'':'(X)'}</b>를 누른 채로 이동하면 질주신발로 빠르게 달릴 수 있어요.`,{title:'달리기'});
-  if(G.flags.badge0&&!guideSeen('fuse'))return guide('fuse','top','몬스터 두 마리를 합치면 <b>한 단계 위 등급</b>의 무작위 타입 몬스터가 돼요. <b>메뉴 → 몬스터 → 합성하기</b>나 몬스터 센터의 합성 연구원에게서 할 수 있어요.',{title:'몬스터 합성'});}
+  if(G.flags.badge0&&!guideSeen('fuse'))return guide('fuse','top','몬스터 두 마리를 합치면 <b>한 단계 위 등급</b>의 무작위 타입 몬스터가 돼요. <b>메뉴 → 몬스터 → 합성하기</b>나 몬스터 쉼터의 합성 연구원에게서 할 수 있어요.',{title:'몬스터 합성'});}
 
 /* =========================================================
    auto.js — 자동 전투 · 자동 사냥 · 탑 자동 등반 · 필드 플로팅 버튼

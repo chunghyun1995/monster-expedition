@@ -95,7 +95,7 @@ defMap('gym3',{name:'붉은재마을 체육관',music:'gym',bg:'rock',floor:'sto
  rows:['wwwwwwwwwwwww','wwwwwwwwwwwww','%%%..ccc..%%%','%...........%','%.%%%%.%%%%.%','%...........%','%%%.%%%%%.%%%','%...........%','%.%%%%.%%%%.%','%...........%','%%%%.%%%.%%%%','%...........%','%...........%','%...Y...Y...%','%...........%','%%%%%%m%%%%%%'],
  warps:{'6,15':['town3',18,6,'down']},
  obj:{'4,13':()=>statue(2),'8,13':()=>statue(2)},
- npcs:[{id:'g3_guide',x:3,y:14,dir:'right',look:'guide',name:'체육관 안내원',text:['여긴 정말 덥지? 관장 화련은 불꽃 타입의 달인이야.','불꽃에는 물·바위·땅 기술이 효과가 굉장해. 풀이나 벌레는 금방 타 버리지!']},
+ npcs:[{id:'g3_guide',x:3,y:14,dir:'right',look:'guide',name:'체육관 안내원',text:['여긴 정말 덥지? 관장 화련은 불꽃 타입의 달인이야.','불꽃에는 물·바위·땅 기술이 효과가 굉장해. 풀이나 곤충은 금방 타 버리지!']},
    {id:'tr_bulsoo',x:10,y:11,dir:'left',look:'camper',trainer:{cls:'camper',name:'불수',team:[[21,23],[22,24]],intro:['내 불꽃 여우들의 춤을 봐라!'],lose:'불씨가 꺼졌다...',after:['관장님의 화르릉은 불꽃을 두 번이나 뿜는다니까!']}},
    {id:'tr_hwaa',x:2,y:7,dir:'right',look:'girl',trainer:{cls:'girl',name:'화아',team:[[1,22],[2,24]],intro:['뜨거운 승부 좋아해?'],lose:'앗 뜨거워!',after:['물 타입 몬스터를 데려왔구나? 현명해!']}},
    {id:'leader3',x:6,y:2,dir:'down',look:'leaderFire',name:'관장 화련',talk:leaderFire}]});
@@ -137,10 +137,10 @@ defMap('route4',{name:'4번 도로',out:1,music:'route',bg:'grass',region:'route
  signs:{'3,6':['4번 도로','← 붉은재마을 · → 번개도시']},
  items:[{x:30,y:3,item:'lvup',n:2,flag:'i_r4a'},{x:2,y:12,item:'fullheal',n:1,flag:'i_r4b'},{x:31,y:15,item:'great',n:3,flag:'i_r4c'}],
  npcs:[{id:'tr_gicheol',x:9,y:5,dir:'down',look:'man',trainer:{cls:'engineer',name:'기철',team:[[17,23],[18,25]],intro:['이 전신주들은 내가 다 점검했다고! 근데 갑자기 전기가 끊겼어...'],lose:'합선이다...',after:['번개도시 발전소에 이상한 녀석들이 들어갔다는 얘기가 있어.']}},
-   {id:'tr_sol',x:17,y:12,dir:'up',look:'camper',trainer:{cls:'birdkeeper',name:'솔이',team:[[10,23],[11,25]],intro:['새들의 날갯짓을 봐!'],lose:'깃털이 다 빠졌어...',after:['하늘봉마을의 관장은 비행 타입을 아주 잘 다룬대.']}},
+   {id:'tr_sol',x:17,y:12,dir:'up',look:'camper',trainer:{cls:'birdkeeper',name:'솔이',team:[[10,23],[11,25]],intro:['새들의 날갯짓을 봐!'],lose:'깃털이 다 빠졌어...',after:['하늘봉마을의 관장은 바람 타입을 아주 잘 다룬대.']}},
    {id:'tr_grunt2',x:24,y:7,dir:'left',look:'villain',trainer:{cls:'grunt',name:'단원',team:[[26,24],[30,24]],intro:['여기서부턴 검은안개단의 구역이다! 썩 돌아가!'],lose:'이, 이럴 수가...',after:['두목님은 발전소에서 거대한 계획을 준비 중이시다!']}},
    {id:'tr_grunt3',x:29,y:10,dir:'up',look:'villain',trainer:{cls:'grunt',name:'단원',team:[[16,24],[28,25]],intro:['발전소에는 한 발짝도 못 들어간다!'],lose:'크윽, 꼬마 주제에...',after:['흥, 두목님께는 상대도 안 될걸!']}},
-   {id:'r4_kid',x:6,y:14,dir:'right',look:'kid',name:'꼬마',wander:1,text:['전기 타입은 물이랑 비행에 강해! 땅에는 하나도 안 통하고.']}]});
+   {id:'r4_kid',x:6,y:14,dir:'right',look:'kid',name:'꼬마',wander:1,text:['전기 타입은 물이랑 바람에 강해! 땅에는 하나도 안 통하고.']}]});
 
 /* ------------------------------ 번개도시 ------------------------------ */
 defMap('town4',{name:'번개도시',out:1,music:'city',bg:'city',region:'town4',
@@ -288,7 +288,7 @@ defMap('town5',{name:'하늘봉마을',out:1,music:'town',bg:'grass',region:'tow
  signs:{'14,10':['하늘봉마을','구름 위의 마을 · 정상까지 조금 더!']},
  npcs:[gate('t5_gate',12,5,()=>!G.flags.badge4,['이 위는 하늘봉 정상이야.','다섯 개의 배지를 모두 모은 트레이너만 오를 수 있지.']),
    {id:'t5_old',x:7,y:14,dir:'right',look:'old',name:'할아버지',wander:1,text:['이 마을은 구름보다 높은 곳에 있다네.','정상에서 보는 일출은 평생 잊지 못할 거야.']},
-   {id:'t5_girl',x:16,y:20,dir:'up',look:'girl',name:'소녀',wander:1,text:['하늬 관장님의 몬스터는 하늘을 춤추듯 날아!','바위나 전기 기술이 비행 타입에 잘 통한대.']},
+   {id:'t5_girl',x:16,y:20,dir:'up',look:'girl',name:'소녀',wander:1,text:['하늬 관장님의 몬스터는 하늘을 춤추듯 날아!','바위나 전기 기술이 바람 타입에 잘 통한대.']},
    {id:'t5_summit',x:12,y:2,dir:'down',look:'rival',name:RIVAL,cond:()=>G.flags.badge4&&!G.flags.clear2,talk:finalRival,sight:finalRival},
    {id:'t5_elder',x:14,y:3,dir:'left',look:'old',name:'하늘봉 장로',cond:()=>!!G.flags.clear2,talk:()=>elderTalk()},
    {id:'t5_sky',x:12,y:2,dir:'down',mon:34,name:'천공신',cond:()=>G.flags.legendQuest&&G.flags.awake31&&G.flags.awake32&&G.flags.awake33&&!G.flags.cap34,talk:()=>legendBattle(34,70,'grass')},
@@ -300,7 +300,7 @@ defMap('gym5',{name:'하늘봉마을 체육관',music:'gym',bg:'grass',floor:'sk
  rows:['wwwwwwwwwwwww','wwwwwwwwwwwww','p....ccc....p','.............','pp.ppp.ppp.pp','.............','..ppp...ppp..','.............','ppp..ppp..ppp','.............','.pp.ppppp.pp.','.............','.............','....Y...Y....','.............','......m......'],
  warps:{'6,15':['town5',21,12,'down']},
  obj:{'4,13':()=>statue(4),'8,13':()=>statue(4)},
- npcs:[{id:'g5_guide',x:3,y:14,dir:'right',look:'guide',name:'체육관 안내원',text:['드디어 마지막 체육관이야! 관장 하늬는 비행 타입의 달인.','비행 타입에는 전기·바위 기술이 효과가 굉장하지!']},
+ npcs:[{id:'g5_guide',x:3,y:14,dir:'right',look:'guide',name:'체육관 안내원',text:['드디어 마지막 체육관이야! 관장 하늬는 바람 타입의 달인.','바람 타입에는 전기·바위 기술이 효과가 굉장하지!']},
    {id:'tr_gureum',x:11,y:11,dir:'left',look:'camper',trainer:{cls:'birdkeeper',name:'구름',team:[[11,34],[14,34]],intro:['구름 위의 승부다!'],lose:'추락했다...',after:['관장님의 마지막 몬스터는 정말 강해!']}},
    {id:'tr_haeun',x:1,y:7,dir:'right',look:'lady',trainer:{cls:'lass',name:'하은',team:[[10,33],[11,35]],intro:['하늘처럼 맑은 승부를!'],lose:'흐려졌어요...',after:['바위 기술을 준비했나요?']}},
    {id:'leader5',x:6,y:2,dir:'down',look:'leaderSky',name:'관장 하늬',talk:leaderSky}]});

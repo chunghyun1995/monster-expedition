@@ -209,7 +209,7 @@ function loop(now){const dt=Math.min(.05,(now-lastT)/1000);lastT=now;frame++;
   if(state==='world')updateWorld(dt);updFloat();FX.step();render();renderBot();requestAnimationFrame(loop);}
 
 async function startFromCode(g,lg){try{localStorage.setItem(SAVE_KEY,JSON.stringify(g));}catch(e){}
-  lg.remove();hideMsg();await fadeTo(1);G=g;G.flags=G.flags||{};G.badges=G.badges||[0,0];G.box=G.box||[];busy=true;state='world';enterMap(G.map,G.x,G.y,G.dir||'down',{sign:1});Pad.show();await fadeTo(0);busy=false;
+  lg.remove();hideMsg();await fadeTo(1);G=fitHp(g);G.flags=G.flags||{};G.badges=G.badges||[0,0];G.box=G.box||[];busy=true;state='world';enterMap(G.map,G.x,G.y,G.dir||'down',{sign:1});Pad.show();await fadeTo(0);busy=false;
   await say(`저장 코드를 불러왔다! ${G.name}의 모험을 이어서 시작한다.`);}
 /* 새 버전 확인: 서버의 index.html이 지금 실행 중인 것과 다르면 새로고침 안내 */
 async function checkUpdate(){if(!/^https?:$/.test(location.protocol))return;
@@ -241,7 +241,7 @@ async function titleScreen(){checkUpdate();state='title';botMode='title';Music.p
       await startFromCode(g,lg);return;}
     if(i===1&&sv){const c=await ask('기존 리포트가 있습니다. 처음부터 시작하면 리포트를 저장할 때 덮어쓰게 됩니다. 괜찮습니까?',['처음부터 시작','돌아가기'],{start:1});if(c!==0)continue;}
     lg.remove();await fadeTo(1);
-    if(i===0){G=sv;G.flags=G.flags||{};G.badges=G.badges||[0,0];busy=true;state='world';enterMap(G.map,G.x,G.y,G.dir||'down',{sign:1});Pad.show();await fadeTo(0);busy=false;return;}
+    if(i===0){G=fitHp(sv);G.flags=G.flags||{};G.badges=G.badges||[0,0];busy=true;state='world';enterMap(G.map,G.x,G.y,G.dir||'down',{sign:1});Pad.show();await fadeTo(0);busy=false;return;}
     await intro();return;}}
 
 Pad.init();requestAnimationFrame(loop);titleScreen();
@@ -252,4 +252,4 @@ function worldGuides(){const touch=matchMedia('(pointer:coarse)').matches;
   if(G.flags.pad&&!guideSeen('menu')&&document.querySelector('#padUI .btn.red'))return guide('menu','#padUI .btn.red',`여기서 <b>메뉴</b>를 열어요. 도감·몬스터·가방·리포트(저장)·설정이 들어 있어요.${touch?'':' 키보드는 <b>Enter</b>.'}`,{title:'메뉴'});
   if(G.flags.pad&&!guideSeen('padapp')&&document.querySelector('#padUI .nav'))return guide('padapp','#padUI .lcd',`원정패드의 <b>◀ ▶</b>로 시계 · 파티 · 지도 · 만보기 앱을 바꿔 볼 수 있어요.${touch?'':' 키보드는 <b>Q / E</b>.'}`,{title:'원정패드'});
   if(G.flags.shoes&&!guideSeen('run'))return guide('run','top',`<b>B${touch?'':'(X)'}</b>를 누른 채로 이동하면 질주신발로 빠르게 달릴 수 있어요.`,{title:'달리기'});
-  if(G.flags.badge0&&!guideSeen('fuse'))return guide('fuse','top','몬스터 두 마리를 합치면 <b>한 단계 위 등급</b>의 무작위 타입 몬스터가 돼요. <b>메뉴 → 몬스터 → 합성하기</b>나 몬스터 센터의 합성 연구원에게서 할 수 있어요.',{title:'몬스터 합성'});}
+  if(G.flags.badge0&&!guideSeen('fuse'))return guide('fuse','top','몬스터 두 마리를 합치면 <b>한 단계 위 등급</b>의 무작위 타입 몬스터가 돼요. <b>메뉴 → 몬스터 → 합성하기</b>나 몬스터 쉼터의 합성 연구원에게서 할 수 있어요.',{title:'몬스터 합성'});}

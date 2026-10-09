@@ -1,5 +1,5 @@
 /* =========================================================
-   battle.js — DS 스타일 턴제 배틀 + 진화 연출
+   battle.js — 2화면 턴제 배틀 + 진화 연출
    ========================================================= */
 let B=null,EV=null,hudE=null,hudP=null;
 const pm=()=>G.party[B.pi],fm=()=>B.foe[B.fi];
@@ -225,7 +225,7 @@ const AX={
   rings:async(c,col,n=3,at='T',grow=2)=>{for(let i=0;i<n;i++){FX.add({x:c[at].x,y:c[at].y,shape:'ring',c:col,s:5,life:18,grow});await sleep(110);}await sleep(160);},
   burst:(c,n,o,at='T')=>FX.burst(c[at].x,c[at].y,n,o)};
 const MOVE_FX={
- /* ----- 노말 ----- */
+ /* ----- 보통 ----- */
  tackle:async c=>{sfx('throw');await AX.dash(c,30,220);sfx('hit');AX.impact(c);await AX.knock(c);},
  scratch:async c=>{await AX.dash(c,14,160);sfx('hit');FX.add({x:c.T.x+4,y:c.T.y,shape:'claw',c:'#ff5a7a',s:18,life:14,fade:1});await AX.knock(c,6);await sleep(80);},
  growl:async c=>{sfx('bad');AX.wiggle(c,6,3,420);for(let i=0;i<4;i++){FX.add({x:c.U.x+c.d*16,y:c.U.y-4,vx:c.d*3.2,vy:(c.T.y-c.U.y)/40,shape:'crescent',c:'#ff8a5a',s:6+i,rot:c.d>0?0:Math.PI,life:36,fade:1});await sleep(90);}await sleep(260);AX.wiggle(c,4,3,300,'TS');await sleep(300);},
@@ -288,14 +288,14 @@ const MOVE_FX={
    for(let i=0;i<16;i++)FX.add({x:c.T.x-24+rnd(48),y:c.T.y+24,vy:-2-Math.random()*1.6,g:.12,shape:'sq',c:i%2?'#d8a858':'#a87a3a',s:3,life:30});await sleep(240);await AX.knock(c,10);},
  bulldoze:async c=>{await AX.hop(c,20,240);sfx('shake');AX.shake(8,520);const t=24;for(let i=0;i<=t;i+=2)setTimeout(()=>{const x=c.U.x+(c.T.x-c.U.x)*i/t,y=c.U.y+24+(c.T.y-c.U.y)*i/t;FX.add({x,y,vy:-2,g:.1,shape:'sq',c:'#c8985a',s:3,life:22});FX.add({x,y,shape:'crack',c:'#3a2a1a',s:8,life:30});},i*16);
    await sleep(t*16+100);AX.impact(c,'#d8a858',16);await AX.knock(c,14);},
- /* ----- 비행 ----- */
+ /* ----- 바람 ----- */
  gust:async c=>{sfx('wind');FX.add({x:c.T.x,y:c.T.y,shape:'spiral',c:'#ffffff',s:22,life:40,fade:1});for(let i=0;i<8;i++)FX.add({x:c.T.x-24,y:c.T.y-20+i*6,vx:3,shape:'line',c:'rgba(255,255,255,.8)',s:8,life:16});await sleep(520);await AX.knock(c,8);},
  wing:async c=>{sfx('wind');await AX.dash(c,24,200);for(const r of[-.5,.5]){FX.add({x:c.T.x,y:c.T.y,shape:'crescent',c:'#ffffff',s:16,life:12,rot:r+(c.d>0?0:Math.PI)});sfx('hit');await sleep(110);}
    AX.burst(c,8,{shape:'feather',c:'#f4f0e4',s:2.2,life:30,sp:1.6,g:.04,vr:.15});await AX.knock(c,8);},
  aerial:async c=>{sfx('wind');await tween(300,k=>{c.S.y=-k*140;c.S.alpha=1-k;});await sleep(200);c.S.x=(c.T.x-c.U.x)*.95;await tween(200,k=>{c.S.y=(c.T.y-c.U.y)-(1-k)*120;c.S.alpha=k;});
    sfx('super');AX.impact(c,'#ffffff',16);AX.shake(5,260);AX.burst(c,10,{shape:'feather',c:'#f4f0e4',s:2.2,life:30,sp:2,g:.04,vr:.15});await AX.knock(c,12);
    await tween(220,k=>{c.S.x=(c.T.x-c.U.x)*.95*(1-k);c.S.y=(c.T.y-c.U.y)*(1-k);});c.S.alpha=1;},
- /* ----- 벌레 ----- */
+ /* ----- 곤충 ----- */
  stringshot:async c=>{sfx('sparkle');for(let i=0;i<4;i++){FX.add({x:c.U.x,y:c.U.y,x2:c.T.x+(i-1.5)*8,y2:c.T.y+(i%2?6:-6),shape:'beam',c:'#ffffff',c2:'#e8e8e8',s:1.4,life:20,fade:0});await sleep(70);}
    FX.add({x:c.T.x,y:c.T.y,shape:'web',c:'rgba(255,255,255,.9)',s:24,life:40,fade:1});await sleep(520);},
  bite:async c=>{await AX.dash(c,22,180);sfx('hit');FX.add({x:c.T.x,y:c.T.y,shape:'fang',s:11,life:22,fade:0});await sleep(220);AX.impact(c,'#ffffff',8);await AX.knock(c,8);},
