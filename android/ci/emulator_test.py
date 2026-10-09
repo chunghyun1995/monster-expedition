@@ -72,6 +72,22 @@ def diagnose():
     print('--- logcat ---\n' + '\n'.join(lines[-120:]), flush=True)
 
 
+def back_log(page):
+    # 뒤로 가기가 게임까지 오지 않았을 때: 어느 창이 포커스였는지, 앱이 뒤로 갔는지, 콜백이 불렸는지
+    print('JS:', page.js("JSON.stringify({back: window.__back, visibility: document.visibilityState, focus: document.hasFocus()})"),
+          flush=True)
+    for line in adb('shell', 'dumpsys', 'window', check=False).splitlines():
+        if 'mCurrentFocus' in line or 'mFocusedApp' in line:
+            print(line.strip(), flush=True)
+    for line in adb('shell', 'dumpsys', 'activity', 'activities', check=False).splitlines():
+        if 'ResumedActivity' in line:
+            print(line.strip(), flush=True)
+    keys = ('MonsterExpedition', 'CoreBackPreview', 'BackNavigation', 'ShellBackPreview', 'OnBackInvoked', 'BackAnimation')
+    lines = [l for l in adb('logcat', '-d', check=False).splitlines() if any(k in l for k in keys)]
+    print('\n'.join(lines[-40:]), flush=True)
+    shot('back-fail')
+
+
 def kill_log():
     # 앱이 크래시 없이 사라졌을 때 누가 종료했는지(패키지 관리자·메모리 부족 등) 보여 준다
     keys = ('Force stopping', 'Killing', 'am_kill', 'am_proc_died', 'lowmemorykiller', 'WebView renderer gone')
@@ -177,6 +193,8 @@ def debug_checks():
     expect(info['audio'] == 'function/function', '소리 일시정지/재개 함수')
     page.js("window.__back=0;addEventListener('keydown',e=>{if(e.key==='Backspace')window.__back++});1")
     key(4)  # (뒤로 가기에 앱이 꺼지지 않는지는 1단계에서 확인)
+    if page.js('window.__back') != 1:
+        back_log(page)
     expect(page.js('window.__back') == 1, '뒤로 가기 → 게임 B(취소) 키 전달')
     page.js("localStorage.setItem('ci-test','saved');1")
     page.close()
