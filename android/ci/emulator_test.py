@@ -40,7 +40,7 @@ def shot(name):
 
 
 def launch(wait):
-    adb('shell', 'am', 'start', '-W', '-n', ACT)
+    report['last_launch'] = adb('shell', 'am', 'start', '-W', '-n', ACT)
     time.sleep(wait)
 
 
@@ -53,7 +53,17 @@ def expect(ok, what):
     print(('✔ ' if ok else '✘ ') + what, flush=True)
     report.setdefault('checks', []).append({'ok': bool(ok), 'what': what})
     if not ok:
+        diagnose()
         finish(1)
+
+
+def diagnose():
+    # 실패 원인을 작업 로그에서 바로 볼 수 있게 실행 결과와 logcat 핵심 줄을 출력한다
+    print('--- last am start ---\n' + report.get('last_launch', ''), flush=True)
+    keys = ('AndroidRuntime', PKG, 'ActivityTaskManager', 'ActivityManager', 'chromium', 'cr_', 'lowmemorykiller',
+            'DEBUG', 'libc')
+    lines = [l for l in adb('logcat', '-d', check=False).splitlines() if any(k in l for k in keys)]
+    print('--- logcat ---\n' + '\n'.join(lines[-120:]), flush=True)
 
 
 def finish(code):
