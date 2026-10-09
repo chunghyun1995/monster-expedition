@@ -80,7 +80,8 @@ class Page:
                 pass
             time.sleep(1)
         expect(pages, 'WebView 원격 디버깅 연결')
-        self.ws = websocket.create_connection(pages[0]['webSocketDebuggerUrl'], timeout=30)
+        # Origin 헤더를 보내면 최신 WebView(Chrome 111+)가 연결을 거부한다
+        self.ws = websocket.create_connection(pages[0]['webSocketDebuggerUrl'], timeout=30, suppress_origin=True)
         self.n = 0
 
     def js(self, expr):
@@ -127,13 +128,18 @@ page = Page()
 info = json.loads(page.js("""JSON.stringify({
   title: document.title, url: location.href, size: innerWidth + 'x' + innerHeight,
   webview: (navigator.userAgent.match(/Chrome\\/[\\d.]+/) || [''])[0],
-  font: document.fonts.check('16px Galmuri11') && document.fonts.check('16px Galmuri9'),
   bridge: !!window.MEApp, audio: typeof audioPause + '/' + typeof audioResume,
   build: typeof BUILD !== 'undefined' ? BUILD : null })"""))
 print(info, flush=True)
 report['game'] = info
 expect(info['title'] == '몬스터 원정대' and info['url'] == 'file:///android_asset/index.html', '게임 페이지 로드')
-expect(info['font'], '내장 Galmuri 글꼴 사용')
+# 아직 화면에 안 쓰인 글꼴은 구버전 WebView에서 check()가 false라서, 직접 불러와 디코딩되는지 본다
+fonts = page.js("""Promise.all(['16px Galmuri11', 'bold 16px Galmuri11', '16px Galmuri9'].map(f =>
+  document.fonts.load(f).then(a => f + ':' + (a.length ? a.map(x => x.status).join('/') : 'none'),
+                              e => f + ':error ' + e)))""")
+print(fonts, flush=True)
+report['fonts'] = fonts
+expect(all(f.endswith(':loaded') for f in fonts), '내장 Galmuri 글꼴 불러오기')
 expect(info['bridge'], '앱 클립보드 브리지(MEApp) 연결')
 expect(info['audio'] == 'function/function', '소리 일시정지/재개 함수')
 page.js("window.__back=0;addEventListener('keydown',e=>{if(e.key==='Backspace')window.__back++});1")
