@@ -88,7 +88,9 @@ cd android
 
 빌드할 때 저장소 맨 위의 `index.html`이 앱에 자동으로 들어가므로, 게임을 고친 뒤 `python3 build.py`만 하면 됩니다. `main`에 `index.html`이나 `android/`의 변경이 올라가면 GitHub Actions(`.github/workflows/android.yml`)가 APK를 빌드·테스트하고 Releases에 새 APK를 올립니다.
 
-**서명 키**: 기본은 저장소에 함께 있는 공용 키(`android/app/monster-expedition.jks`, 비밀번호 `monster-expedition`)라서 어디서 빌드해도 서로 덮어 설치됩니다. 공개 저장소에 있는 키이므로, 다른 사람이 같은 서명의 APK를 만들 수도 있습니다. 개인 키로 바꾸려면 저장소 Settings → Secrets에 `ME_KEYSTORE_BASE64`(키 파일 base64), `ME_KEYSTORE_PASSWORD`, `ME_KEY_ALIAS`, `ME_KEY_PASSWORD`를 넣으세요(로컬 빌드는 같은 이름의 환경 변수, `ME_KEYSTORE_FILE`은 키 파일 경로). 키를 바꾸면 기존 앱을 지우고 새로 설치해야 하므로, 먼저 저장 코드로 리포트를 옮겨 두세요.
+**서명 키**: Releases에 올라가는 APK는 저장소에 올리지 않은 개인 키로 서명합니다. GitHub Actions는 저장소 시크릿 4개(`ME_KEYSTORE_BASE64` 키 파일 base64, `ME_KEYSTORE_PASSWORD`, `ME_KEY_ALIAS`, `ME_KEY_PASSWORD`)로 키를 받고, 시크릿이 없으면 빌드를 멈춥니다. 로컬에서 같은 키로 서명하려면 환경 변수 `ME_KEYSTORE_FILE`(키 파일 경로)과 비밀번호·별칭 변수를 지정하세요. 지정하지 않으면 배포용은 서명 없이(`app-release-unsigned.apk`), 디버그용은 Android 기본 디버그 키로 만들어집니다. 키 파일과 비밀번호를 잃어버리면 같은 앱으로 업데이트를 낼 수 없으니 꼭 백업해 두세요.
+
+> APK 13 이하(apk-1 ~ apk-13)는 예전 공용 키로 서명돼 있어서 새 APK를 덮어 설치할 수 없습니다. 그 버전을 쓰고 있다면 리포트 → 저장 코드로 진행을 옮겨 둔 뒤, 앱을 지우고 새로 설치해 저장 코드로 불러오세요.
 
 ## 프로젝트 구조
 

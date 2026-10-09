@@ -33,18 +33,20 @@ jobs:
           java-version: 17
           cache: gradle
 
-      # 저장소 시크릿에 개인 서명 키(ME_KEYSTORE_BASE64 등)가 있으면 그 키로, 없으면 저장소의 공용 키로 서명
-      - name: Private signing key (optional)
+      # 배포용 개인 서명 키(저장소 시크릿). 없으면 빌드를 멈춘다 — 다른 키로 서명된 APK가 올라가지 않게.
+      - name: Signing key
         env:
           KEYSTORE_B64: ${{ secrets.ME_KEYSTORE_BASE64 }}
+          ME_KEYSTORE_PASSWORD: ${{ secrets.ME_KEYSTORE_PASSWORD }}
         run: |
-          if [ -n "$KEYSTORE_B64" ]; then
-            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
-            echo "ME_KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
-            echo "개인 서명 키 사용"
-          else
-            echo "공용 서명 키(android/app/monster-expedition.jks) 사용"
+          if [ -z "$KEYSTORE_B64" ] || [ -z "$ME_KEYSTORE_PASSWORD" ]; then
+            echo "::error::저장소 시크릿 ME_KEYSTORE_BASE64·ME_KEYSTORE_PASSWORD·ME_KEY_ALIAS·ME_KEY_PASSWORD를 등록하세요 (README '서명 키')."
+            exit 1
           fi
+          printf '%s' "$KEYSTORE_B64" | tr -d ' \r\n' | base64 -d > "$RUNNER_TEMP/release.jks"
+          keytool -list -keystore "$RUNNER_TEMP/release.jks" -storepass "$ME_KEYSTORE_PASSWORD" > /dev/null \
+            || { echo "::error::서명 키를 열 수 없습니다. ME_KEYSTORE_BASE64와 ME_KEYSTORE_PASSWORD를 확인하세요."; exit 1; }
+          echo "ME_KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
 
       - name: Build APK
         working-directory: android
@@ -59,8 +61,9 @@ jobs:
           mkdir -p dist
           cp android/app/build/outputs/apk/release/app-release.apk dist/monster-expedition.apk
           cp android/app/build/outputs/apk/debug/app-debug.apk dist/monster-expedition-debug.apk
-          AAPT="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)aapt"
-          "$AAPT" dump badging dist/monster-expedition.apk | head -3
+          TOOLS="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)"
+          "${TOOLS}aapt" dump badging dist/monster-expedition.apk | head -3
+          "${TOOLS}apksigner" verify --print-certs dist/monster-expedition.apk | grep -E 'DN|SHA-256'
 
       - uses: actions/upload-artifact@v4
         with:
@@ -156,4 +159,5 @@ jobs:
 
             - 지원: Android 7.0 이상 (Android 12 · 13 · 14 에뮬레이터 테스트 통과)
             - 이전 버전이 깔려 있으면 지우지 말고 그대로 덮어 설치하면 리포트(세이브)가 유지됩니다.
+              (apk-13 이하는 예전 공용 키로 서명돼 있어서, 그 버전이 깔려 있으면 저장 코드로 리포트를 옮긴 뒤 지우고 설치하세요.)
             - 커밋: ${{ github.sha }}
