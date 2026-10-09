@@ -220,6 +220,7 @@ public class MainActivity extends Activity {
     }
 
     private void pressB() {
+        Log.i(TAG, "back → B");
         web.evaluateJavascript(
                 "dispatchEvent(new KeyboardEvent('keydown',{key:'Backspace'}));"
                         + "dispatchEvent(new KeyboardEvent('keyup',{key:'Backspace'}));", null);
@@ -227,6 +228,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onPause() {
+        Log.i(TAG, "onPause");
         // 앱을 벗어나면 소리를 멈춘다(돌아오면 다시 재생)
         web.evaluateJavascript("typeof audioPause==='function'&&audioPause()", null);
         web.onPause();
@@ -237,6 +239,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        Log.i(TAG, "onResume");
         web.resumeTimers();
         web.onResume();
         web.evaluateJavascript("typeof audioResume==='function'&&audioResume()", null);
@@ -257,6 +260,19 @@ public class MainActivity extends Activity {
         public void copyText(String text) {
             ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
             if (cm != null) cm.setPrimaryClip(ClipData.newPlainText("몬스터 원정대", text));
+        }
+
+        /** 개인정보처리방침 등 웹 페이지를 브라우저로 연다(https 주소만). */
+        @JavascriptInterface
+        public void openUrl(String url) {
+            final Uri uri = Uri.parse(url);
+            if (!"https".equals(uri.getScheme())) return;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    openOutside(uri);
+                }
+            });
         }
     }
 }
