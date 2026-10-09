@@ -9,7 +9,7 @@ function autoTalk(){return!!AUTO&&(AUTO.climb||AUTO.hunt||(AUTO.battle&&state===
 /* ---------- 자동 전투: 기술 고르기 ---------- */
 function autoMoveIndex(){const p=pm(),f=fm(),usable=p.moves.map((x,i)=>({x,i,d:MV[x.id]})).filter(o=>o.x.pp>0);
   if(!usable.length)return'struggle';
-  const dmg=usable.filter(o=>o.d.p>0).map(o=>{const e=effT(o.d.t,SP[f.sid].t),stab=SP[p.sid].t.includes(o.d.t)?1.5:1;return{...o,e,score:o.d.p*e*stab*((o.d.a||100)/100)};}).filter(o=>o.e>0);
+  const dmg=usable.filter(o=>o.d.p>0).map(o=>{const e=f?effT(o.d.t,SP[f.sid].t):1,stab=SP[p.sid].t.includes(o.d.t)?1.5:1;return{...o,e,score:o.d.p*e*stab*((o.d.a||100)/100)};}).filter(o=>o.e>0);
   if(!dmg.length)return usable[0].i;
   const sup=dmg.filter(o=>o.e>1),pool=sup.length?sup:dmg;
   return pool.sort((a,b)=>b.score-a.score)[0].i;}
