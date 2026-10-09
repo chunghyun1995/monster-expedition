@@ -49,7 +49,7 @@ async function goTower(){const t=towerState();
   if(r!==0)return;G.towerRet={map:G.map,x:P.x,y:P.y,dir:P.dir};sfx('exit');
   await fadeTo(1);enterMap('towerLobby',5,8,'up',{sign:1});await fadeTo(0);}
 Object.defineProperty(MAPS.towerLobby.warps,'5,9',{enumerable:true,configurable:true,get(){const r=G&&G.towerRet;return r&&MAPS[r.map]?[r.map,r.x,r.y,r.dir||'down']:['town5',20,4,'down'];}});
-async function autoClimb(start){AUTO.climb=true;updFloat(true);await towerEnter(start);
+async function autoClimb(start,here){AUTO.climb=true;updFloat(true);if(!here)await towerEnter(start);
   while(AUTO.climb&&G.map==='towerFloor'){const g=npcById('tw_guard');
     if(g&&!g.hide){await sleep(250);await towerFight();if(G.map!=='towerFloor')break;}
     if(towerState().cur>=100||!AUTO.climb)break;await sleep(200);await towerNext();}
@@ -57,8 +57,8 @@ async function autoClimb(start){AUTO.climb=true;updFloat(true);await towerEnter(
   if(was&&G.map==='towerFloor'&&towerState().cur>=100)await say('탑의 꼭대기에 도착했다!');}
 
 /* ---------- 필드 플로팅 버튼 ---------- */
-const FLOAT=el(TOP,'floatbar','');FLOAT.innerHTML=`<button class="fb tower"><i></i><span>탑</span></button><button class="fb hunt"><i></i><span>자동<br>사냥</span></button><button class="fb auto"><i></i><span>자동<br>전투</span></button><button class="fb stop"><span>자동<br>중지</span></button>`;
-const FB={tower:FLOAT.querySelector('.tower'),hunt:FLOAT.querySelector('.hunt'),auto:FLOAT.querySelector('.auto'),stop:FLOAT.querySelector('.stop')};
+const FLOAT=el(TOP,'floatbar','');FLOAT.innerHTML=`<button class="fb tower"><i></i><span>탑</span></button><button class="fb hunt"><i></i><span>자동<br>사냥</span></button><button class="fb auto"><i></i><span>자동<br>전투</span></button><button class="fb climb"><i></i><span>자동<br>등반</span></button><button class="fb stop"><span>자동<br>중지</span></button>`;
+const FB={tower:FLOAT.querySelector('.tower'),hunt:FLOAT.querySelector('.hunt'),auto:FLOAT.querySelector('.auto'),stop:FLOAT.querySelector('.stop'),climb:FLOAT.querySelector('.climb')};
 for(const b of Object.values(FB))b.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();});
 FB.tower.addEventListener('click',e=>{e.stopPropagation();if(!fieldFree())return;audioInit();sfx('sel');runScript(()=>goTower());});
 FB.hunt.addEventListener('click',e=>{e.stopPropagation();audioInit();if(AUTO.hunt){stopHunt('자동 사냥을 멈췄어요.');return;}
@@ -68,10 +68,13 @@ FB.hunt.addEventListener('click',e=>{e.stopPropagation();audioInit();if(AUTO.hun
 FB.auto.addEventListener('click',e=>{e.stopPropagation();audioInit();AUTO.battle=!AUTO.battle;SET.autoBattle=AUTO.battle?1:0;saveSettings();sfx(AUTO.battle?'sel':'back');
   toast(AUTO.battle?'자동 전투 켜짐':'자동 전투 꺼짐');updFloat(true);
   if(AUTO.battle&&state==='battle'){const h=topH();if(h&&h.autoHook)h.autoHook();}});
+FB.climb.addEventListener('click',e=>{e.stopPropagation();audioInit();if(AUTO.climb||!fieldFree()||G.map!=='towerFloor')return;
+  if(!G.party.some(m=>m.hp>0)){toast('싸울 수 있는 몬스터가 없어요.');sfx('bad');return;}
+  sfx('sel');toast(`${towerState().cur}층부터 자동 등반을 다시 시작해요`);runScript(()=>autoClimb(towerState().cur,true));});
 FB.stop.addEventListener('click',e=>{e.stopPropagation();sfx('back');if(AUTO.hunt)stopHunt('자동 사냥을 멈췄어요.');if(AUTO.climb){AUTO.climb=false;toast('자동 등반을 멈춰요 (지금 층까지만)');}updFloat(true);});
 let floatKey='';
 function updFloat(force){const inWorld=G&&state==='world',inBattle=state==='battle',inTower=G&&(G.map==='towerLobby'||G.map==='towerFloor');
-  const show={tower:inWorld&&!!G.flags.pad&&!inTower&&!AUTO.hunt,hunt:inWorld&&!!G.flags.pad&&!inTower&&!!(curMap()&&curMap().enc),auto:(inWorld&&!!G.flags.pad)||inBattle,stop:AUTO.hunt||AUTO.climb};
+  const show={tower:inWorld&&!!G.flags.pad&&!inTower&&!AUTO.hunt,hunt:inWorld&&!!G.flags.pad&&!inTower&&!!(curMap()&&curMap().enc),auto:(inWorld&&!!G.flags.pad)||inBattle,stop:AUTO.hunt||AUTO.climb,climb:inWorld&&G.map==='towerFloor'&&!AUTO.climb};
   const k=JSON.stringify([show,AUTO.battle,AUTO.hunt,AUTO.climb]);if(!force&&k===floatKey)return;floatKey=k;
   for(const n in FB)FB[n].classList.toggle('hidden',!show[n]);FB.auto.classList.toggle('on',autoFight());FB.hunt.classList.toggle('on',AUTO.hunt);
   FB.auto.querySelector('span').innerHTML=AUTO.climb||AUTO.hunt?'자동<br>진행중':AUTO.battle?'자동<br>전투 ON':'자동<br>전투';}
