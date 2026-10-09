@@ -44,8 +44,9 @@ function monCanvas(sid,back=false,shiny=false){const key=sid+(back?'b':'f')+(shi
       set(CX-headRx-.8,faceY,3);set(CX-headRx-1.6,faceY-1,3);}
     else if(t==='grass'){if(st<2){set(11,top-1,13);set(11,top-2,13);set(10,top-2,14);set(9,top-3,14);set(10,top-3,14);if(st)set(8,top-4,14),set(9,top-4,14);}
       else{ell(CX,top-1.5,7,3.8,14,(x,y,v)=>v===0);ell(CX,top-1.5,4,2.2,13,(x,y,v)=>v===14);}}
-    else if(t==='elec'){const x0=CX-headRx*.65;[[0,-1],[-1,-2],[0,-3],[-1,-4],[-1,-5]].slice(0,3+st).forEach(([dx,dy],i,a)=>set(x0+dx,top+dy,i===a.length-1?6:1));
-      if(!back){set(CX-headRx*.78,faceY+headR*.35,8);set(CX-headRx*.78+1,faceY+headR*.35,8);}}
+    else if(t==='elec'){const x0=CX-headRx*.65;[[0,-1],[-1,-2],[0,-3],[-1,-4],[-1,-5]].slice(0,3+st).forEach(([dx,dy],i,a)=>set(x0+dx,top+dy,i===a.length-1?4:1));
+      // 가슴의 번개 무늬(좌우 대칭으로 펼쳐진다)
+      if(!back){const bx=CX-2,by=Math.floor(cy-bodyRy*.25);[[1,0],[0,1],[1,2],[0,3]].forEach(([dx,dy])=>{const v=get(bx+dx,by+dy);if(v===1||v===2)set(bx+dx,by+dy,4);});}}
     else if(t==='rock'){for(let k=0;k<5+st*3;k++){const x=Math.floor(CX-bodyRx*Rs()),y=Math.floor(cy-bodyRy*.6+Rs()*bodyRy*1.4);if(get(x,y)===1)set(x,y,7);}
       if(st>=1){set(CX-bodyRx*.75,cy-bodyRy*.85,7);set(CX-bodyRx*.75,cy-bodyRy*.85-1,7);set(CX-bodyRx*.95,cy-bodyRy*.6,7);}}
     else if(t==='ground'){set(CX-headRx*.7,top,1);set(CX-headRx*.8,top-1,3);}

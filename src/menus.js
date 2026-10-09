@@ -237,6 +237,8 @@ async function trainerCard(){const tp=page(TOP,''),bp=el(BOT,'abs','',[0,0,256,1
 const SAVE_KEY='monster-expedition-save-v2';
 function saveGame(){G.x=P.x;G.y=P.y;G.dir=P.dir;G.savedAt=Date.now();try{localStorage.setItem(SAVE_KEY,JSON.stringify(G));return true;}catch(e){return false;}}
 function readSave(){try{const s=localStorage.getItem(SAVE_KEY);return s?JSON.parse(s):null;}catch(e){return null;}}
+// 몬스터 수치가 바뀐 버전에서 예전 리포트를 불러와도 HP가 최대치를 넘지 않게
+function fitHp(g){for(const m of[...(g.party||[]),...(g.box||[])])if(m&&SP[m.sid])m.hp=Math.min(m.hp,maxHp(m));return g;}
 /* ---------- 저장 코드 (다른 기기로 옮기기) ----------
    형식: ME2-<체크섬4>-<base64url(deflate(JSON))>  · 압축을 못 쓰는 브라우저는 ME2U-(무압축) */
 const b64u={enc:u8=>{let s='';for(let i=0;i<u8.length;i+=8192)s+=String.fromCharCode.apply(null,u8.subarray(i,i+8192));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');},
@@ -352,7 +354,7 @@ async function shopBuy(){const tp=page(TOP,'');let at=0;guideSoon('shop','bot','
     msg(`${J(it.n,'을')} 몇 개 사시겠어요?`,{name:'점원'});const n=await numberPick({max,price:it.price,title:it.n});hideMsg();if(!n)continue;
     const ok=await ask(`${it.n} ${n}개, 총 ${money(n*it.price)}입니다. 괜찮으시겠어요?`,['예','아니오'],{name:'점원'});if(ok!==0)continue;
     G.money-=n*it.price;G.bag[id]=(G.bag[id]||0)+n;sfx('save');tp.innerHTML=shopTop(id,'사기');await say('네, 여기 있습니다! 감사합니다!',{name:'점원'});
-    if(id==='ball'&&n>=10){G.bag.great=(G.bag.great||0)+1;await say('캡슐을 많이 사 주셔서 슈퍼캡슐을 하나 덤으로 드릴게요!',{name:'점원'});}}}
+    if(id==='ball'&&n>=10){G.bag.great=(G.bag.great||0)+1;await say('캡슐을 많이 사 주셔서 은빛캡슐을 하나 덤으로 드릴게요!',{name:'점원'});}}}
   finally{tp.remove();}}
 async function shopSell(){const tp=page(TOP,'');
   try{while(true){const ids=Object.keys(ITEMS).filter(k=>ITEMS[k].price&&G.bag[k]>0);
@@ -364,9 +366,9 @@ async function shopSell(){const tp=page(TOP,'');
     G.bag[id]-=n;G.money+=n*it.price/2;sfx('save');await say(`${money(n*it.price/2)}을 받았다!`);}}
   finally{tp.remove();}}
 
-/* ================= 몬스터 센터 ================= */
+/* ================= 몬스터 쉼터 ================= */
 async function nurse(out,ox,oy){const o={name:'간호사'},n=npcById('nurse_'+G.map);
-  await say('어서 오세요! 몬스터 센터입니다.',o);
+  await say('어서 오세요! 몬스터 쉼터입니다.',o);
   const r=await ask('몬스터의 체력을 회복시켜 드릴까요?',['예','아니오'],o);
   if(r!==0){await say('또 들러 주세요!',o);return;}
   await say('그럼 몬스터를 잠시 맡아 두겠습니다.',o);n.dir='left';const m=curMap();m.healAnim={n:G.party.length,f0:frame,on:true};
@@ -413,7 +415,7 @@ async function pcMenu(){sfx('menu');guideSoon('pc','top',`파티에는 6마리�
 
 /* ================= 몬스터 합성 =================
    아무 몬스터 두 마리 → 한 단계 위 등급(진화 단계)의 무작위 타입 몬스터 1마리.
-   등급 = min(2, 두 마리 중 높은 진화 단계 + 1). 레벨은 높은 쪽 +2. 둘 중 하나라도 이로치면 결과도 이로치. */
+   등급 = min(2, 두 마리 중 높은 진화 단계 + 1). 레벨은 높은 쪽 +2. 둘 중 하나라도 반짝이(★)면 결과도 반짝이. */
 const STAGE_N=['기본','1진화','최종진화'];
 function fusionStage(a,b){return Math.min(2,Math.max(SP[a.sid].st,SP[b.sid].st)+1);}
 function fusionPool(stage){return Object.keys(SP).map(Number).filter(s=>SP[s].st===stage&&s!==13&&!SP[s].legend&&(stage===2||SP[s].line>9));}
@@ -453,7 +455,7 @@ async function fusionFlow(first){const o={name:'합성 장치'};
     if(!G.party.includes(m))await say(`파티가 가득 차서 ${J(N(m),'은')} 보관함으로 보내졌다.`);}
   finally{fx.remove();botMode=prevBot;}
   return true;}
-/* 몬스터 센터 합성 연구원 */
+/* 몬스터 쉼터 합성 연구원 */
 async function fusionLab(){const o={name:'합성 연구원'};
   if(!G.flags.fuseIntro2){G.flags.fuseIntro2=1;
     await say('어서 오세요! 여기는 몬스터 합성 연구실이에요.',o);
