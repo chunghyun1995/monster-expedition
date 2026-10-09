@@ -246,6 +246,20 @@ body.land #pad .mid{left:auto;right:8px;top:8px;transform:none}
 #dlg.withpor .tag{left:calc(var(--u)*58)}
 .updbar{position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:1000;display:flex;gap:10px;align-items:center;padding:8px 12px;border-radius:10px;background:#fffdf2;color:#2b2f45;border:2px solid #3d4562;box-shadow:0 3px 0 rgba(0,0,0,.35);font-size:14px}
 .updbar button{font:inherit;border:none;border-radius:7px;padding:5px 10px;background:#3d7ad6;color:#fff;cursor:pointer}
+/* 필드 플로팅 버튼 (탑 · 자동 사냥 · 자동 전투) */
+.floatbar{position:absolute;right:calc(var(--u)*4);top:calc(var(--u)*24);display:flex;flex-direction:column;gap:calc(var(--u)*4);z-index:25;pointer-events:none}
+.fb{pointer-events:auto;width:calc(var(--u)*30);height:calc(var(--u)*30);border-radius:50%;border:calc(var(--u)*1.5) solid #2b2f45;background:radial-gradient(circle at 40% 30%,#ffffff,#dfe3f0);
+  box-shadow:0 calc(var(--u)*1.5) 0 rgba(0,0,0,.35);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0;cursor:pointer;font:inherit;color:#2b2f45;opacity:.92}
+.fb.hidden{display:none}
+.fb span{font-size:calc(var(--u)*6);line-height:1.05;text-align:center;white-space:nowrap}
+.fb i{display:block;width:calc(var(--u)*11);height:calc(var(--u)*9);margin-bottom:calc(var(--u)*1)}
+.fb.tower{background:radial-gradient(circle at 40% 30%,#efe6ff,#b8a0f0)}
+.fb.tower i{background:linear-gradient(#6a4ab0,#4a2a8a);clip-path:polygon(50% 0,80% 25%,80% 100%,20% 100%,20% 25%)}
+.fb.hunt i{background:linear-gradient(#7bd35a,#2f7d34);clip-path:polygon(0 100%,15% 30%,30% 100%,45% 10%,60% 100%,75% 35%,90% 100%)}
+.fb.auto i{background:linear-gradient(#ffd84a,#e8902a);clip-path:polygon(25% 0,90% 50%,25% 100%)}
+.fb.on{background:radial-gradient(circle at 40% 30%,#fff6b0,#ffcf3a);box-shadow:0 0 0 calc(var(--u)*1.5) #fff,0 0 calc(var(--u)*6) #ffcf3a;animation:fbPulse 1s ease-in-out infinite alternate}
+.fb.stop{background:radial-gradient(circle at 40% 30%,#ffd0d6,#e2566f);color:#fff}
+@keyframes fbPulse{to{transform:scale(1.06)}}
 
 </style>
 </head>
@@ -276,7 +290,7 @@ body.land #pad .mid{left:auto;right:8px;top:8px;transform:none}
   <div id="help"><b>방향키</b> 이동 · <b>Z</b> 확인 · <b>X</b> 취소(누른 채 이동하면 달리기) · <b>Enter</b> 메뉴 · <b>Q</b>/<b>E</b> 패드 앱 전환 · <b>M</b> 소리</div>
 </div>
 <script>
-const BUILD='7e285212';
+const BUILD='a72f2722';
 // Copyright (c) 2009 Kazuhiko Arase
 // Licensed under the MIT license:
 // The word 'QR Code' is registered trademark of
@@ -333,10 +347,10 @@ const DIRS=new Set(['up','down','left','right']);
 const KEYMAP={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',w:'up',s:'down',a:'left',d:'right',W:'up',S:'down',A:'left',D:'right',
   z:'a',Z:'a',' ':'a',x:'b',X:'b',Backspace:'b',Shift:'b',Enter:'menu',Escape:'menu',c:'menu',C:'menu',q:'l',Q:'l',e:'r',E:'r'};
 let fieldKey=null; // world.js가 지정: 필드에서 받는 키 처리
-function press(k){audioInit();const h=topH();if(h){if(h.key)h.key(k);return;}if(fieldKey)fieldKey(k);}
+function press(k){audioInit();if(typeof autoUserInput!=='undefined'&&!(k==='a'&&AUTO.climb))autoUserInput();const h=topH();if(h){if(h.key)h.key(k);return;}if(fieldKey)fieldKey(k);}
 // 메뉴·전투·대화 중에 누른 방향은 필드 이동으로 넘기지 않는다
 function fieldFree(){return typeof state!=='undefined'&&state==='world'&&!ui.length&&!busy;}
-function dirDown(k){dirStack=dirStack.filter(x=>x!==k);dirStack.push(k);tapDir=fieldFree()?k:null;}
+function dirDown(k){if(typeof autoUserInput!=='undefined')autoUserInput();dirStack=dirStack.filter(x=>x!==k);dirStack.push(k);tapDir=fieldFree()?k:null;}
 function clearDirs(){dirStack=[];tapDir=null;if(typeof P!=='undefined'&&P)P.chain=false;}
 function dirUp(k){dirStack=dirStack.filter(x=>x!==k);}
 addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
@@ -1403,7 +1417,7 @@ function fitCut(rest,max=2){if(dlgLines(rest)<=max)return rest.length;
 function splitPage(rest){rest=String(rest);if(!dlg.offsetWidth)return[rest,''];const c=fitCut(rest);const pg=rest.slice(0,c).replace(/\s+$/,''),r=rest.slice(c).replace(/^\s+/,'');dtx.textContent='';return[pg,r];}
 function paginate(text){const pages=[];let rest=String(text);do{const[a,b]=splitPage(rest);pages.push(a);rest=b;}while(rest.length);return pages;}
 const CPS=[45,22,6];
-function say(text,o={}){return new Promise(res=>{clearTimeout(dlgTm);dlgShow();setTag(o.name,o.look);dnx.classList.add('hidden');
+function say(text,o={}){if(typeof autoTalk!=='undefined'&&autoTalk()&&!o.auto)o={...o,auto:520};return new Promise(res=>{clearTimeout(dlgTm);dlgShow();setTag(o.name,o.look);dnx.classList.add('hidden');
   let rest=String(text),cur='';dtx.textContent='';
   let i=0,done=false,closed=false,at=null,tm=null;const sp=CPS[SET.text]||22;
   const last=()=>!rest.length;
@@ -1468,7 +1482,8 @@ function list(items,o={}){return new Promise(res=>{const root=o.root||BOT,[x,y,w
   pushH(h);draw();if(o.onOpen)o.onOpen(h);});}
 
 /* ---------- 예 / 아니오 ---------- */
-async function ask(text,opts=['예','아니오'],o={}){dlgShow();setTag(o.name,o.look);const pg=paginate(text);for(let i=0;i<pg.length-1;i++)await say(pg[i],{...o,keep:1});msg(pg[pg.length-1],o);
+async function ask(text,opts=['예','아니오'],o={}){if(typeof autoAnswer!=='undefined'){const a=autoAnswer(text,opts);if(a!=null){dlgShow();setTag(o.name,o.look);msg(text,o);await sleep(450);if(!o.keep)hideMsg();return a;}}
+  dlgShow();setTag(o.name,o.look);const pg=paginate(text);for(let i=0;i<pg.length-1;i++)await say(pg[i],{...o,keep:1});msg(pg[pg.length-1],o);
   const n=opts.length,bw=n>2?200:176,bh=n>2?38:52,gap=8,y0=(192-(bh+gap)*n+gap)/2;
   const i=await panel(opts.map((t,j)=>({html:`<span class="bigbtn">${esc(t)}</span>`,x:(256-bw)/2,y:y0+j*(bh+gap),w:bw,h:bh,cls:j===0?'blue':''})),
     {backdrop:true,bg:'rgba(20,24,40,.55)',cancel:o.cancel!=null?o.cancel:n-1,start:o.start||0});
@@ -2304,13 +2319,14 @@ async function towerMenu(){const o={name:'탑 안내원'},t=towerState();
     await say('10층을 돌파할 때마다 몬스터가 회복되고 보상을 받아요. 다음에는 돌파한 10층 단위부터 다시 도전할 수 있어요.',o);
     await say('도중에 지면 이 로비로 돌아오게 되지만, 돈을 잃지는 않으니 안심하세요!',o);}
   const top=Math.min(91,Math.floor(t.best/10)*10+1),cps=[];for(let f=1;f<=top;f+=10)cps.push(f);
-  const items=[...cps.reverse().map(f=>({html:`<span>${f}층부터 도전</span><span class="r">${f===1?'처음부터':'체크포인트'}</span>`})),{html:'<span>그만두기</span>'}];
+  cps.reverse();const items=[...cps.map(f=>({html:`<span>${f}층부터 도전</span><span class="r">${f===1?'처음부터':'체크포인트'}</span>`})),...cps.map(f=>({html:`<span>${f}층부터 자동 등반</span><span class="r">AUTO</span>`})),{html:'<span>그만두기</span>'}];
   const tp=page(TOP,`<div class="abs" style="inset:0;background:linear-gradient(#3a2a6a,#1d1a3a)"></div><div class="title-bar">무한의 탑<span class="r">최고 기록 ${t.best}층</span></div>
     <div class="sheet desc" style="left:${U(14)};top:${U(30)};width:${U(228)}">수호자의 몬스터 레벨 = 층수<br>10층마다 회복 + 보상 · 체크포인트<br>100층 수호자: 레벨 100 몬스터 6마리</div>`);
   const r=await list(items,{rect:[4,4,248,150],rowH:20,backdrop:true,bg:'linear-gradient(#6a5aa8,#3d3270)',buttons:[{html:'닫기',x:170,y:160,w:82,h:28,cls:'dark',val:-1}]});
-  tp.remove();if(r<0||r>=cps.length){await say('또 오세요!',o);return;}
-  const f=cps[r];if(!G.party.some(m=>m.hp>0)){await say('먼저 몬스터를 회복시켜 주세요.',o);return;}
+  tp.remove();if(r<0||r>=cps.length*2){await say('또 오세요!',o);return;}
+  const auto=r>=cps.length,f=cps[auto?r-cps.length:r];if(auto){AUTO.climb=true;updFloat(true);}if(!G.party.some(m=>m.hp>0)){await say('먼저 몬스터를 회복시켜 주세요.',o);return;}
   await say('도전 전에 몬스터들을 회복시켜 드릴게요.',o);healParty();sfx('heal');
+  if(auto){await say(`${f}층부터 자동으로 올라갈게요. 지거나 '자동 중지'를 누르면 멈춰요.`,o);await autoClimb(f);return;}
   await say(`그럼 ${f}층으로 안내할게요. 행운을 빌어요!`,o);await towerEnter(f);}
 async function towerEnter(f){const t=towerState();t.cur=f;const m=MAPS.towerFloor;m.name=`무한의 탑 ${f}층`;
   m.npcs[0].look=f===100?'boss':f%10===0?'villain':TOWER_LOOKS[f%TOWER_LOOKS.length];m.npcs[0].name=`${f}층 수호자`;
@@ -2415,7 +2431,8 @@ function monTopPage(m,title){const sp=SP[m.sid],mx=maxHp(m);
   <div style="font-size:${U(8.5)};color:#6a7190;margin-top:${U(3)}">${NATURES[m.nat][0]} 성격</div></div>
   <div class="sheet" style="left:${U(10)};top:${U(138)};width:${U(238)};height:${U(48)};font-size:${U(9)};padding:${U(4)} ${U(8)}">${m.moves.map(x=>`${tb(MV[x.id].t)} ${MV[x.id].n}`).join('&nbsp; ')}</div>`;}
 /* mode: field | battle | forced | item | deposit — 선택 인덱스 반환 */
-async function partyScreen(mode,o={}){let at=o.start!=null?o.start:mode==='forced'?Math.max(0,G.party.findIndex(m=>m.hp>0)):mode==='battle'&&B?B.pi:0;const prevBot=botMode;botMode='menu';
+async function partyScreen(mode,o={}){if(mode==='forced'&&typeof autoTalk!=='undefined'&&autoTalk()){await sleep(300);return autoForcedPick();}
+  let at=o.start!=null?o.start:mode==='forced'?Math.max(0,G.party.findIndex(m=>m.hp>0)):mode==='battle'&&B?B.pi:0;const prevBot=botMode;botMode='menu';
   const tp=page(TOP,'');
   try{while(true){
     const btns=[0,1,2,3,4,5].map(i=>{const m=G.party[i];if(!m)return{html:'',x:i%2?130:4,y:4+Math.floor(i/2)*52,w:122,h:48,cls:'pcell empty',disabled:1,skip:1};
@@ -2810,7 +2827,7 @@ const tn=()=>`${TCLASS[B.o.cls].n} ${B.o.name}`;
 const bname=s=>s==='e'?(B.wild?'야생 ':'상대 ')+N(fm()):N(pm());
 const center=s=>s==='e'?{x:EPOS.x+B.e.x,y:EPOS.y-34+B.e.y}:{x:PPOS.x+B.p.x,y:PPOS.y-62+B.p.y};
 function bsay(t,wait){return say(t,wait?{keep:1}:{keep:1,auto:520+t.length*16});}
-function waitA(){return new Promise(res=>{const h={tapA:1,key(k){if(k==='a'||k==='b'){popH(h);sfx('cur');res();}}};pushH(h);});}
+function waitA(){if(typeof autoTalk!=='undefined'&&autoTalk())return sleep(650);return new Promise(res=>{const h={tapA:1,key(k){if(k==='a'||k==='b'){popH(h);sfx('cur');res();}}};pushH(h);});}
 const blank=()=>({show:false,x:0,y:0,white:0,alpha:1,sx:1,sy:1,dark:false,blink:false,tint:null});
 
 /* ---------- HUD ---------- */
@@ -2874,11 +2891,12 @@ async function chooseAction(){
   while(true){msg(`${J(N(pm()),'은')}\n무엇을 할까?`);
     guideSoon('battle','#botUI .btn.red','<b>싸운다</b>를 누르면 기술을 고를 수 있어요. 아래의 <b>가방</b>에선 회복약을, <b>몬스터</b>에선 교체를 할 수 있어요.',{title:'전투'});
     if(B.wild&&Object.keys(G.bag).some(k=>ITEMS[k]&&ITEMS[k].ball&&G.bag[k]>0))guideSoon('catch','#botUI .btn.yellow','야생 몬스터는 HP를 줄인 뒤 <b>가방 → 캡슐</b>을 던지면 붙잡을 수 있어요. 잠듦·마비 같은 상태 이상이면 더 잘 잡혀요!',{title:'포획'});
+    if(autoFight()){await sleep(220);return{type:'move',mi:autoMoveIndex()};}
     const i=await panel([{html:`<span style="font-size:${U(20)}">싸운다</span>`,x:24,y:14,w:208,h:104,cls:'red',flash:1},
       {html:`<img src="${menuIcon('bag')}" style="width:${U(22)};height:${U(22)}"><span>가방</span>`,x:4,y:124,w:84,h:64,cls:'yellow'},
       {html:'<span>도망치다</span>',x:96,y:140,w:64,h:48,cls:'blue'},
-      {html:`<img src="${menuIcon('party')}" style="width:${U(22)};height:${U(22)}"><span>몬스터</span>`,x:168,y:124,w:84,h:64,cls:'green'}],{cancel:false,start:0});
-    if(i===0){const mi=await chooseMove();if(mi==='back')continue;return{type:'move',mi};}
+      {html:`<img src="${menuIcon('party')}" style="width:${U(22)};height:${U(22)}"><span>몬스터</span>`,x:168,y:124,w:84,h:64,cls:'green'}],{cancel:false,start:0,onOpen:h=>{h.autoHook=()=>{h.set&&h.set(0);h.key('a');};}});
+    if(i===0){if(autoFight())return{type:'move',mi:autoMoveIndex()};const mi=await chooseMove();if(mi==='back')continue;return{type:'move',mi};}
     if(i===1){hideMsg();const r=await bagScreen('battle');if(!r)continue;return{type:'item',...r};}
     if(i===3){hideMsg();const j=await partyScreen('battle');if(j<0)continue;return{type:'switch',idx:j};}
     return{type:'run'};}}
@@ -3262,7 +3280,7 @@ async function heroTurn(){const f=fm(),h=B.hero;
     {html:heal?`<span>${ITEMS[heal].n} 마시기</span><small>남은 ${G.bag[heal]}개</small>`:'<span>회복약 없음</span>',x:4,y:74,w:122,h:56,cls:'yellow',disabled:!heal},
     {html:B.wild?'<span>도망치다</span>':'<span>버티기</span><small>방어 자세</small>',x:130,y:74,w:122,h:56,cls:'blue'}];
   guideSoon('hero','#botUI .mvbtn','몬스터가 모두 쓰러져서 <b>트레이너가 직접</b> 싸우고 있어요! 트레이너가 쓰러지면 패배예요.',{title:'최후의 수단'});
-  const i=await panel(btns,{cancel:false,onOpen:hh=>hh.els.slice(0,2).forEach(e=>{e.style.background='linear-gradient(#ffb08a,#d8603a)';e.style.borderColor='#7a2a10';})});
+  const i=autoFight()?(await sleep(300),0):await panel(btns,{cancel:false,onOpen:hh=>hh.els.slice(0,2).forEach(e=>{e.style.background='linear-gradient(#ffb08a,#d8603a)';e.style.borderColor='#7a2a10';})});
   hideMsg();let guard=false;
   if(i<2){const a=HERO_ACT[i];await bsay(`${J(G.name,'은')} ${J(a.n,'을')} 했다!`);
     // 연출: 돌 던지기 = 포물선, 몸통 박치기 = 돌진
@@ -3331,7 +3349,7 @@ async function edgeWarp(to,side){busy=true;const m2=MAPS[to];let x=P.x,y=P.y;
 function checkTrig(){const m=curMap();for(const t of m.trig){if(P.x>=t.x&&P.x<t.x+t.w&&P.y>=t.y&&P.y<t.y+t.h&&(!t.cond||t.cond())){runScript(t.run);return true;}}return false;}
 
 /* ---------- 필드 업데이트 ---------- */
-function updateWorld(dt){const m=curMap();if(!busy&&!ui.length&&!P.moving&&SET.tips)worldGuides();
+function updateWorld(dt){const m=curMap();autoTick();if(!busy&&!ui.length&&!P.moving&&SET.tips)worldGuides();
   /* NPC 배회 */
   if(!busy&&!ui.length)for(const n of npcsOf(m)){if(!n.wander||n.mv)continue;if(--n.wt>0)continue;n.wt=90+rnd(180);
     const d=['up','down','left','right'][rnd(4)],[dx,dy]=DV[d],nx=n.x+dx,ny=n.y+dy;n.dir=d;
@@ -3497,7 +3515,7 @@ function render(){const g=ctx;g.setTransform(SC,0,0,SC,0,0);g.imageSmoothingEnab
   if(transFx)drawTrans(g);}
 function loop(now){const dt=Math.min(.05,(now-lastT)/1000);lastT=now;frame++;
   if(G&&(state==='world'||state==='battle'))G.playMs=(G.playMs||0)+dt*1000;
-  if(state==='world')updateWorld(dt);FX.step();render();renderBot();requestAnimationFrame(loop);}
+  if(state==='world')updateWorld(dt);updFloat();FX.step();render();renderBot();requestAnimationFrame(loop);}
 
 async function startFromCode(g,lg){try{localStorage.setItem(SAVE_KEY,JSON.stringify(g));}catch(e){}
   lg.remove();hideMsg();await fadeTo(1);G=g;G.flags=G.flags||{};G.badges=G.badges||[0,0];G.box=G.box||[];busy=true;state='world';enterMap(G.map,G.x,G.y,G.dir||'down',{sign:1});Pad.show();await fadeTo(0);busy=false;
@@ -3544,6 +3562,84 @@ function worldGuides(){const touch=matchMedia('(pointer:coarse)').matches;
   if(G.flags.pad&&!guideSeen('padapp')&&document.querySelector('#padUI .nav'))return guide('padapp','#padUI .lcd',`원정패드의 <b>◀ ▶</b>로 시계 · 파티 · 지도 · 만보기 앱을 바꿔 볼 수 있어요.${touch?'':' 키보드는 <b>Q / E</b>.'}`,{title:'원정패드'});
   if(G.flags.shoes&&!guideSeen('run'))return guide('run','top',`<b>B${touch?'':'(X)'}</b>를 누른 채로 이동하면 질주신발로 빠르게 달릴 수 있어요.`,{title:'달리기'});
   if(G.flags.badge0&&!guideSeen('fuse'))return guide('fuse','top','몬스터 두 마리를 합치면 <b>한 단계 위 등급</b>의 무작위 타입 몬스터가 돼요. <b>메뉴 → 몬스터 → 합성하기</b>나 몬스터 센터의 합성 연구원에게서 할 수 있어요.',{title:'몬스터 합성'});}
+
+/* =========================================================
+   auto.js — 자동 전투 · 자동 사냥 · 탑 자동 등반 · 필드 플로팅 버튼
+   자동 전투: 효과가 굉장한 공격 기술이 있으면 그중 가장 센 것, 없으면 가장 센 공격 기술.
+   자동 진행 중에는 대화가 저절로 넘어가고, 확인 질문은 안전한 쪽으로 답한다.
+   ========================================================= */
+var AUTO={battle:!!SET.autoBattle,hunt:false,climb:false,lastDir:null};
+function autoFight(){return!!AUTO&&(AUTO.battle||AUTO.hunt||AUTO.climb);}
+function autoTalk(){return!!AUTO&&(AUTO.climb||AUTO.hunt||(AUTO.battle&&state==='battle'));}
+/* ---------- 자동 전투: 기술 고르기 ---------- */
+function autoMoveIndex(){const p=pm(),f=fm(),usable=p.moves.map((x,i)=>({x,i,d:MV[x.id]})).filter(o=>o.x.pp>0);
+  if(!usable.length)return'struggle';
+  const dmg=usable.filter(o=>o.d.p>0).map(o=>{const e=effT(o.d.t,SP[f.sid].t),stab=SP[p.sid].t.includes(o.d.t)?1.5:1;return{...o,e,score:o.d.p*e*stab*((o.d.a||100)/100)};}).filter(o=>o.e>0);
+  if(!dmg.length)return usable[0].i;
+  const sup=dmg.filter(o=>o.e>1),pool=sup.length?sup:dmg;
+  return pool.sort((a,b)=>b.score-a.score)[0].i;}
+/* 자동 진행 중 확인 질문에 대한 답 (null이면 사람에게 묻는다) */
+function autoAnswer(text,opts){if(!autoTalk())return null;
+  if(text.includes('다음 몬스터'))return 0;           // 다음 몬스터를 내보낸다
+  if(text.includes('교체하겠습니까'))return opts.length-1; // 교체하지 않는다
+  if(text.includes('배우게 하겠습니까'))return opts.length-1; // 기존 기술 유지
+  if(text.includes('포기하겠습니까'))return 0;
+  if(text.includes('이름을 붙여'))return opts.length-1;
+  if(text.includes('직접 맞서'))return 0;
+  return null;}
+function autoForcedPick(){let best=-1,bh=-1;G.party.forEach((m,i)=>{if(m.hp>0&&i!==B.pi&&m.hp/maxHp(m)>bh){bh=m.hp/maxHp(m);best=i;}});return best<0?G.party.findIndex(m=>m.hp>0):best;}
+
+/* ---------- 자동 사냥: 풀숲에서 왔다 갔다 ---------- */
+function partyHpRatio(){let a=0,b=0;for(const m of G.party){a+=Math.max(0,m.hp);b+=maxHp(m);}return b?a/b:0;}
+function stopHunt(msgText){if(!AUTO.hunt)return;AUTO.hunt=false;updFloat(true);if(msgText){toast(msgText);sfx('back');}}
+function nearestGrassStep(m){const key=(x,y)=>x+','+y,prev={},q=[[P.x,P.y]];prev[key(P.x,P.y)]=null;let n=0;
+  while(q.length&&n++<900){const[x,y]=q.shift();if(tileAt(m,x,y)===','&&!(x===P.x&&y===P.y)){let k=key(x,y),d=null;while(prev[k]){d=prev[k][1];k=prev[k][0];}return d;}
+    for(const d of['up','down','left','right']){const[dx,dy]=DV[d],nx=x+dx,ny=y+dy,k=key(nx,ny);if(k in prev||!passable(m,nx,ny,d)||npcAt(m,nx,ny)||itemAt(m,nx,ny)||tileAt(m,nx,ny)==='L')continue;prev[k]=[key(x,y),d];q.push([nx,ny]);}}
+  return null;}
+function autoTick(){if(!AUTO.hunt||busy||ui.length||P.moving||state!=='world')return;const m=curMap();
+  if(!m.enc){stopHunt('이곳에는 야생 몬스터가 없어요.');return;}
+  if(!G.party.some(p=>p.hp>0)||partyHpRatio()<.35){stopHunt('몬스터들의 체력이 낮아서 자동 사냥을 멈췄어요.');return;}
+  let d=null;
+  if(tileAt(m,P.x,P.y)===','){const opts=['left','right','up','down'].filter(k=>{const[dx,dy]=DV[k],nx=P.x+dx,ny=P.y+dy;return tileAt(m,nx,ny)===','&&passable(m,nx,ny,k)&&!npcAt(m,nx,ny)&&!itemAt(m,nx,ny);});
+    const back={left:'right',right:'left',up:'down',down:'up'}[AUTO.lastDir];
+    d=opts.includes(back)&&Math.random()<.85?back:opts[0]||null;}
+  else d=nearestGrassStep(m);
+  if(!d){stopHunt('근처에 풀숲이 없어요. 풀숲 근처에서 켜 주세요.');return;}
+  AUTO.lastDir=d;P.dir=d;tryMove(d);}
+function autoUserInput(){if(AUTO.hunt)stopHunt('자동 사냥을 멈췄어요.');if(AUTO.climb){AUTO.climb=false;updFloat(true);toast('자동 등반을 멈춰요 (지금 층까지만)');}}
+
+/* ---------- 무한의 탑: 어디서든 입장 · 자동 등반 ---------- */
+async function goTower(){const t=towerState();
+  const r=await ask(`무한의 탑으로 이동할까요?\n최고 기록 ${t.best}층 · 나오면 지금 자리로 돌아와요.`,['이동한다','그만둔다']);
+  if(r!==0)return;G.towerRet={map:G.map,x:P.x,y:P.y,dir:P.dir};sfx('exit');
+  await fadeTo(1);enterMap('towerLobby',5,8,'up',{sign:1});await fadeTo(0);}
+Object.defineProperty(MAPS.towerLobby.warps,'5,9',{enumerable:true,configurable:true,get(){const r=G&&G.towerRet;return r&&MAPS[r.map]?[r.map,r.x,r.y,r.dir||'down']:['town5',20,4,'down'];}});
+async function autoClimb(start){AUTO.climb=true;updFloat(true);await towerEnter(start);
+  while(AUTO.climb&&G.map==='towerFloor'){const g=npcById('tw_guard');
+    if(g&&!g.hide){await sleep(250);await towerFight();if(G.map!=='towerFloor')break;}
+    if(towerState().cur>=100||!AUTO.climb)break;await sleep(200);await towerNext();}
+  const was=AUTO.climb;AUTO.climb=false;updFloat(true);
+  if(was&&G.map==='towerFloor'&&towerState().cur>=100)await say('탑의 꼭대기에 도착했다!');}
+
+/* ---------- 필드 플로팅 버튼 ---------- */
+const FLOAT=el(TOP,'floatbar','');FLOAT.innerHTML=`<button class="fb tower"><i></i><span>탑</span></button><button class="fb hunt"><i></i><span>자동<br>사냥</span></button><button class="fb auto"><i></i><span>자동<br>전투</span></button><button class="fb stop"><span>자동<br>중지</span></button>`;
+const FB={tower:FLOAT.querySelector('.tower'),hunt:FLOAT.querySelector('.hunt'),auto:FLOAT.querySelector('.auto'),stop:FLOAT.querySelector('.stop')};
+for(const b of Object.values(FB))b.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();});
+FB.tower.addEventListener('click',e=>{e.stopPropagation();if(!fieldFree())return;audioInit();sfx('sel');runScript(()=>goTower());});
+FB.hunt.addEventListener('click',e=>{e.stopPropagation();audioInit();if(AUTO.hunt){stopHunt('자동 사냥을 멈췄어요.');return;}
+  if(!fieldFree())return;if(!curMap().enc){toast('야생 몬스터가 나오는 곳에서만 쓸 수 있어요.');sfx('bad');return;}
+  if(partyHpRatio()<.35){toast('먼저 몬스터를 회복시켜 주세요.');sfx('bad');return;}
+  AUTO.hunt=true;sfx('sel');toast('자동 사냥 시작! 아무 키나 누르면 멈춰요.');updFloat(true);});
+FB.auto.addEventListener('click',e=>{e.stopPropagation();audioInit();AUTO.battle=!AUTO.battle;SET.autoBattle=AUTO.battle?1:0;saveSettings();sfx(AUTO.battle?'sel':'back');
+  toast(AUTO.battle?'자동 전투 켜짐':'자동 전투 꺼짐');updFloat(true);
+  if(AUTO.battle&&state==='battle'){const h=topH();if(h&&h.autoHook)h.autoHook();}});
+FB.stop.addEventListener('click',e=>{e.stopPropagation();sfx('back');if(AUTO.hunt)stopHunt('자동 사냥을 멈췄어요.');if(AUTO.climb){AUTO.climb=false;toast('자동 등반을 멈춰요 (지금 층까지만)');}updFloat(true);});
+let floatKey='';
+function updFloat(force){const inWorld=G&&state==='world',inBattle=state==='battle',inTower=G&&(G.map==='towerLobby'||G.map==='towerFloor');
+  const show={tower:inWorld&&!!G.flags.pad&&!inTower&&!AUTO.hunt,hunt:inWorld&&!!G.flags.pad&&!inTower&&!!(curMap()&&curMap().enc),auto:(inWorld&&!!G.flags.pad)||inBattle,stop:AUTO.hunt||AUTO.climb};
+  const k=JSON.stringify([show,AUTO.battle,AUTO.hunt,AUTO.climb]);if(!force&&k===floatKey)return;floatKey=k;
+  for(const n in FB)FB[n].classList.toggle('hidden',!show[n]);FB.auto.classList.toggle('on',autoFight());FB.hunt.classList.toggle('on',AUTO.hunt);
+  FB.auto.querySelector('span').innerHTML=AUTO.climb||AUTO.hunt?'자동<br>진행중':AUTO.battle?'자동<br>전투 ON':'자동<br>전투';}
 
 </script>
 </body>

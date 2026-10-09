@@ -40,7 +40,7 @@ async function edgeWarp(to,side){busy=true;const m2=MAPS[to];let x=P.x,y=P.y;
 function checkTrig(){const m=curMap();for(const t of m.trig){if(P.x>=t.x&&P.x<t.x+t.w&&P.y>=t.y&&P.y<t.y+t.h&&(!t.cond||t.cond())){runScript(t.run);return true;}}return false;}
 
 /* ---------- 필드 업데이트 ---------- */
-function updateWorld(dt){const m=curMap();if(!busy&&!ui.length&&!P.moving&&SET.tips)worldGuides();
+function updateWorld(dt){const m=curMap();autoTick();if(!busy&&!ui.length&&!P.moving&&SET.tips)worldGuides();
   /* NPC 배회 */
   if(!busy&&!ui.length)for(const n of npcsOf(m)){if(!n.wander||n.mv)continue;if(--n.wt>0)continue;n.wt=90+rnd(180);
     const d=['up','down','left','right'][rnd(4)],[dx,dy]=DV[d],nx=n.x+dx,ny=n.y+dy;n.dir=d;
@@ -206,7 +206,7 @@ function render(){const g=ctx;g.setTransform(SC,0,0,SC,0,0);g.imageSmoothingEnab
   if(transFx)drawTrans(g);}
 function loop(now){const dt=Math.min(.05,(now-lastT)/1000);lastT=now;frame++;
   if(G&&(state==='world'||state==='battle'))G.playMs=(G.playMs||0)+dt*1000;
-  if(state==='world')updateWorld(dt);FX.step();render();renderBot();requestAnimationFrame(loop);}
+  if(state==='world')updateWorld(dt);updFloat();FX.step();render();renderBot();requestAnimationFrame(loop);}
 
 async function startFromCode(g,lg){try{localStorage.setItem(SAVE_KEY,JSON.stringify(g));}catch(e){}
   lg.remove();hideMsg();await fadeTo(1);G=g;G.flags=G.flags||{};G.badges=G.badges||[0,0];G.box=G.box||[];busy=true;state='world';enterMap(G.map,G.x,G.y,G.dir||'down',{sign:1});Pad.show();await fadeTo(0);busy=false;

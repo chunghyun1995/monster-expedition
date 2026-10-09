@@ -39,7 +39,7 @@ function fitCut(rest,max=2){if(dlgLines(rest)<=max)return rest.length;
 function splitPage(rest){rest=String(rest);if(!dlg.offsetWidth)return[rest,''];const c=fitCut(rest);const pg=rest.slice(0,c).replace(/\s+$/,''),r=rest.slice(c).replace(/^\s+/,'');dtx.textContent='';return[pg,r];}
 function paginate(text){const pages=[];let rest=String(text);do{const[a,b]=splitPage(rest);pages.push(a);rest=b;}while(rest.length);return pages;}
 const CPS=[45,22,6];
-function say(text,o={}){return new Promise(res=>{clearTimeout(dlgTm);dlgShow();setTag(o.name,o.look);dnx.classList.add('hidden');
+function say(text,o={}){if(typeof autoTalk!=='undefined'&&autoTalk()&&!o.auto)o={...o,auto:520};return new Promise(res=>{clearTimeout(dlgTm);dlgShow();setTag(o.name,o.look);dnx.classList.add('hidden');
   let rest=String(text),cur='';dtx.textContent='';
   let i=0,done=false,closed=false,at=null,tm=null;const sp=CPS[SET.text]||22;
   const last=()=>!rest.length;
@@ -104,7 +104,8 @@ function list(items,o={}){return new Promise(res=>{const root=o.root||BOT,[x,y,w
   pushH(h);draw();if(o.onOpen)o.onOpen(h);});}
 
 /* ---------- 예 / 아니오 ---------- */
-async function ask(text,opts=['예','아니오'],o={}){dlgShow();setTag(o.name,o.look);const pg=paginate(text);for(let i=0;i<pg.length-1;i++)await say(pg[i],{...o,keep:1});msg(pg[pg.length-1],o);
+async function ask(text,opts=['예','아니오'],o={}){if(typeof autoAnswer!=='undefined'){const a=autoAnswer(text,opts);if(a!=null){dlgShow();setTag(o.name,o.look);msg(text,o);await sleep(450);if(!o.keep)hideMsg();return a;}}
+  dlgShow();setTag(o.name,o.look);const pg=paginate(text);for(let i=0;i<pg.length-1;i++)await say(pg[i],{...o,keep:1});msg(pg[pg.length-1],o);
   const n=opts.length,bw=n>2?200:176,bh=n>2?38:52,gap=8,y0=(192-(bh+gap)*n+gap)/2;
   const i=await panel(opts.map((t,j)=>({html:`<span class="bigbtn">${esc(t)}</span>`,x:(256-bw)/2,y:y0+j*(bh+gap),w:bw,h:bh,cls:j===0?'blue':''})),
     {backdrop:true,bg:'rgba(20,24,40,.55)',cancel:o.cancel!=null?o.cancel:n-1,start:o.start||0});

@@ -80,7 +80,8 @@ function monTopPage(m,title){const sp=SP[m.sid],mx=maxHp(m);
   <div style="font-size:${U(8.5)};color:#6a7190;margin-top:${U(3)}">${NATURES[m.nat][0]} 성격</div></div>
   <div class="sheet" style="left:${U(10)};top:${U(138)};width:${U(238)};height:${U(48)};font-size:${U(9)};padding:${U(4)} ${U(8)}">${m.moves.map(x=>`${tb(MV[x.id].t)} ${MV[x.id].n}`).join('&nbsp; ')}</div>`;}
 /* mode: field | battle | forced | item | deposit — 선택 인덱스 반환 */
-async function partyScreen(mode,o={}){let at=o.start!=null?o.start:mode==='forced'?Math.max(0,G.party.findIndex(m=>m.hp>0)):mode==='battle'&&B?B.pi:0;const prevBot=botMode;botMode='menu';
+async function partyScreen(mode,o={}){if(mode==='forced'&&typeof autoTalk!=='undefined'&&autoTalk()){await sleep(300);return autoForcedPick();}
+  let at=o.start!=null?o.start:mode==='forced'?Math.max(0,G.party.findIndex(m=>m.hp>0)):mode==='battle'&&B?B.pi:0;const prevBot=botMode;botMode='menu';
   const tp=page(TOP,'');
   try{while(true){
     const btns=[0,1,2,3,4,5].map(i=>{const m=G.party[i];if(!m)return{html:'',x:i%2?130:4,y:4+Math.floor(i/2)*52,w:122,h:48,cls:'pcell empty',disabled:1,skip:1};

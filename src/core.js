@@ -50,10 +50,10 @@ const DIRS=new Set(['up','down','left','right']);
 const KEYMAP={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',w:'up',s:'down',a:'left',d:'right',W:'up',S:'down',A:'left',D:'right',
   z:'a',Z:'a',' ':'a',x:'b',X:'b',Backspace:'b',Shift:'b',Enter:'menu',Escape:'menu',c:'menu',C:'menu',q:'l',Q:'l',e:'r',E:'r'};
 let fieldKey=null; // world.js가 지정: 필드에서 받는 키 처리
-function press(k){audioInit();const h=topH();if(h){if(h.key)h.key(k);return;}if(fieldKey)fieldKey(k);}
+function press(k){audioInit();if(typeof autoUserInput!=='undefined'&&!(k==='a'&&AUTO.climb))autoUserInput();const h=topH();if(h){if(h.key)h.key(k);return;}if(fieldKey)fieldKey(k);}
 // 메뉴·전투·대화 중에 누른 방향은 필드 이동으로 넘기지 않는다
 function fieldFree(){return typeof state!=='undefined'&&state==='world'&&!ui.length&&!busy;}
-function dirDown(k){dirStack=dirStack.filter(x=>x!==k);dirStack.push(k);tapDir=fieldFree()?k:null;}
+function dirDown(k){if(typeof autoUserInput!=='undefined')autoUserInput();dirStack=dirStack.filter(x=>x!==k);dirStack.push(k);tapDir=fieldFree()?k:null;}
 function clearDirs(){dirStack=[];tapDir=null;if(typeof P!=='undefined'&&P)P.chain=false;}
 function dirUp(k){dirStack=dirStack.filter(x=>x!==k);}
 addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;

@@ -11,7 +11,7 @@ const tn=()=>`${TCLASS[B.o.cls].n} ${B.o.name}`;
 const bname=s=>s==='e'?(B.wild?'야생 ':'상대 ')+N(fm()):N(pm());
 const center=s=>s==='e'?{x:EPOS.x+B.e.x,y:EPOS.y-34+B.e.y}:{x:PPOS.x+B.p.x,y:PPOS.y-62+B.p.y};
 function bsay(t,wait){return say(t,wait?{keep:1}:{keep:1,auto:520+t.length*16});}
-function waitA(){return new Promise(res=>{const h={tapA:1,key(k){if(k==='a'||k==='b'){popH(h);sfx('cur');res();}}};pushH(h);});}
+function waitA(){if(typeof autoTalk!=='undefined'&&autoTalk())return sleep(650);return new Promise(res=>{const h={tapA:1,key(k){if(k==='a'||k==='b'){popH(h);sfx('cur');res();}}};pushH(h);});}
 const blank=()=>({show:false,x:0,y:0,white:0,alpha:1,sx:1,sy:1,dark:false,blink:false,tint:null});
 
 /* ---------- HUD ---------- */
@@ -75,11 +75,12 @@ async function chooseAction(){
   while(true){msg(`${J(N(pm()),'은')}\n무엇을 할까?`);
     guideSoon('battle','#botUI .btn.red','<b>싸운다</b>를 누르면 기술을 고를 수 있어요. 아래의 <b>가방</b>에선 회복약을, <b>몬스터</b>에선 교체를 할 수 있어요.',{title:'전투'});
     if(B.wild&&Object.keys(G.bag).some(k=>ITEMS[k]&&ITEMS[k].ball&&G.bag[k]>0))guideSoon('catch','#botUI .btn.yellow','야생 몬스터는 HP를 줄인 뒤 <b>가방 → 캡슐</b>을 던지면 붙잡을 수 있어요. 잠듦·마비 같은 상태 이상이면 더 잘 잡혀요!',{title:'포획'});
+    if(autoFight()){await sleep(220);return{type:'move',mi:autoMoveIndex()};}
     const i=await panel([{html:`<span style="font-size:${U(20)}">싸운다</span>`,x:24,y:14,w:208,h:104,cls:'red',flash:1},
       {html:`<img src="${menuIcon('bag')}" style="width:${U(22)};height:${U(22)}"><span>가방</span>`,x:4,y:124,w:84,h:64,cls:'yellow'},
       {html:'<span>도망치다</span>',x:96,y:140,w:64,h:48,cls:'blue'},
-      {html:`<img src="${menuIcon('party')}" style="width:${U(22)};height:${U(22)}"><span>몬스터</span>`,x:168,y:124,w:84,h:64,cls:'green'}],{cancel:false,start:0});
-    if(i===0){const mi=await chooseMove();if(mi==='back')continue;return{type:'move',mi};}
+      {html:`<img src="${menuIcon('party')}" style="width:${U(22)};height:${U(22)}"><span>몬스터</span>`,x:168,y:124,w:84,h:64,cls:'green'}],{cancel:false,start:0,onOpen:h=>{h.autoHook=()=>{h.set&&h.set(0);h.key('a');};}});
+    if(i===0){if(autoFight())return{type:'move',mi:autoMoveIndex()};const mi=await chooseMove();if(mi==='back')continue;return{type:'move',mi};}
     if(i===1){hideMsg();const r=await bagScreen('battle');if(!r)continue;return{type:'item',...r};}
     if(i===3){hideMsg();const j=await partyScreen('battle');if(j<0)continue;return{type:'switch',idx:j};}
     return{type:'run'};}}
@@ -463,7 +464,7 @@ async function heroTurn(){const f=fm(),h=B.hero;
     {html:heal?`<span>${ITEMS[heal].n} 마시기</span><small>남은 ${G.bag[heal]}개</small>`:'<span>회복약 없음</span>',x:4,y:74,w:122,h:56,cls:'yellow',disabled:!heal},
     {html:B.wild?'<span>도망치다</span>':'<span>버티기</span><small>방어 자세</small>',x:130,y:74,w:122,h:56,cls:'blue'}];
   guideSoon('hero','#botUI .mvbtn','몬스터가 모두 쓰러져서 <b>트레이너가 직접</b> 싸우고 있어요! 트레이너가 쓰러지면 패배예요.',{title:'최후의 수단'});
-  const i=await panel(btns,{cancel:false,onOpen:hh=>hh.els.slice(0,2).forEach(e=>{e.style.background='linear-gradient(#ffb08a,#d8603a)';e.style.borderColor='#7a2a10';})});
+  const i=autoFight()?(await sleep(300),0):await panel(btns,{cancel:false,onOpen:hh=>hh.els.slice(0,2).forEach(e=>{e.style.background='linear-gradient(#ffb08a,#d8603a)';e.style.borderColor='#7a2a10';})});
   hideMsg();let guard=false;
   if(i<2){const a=HERO_ACT[i];await bsay(`${J(G.name,'은')} ${J(a.n,'을')} 했다!`);
     // 연출: 돌 던지기 = 포물선, 몸통 박치기 = 돌진

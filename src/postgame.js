@@ -68,13 +68,14 @@ async function towerMenu(){const o={name:'탑 안내원'},t=towerState();
     await say('10층을 돌파할 때마다 몬스터가 회복되고 보상을 받아요. 다음에는 돌파한 10층 단위부터 다시 도전할 수 있어요.',o);
     await say('도중에 지면 이 로비로 돌아오게 되지만, 돈을 잃지는 않으니 안심하세요!',o);}
   const top=Math.min(91,Math.floor(t.best/10)*10+1),cps=[];for(let f=1;f<=top;f+=10)cps.push(f);
-  const items=[...cps.reverse().map(f=>({html:`<span>${f}층부터 도전</span><span class="r">${f===1?'처음부터':'체크포인트'}</span>`})),{html:'<span>그만두기</span>'}];
+  cps.reverse();const items=[...cps.map(f=>({html:`<span>${f}층부터 도전</span><span class="r">${f===1?'처음부터':'체크포인트'}</span>`})),...cps.map(f=>({html:`<span>${f}층부터 자동 등반</span><span class="r">AUTO</span>`})),{html:'<span>그만두기</span>'}];
   const tp=page(TOP,`<div class="abs" style="inset:0;background:linear-gradient(#3a2a6a,#1d1a3a)"></div><div class="title-bar">무한의 탑<span class="r">최고 기록 ${t.best}층</span></div>
     <div class="sheet desc" style="left:${U(14)};top:${U(30)};width:${U(228)}">수호자의 몬스터 레벨 = 층수<br>10층마다 회복 + 보상 · 체크포인트<br>100층 수호자: 레벨 100 몬스터 6마리</div>`);
   const r=await list(items,{rect:[4,4,248,150],rowH:20,backdrop:true,bg:'linear-gradient(#6a5aa8,#3d3270)',buttons:[{html:'닫기',x:170,y:160,w:82,h:28,cls:'dark',val:-1}]});
-  tp.remove();if(r<0||r>=cps.length){await say('또 오세요!',o);return;}
-  const f=cps[r];if(!G.party.some(m=>m.hp>0)){await say('먼저 몬스터를 회복시켜 주세요.',o);return;}
+  tp.remove();if(r<0||r>=cps.length*2){await say('또 오세요!',o);return;}
+  const auto=r>=cps.length,f=cps[auto?r-cps.length:r];if(auto){AUTO.climb=true;updFloat(true);}if(!G.party.some(m=>m.hp>0)){await say('먼저 몬스터를 회복시켜 주세요.',o);return;}
   await say('도전 전에 몬스터들을 회복시켜 드릴게요.',o);healParty();sfx('heal');
+  if(auto){await say(`${f}층부터 자동으로 올라갈게요. 지거나 '자동 중지'를 누르면 멈춰요.`,o);await autoClimb(f);return;}
   await say(`그럼 ${f}층으로 안내할게요. 행운을 빌어요!`,o);await towerEnter(f);}
 async function towerEnter(f){const t=towerState();t.cur=f;const m=MAPS.towerFloor;m.name=`무한의 탑 ${f}층`;
   m.npcs[0].look=f===100?'boss':f%10===0?'villain':TOWER_LOOKS[f%TOWER_LOOKS.length];m.npcs[0].name=`${f}층 수호자`;
