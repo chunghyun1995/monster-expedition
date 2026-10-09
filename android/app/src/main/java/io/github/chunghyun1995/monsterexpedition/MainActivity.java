@@ -12,6 +12,8 @@ import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.SystemClock;
+import android.util.Log;
 import android.view.DisplayCutout;
 import android.view.View;
 import android.view.Window;
@@ -19,6 +21,7 @@ import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
+import android.webkit.RenderProcessGoneDetail;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -36,8 +39,13 @@ public class MainActivity extends Activity {
     private static final String GAME_URL = "file:///android_asset/index.html";
     private static final String ASSET_PREFIX = "file:///android_asset/";
 
+    private static final String TAG = "MonsterExpedition";
+    private static final int BG = Color.rgb(0x14, 0x16, 0x1f);
+
     private FrameLayout root;
     private WebView web;
+    private int rendererRestarts;
+    private long lastRendererRestart;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,16 +55,23 @@ public class MainActivity extends Activity {
         w.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON); // 자동 사냥 중 화면 꺼짐 방지
 
         root = new FrameLayout(this);
-        root.setBackgroundColor(Color.rgb(0x14, 0x16, 0x1f));
+        root.setBackgroundColor(BG);
+        setContentView(root);
+        if ((getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+            WebView.setWebContentsDebuggingEnabled(true); // 디버그 빌드: PC 크롬 chrome://inspect 로 확인
+        }
+        createWebView();
+        setupFullscreen();
+        setupBack();
+    }
+
+    private void createWebView() {
         web = new WebView(this);
-        web.setBackgroundColor(Color.rgb(0x14, 0x16, 0x1f));
+        web.setBackgroundColor(BG);
         web.setOverScrollMode(View.OVER_SCROLL_NEVER);
         web.setVerticalScrollBarEnabled(false);
         web.setHorizontalScrollBarEnabled(false);
         web.setHapticFeedbackEnabled(false);
-        root.addView(web, new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
-        setContentView(root);
 
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
@@ -66,28 +81,47 @@ public class MainActivity extends Activity {
         s.setSupportZoom(false);
         s.setBuiltInZoomControls(false);
         s.setDisplayZoomControls(false);
-        if ((getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
-            WebView.setWebContentsDebuggingEnabled(true); // 디버그 빌드: PC 크롬 chrome://inspect 로 확인
-        }
 
         web.addJavascriptInterface(new AppBridge(), "MEApp");
-        web.setWebViewClient(new WebViewClient() {
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                return openOutside(request.getUrl());
-            }
-
-            @Override
-            @SuppressWarnings("deprecation")
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                return openOutside(Uri.parse(url));
-            }
-        });
-
-        setupFullscreen();
-        setupBack();
+        web.setWebViewClient(client);
+        root.addView(web, 0, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
         web.loadUrl(GAME_URL);
     }
+
+    private final WebViewClient client = new WebViewClient() {
+        @Override
+        public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+            return openOutside(request.getUrl());
+        }
+
+        @Override
+        @SuppressWarnings("deprecation")
+        public boolean shouldOverrideUrlLoading(WebView view, String url) {
+            return openOutside(Uri.parse(url));
+        }
+
+        /**
+         * 메모리가 부족해 WebView 렌더러가 종료되면 기본 동작은 앱까지 꺼지는 것(Android 8+).
+         * 대신 WebView를 새로 만들어 게임을 다시 연다. 리포트는 localStorage에 그대로 남아 있다.
+         */
+        @Override
+        public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
+            Log.w(TAG, "WebView renderer gone (crash=" + detail.didCrash() + ")");
+            root.removeView(view);
+            view.destroy();
+            if (view != web || isFinishing() || isDestroyed()) return true;
+            long now = SystemClock.elapsedRealtime();
+            rendererRestarts = now - lastRendererRestart < 60000 ? rendererRestarts + 1 : 1;
+            lastRendererRestart = now;
+            if (rendererRestarts > 3) {
+                finish(); // 짧은 시간에 계속 죽으면 다시 만들지 않고 닫는다
+            } else {
+                createWebView();
+            }
+            return true;
+        }
+    };
 
     /** 게임 밖 주소(웹 링크 등)는 브라우저로 연다. */
     private boolean openOutside(Uri uri) {
