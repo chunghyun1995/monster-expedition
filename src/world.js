@@ -11,7 +11,7 @@ const npcsOf=m=>m.npcs.filter(npcOn);
 const npcById=id=>curMap().npcs.find(n=>n.id===id);
 function npcAt(m,x,y){return npcsOf(m).find(n=>(n.x===x&&n.y===y)||(n.mv&&n.mx===x&&n.my===y));}
 const itemAt=(m,x,y)=>m.items.find(i=>i.x===x&&i.y===y&&!G.flags[i.flag]);
-function passable(m,x,y,dir){const c=tileAt(m,x,y);if(c==null)return false;if(m.out){if(c==='L')return dir==='down';return'.,=fQD:'.includes(c);}return'.cm'.includes(c);}
+function passable(m,x,y,dir){const c=tileAt(m,x,y);if(c==null)return false;if(m.out){if(c==='L')return dir==='down';if(c==='O')return!!(G&&G.flags.legendQuest);return'.,=fQD:'.includes(c);}return'.cmu'.includes(c);}
 
 /* ---------- 이벤트 도우미 ---------- */
 async function walkNpc(n,dirs,ms=240){for(const d of dirs){n.dir=d;const[dx,dy]=DV[d];n.mv=1;n.mx=n.x+dx;n.my=n.y+dy;n.walk=1;
@@ -110,7 +110,8 @@ function drawWorld(g){const m=curMap(),{cx,cy,px,py}=camera();R('#000',0,0,W,H,g
   const ents=[];
   for(const n of npcsOf(m)){const[dx,dy]=DV[n.dir],off=n.off||0;
     ents.push({y:n.y*T+dy*off,f:()=>{const sx=Math.round(n.x*T+dx*off-cx),sy=Math.round(n.y*T+dy*off-cy)-6;
-      person(g,sx,sy+(n.bow?1:0),n.dir,n.walk?((frame>>3)&1)+1:0,LOOK[n.look]||LOOK.man);grassOver(g,m,n.x,n.y,sx,sy);if(n.emote)emote(g,sx,sy,n.emote);}});}
+      if(n.mon){const b=Math.sin(frame/14+n.x)*1.5;g.fillStyle='rgba(0,0,0,.25)';g.beginPath();g.ellipse(sx+8,sy+19,10,3,0,0,7);g.fill();drawMon(g,n.mon,sx+8,sy+18+b,1.25);}
+      else person(g,sx,sy+(n.bow?1:0),n.dir,n.walk?((frame>>3)&1)+1:0,LOOK[n.look]||LOOK.man);grassOver(g,m,n.x,n.y,sx,sy);if(n.emote)emote(g,sx,sy,n.emote);}});}
   if(!P.hidden)ents.push({y:py+.5,f:()=>{const k=P.moving?P.t:0,jy=P.jump?-Math.sin(Math.PI*k)*10:0,sx=Math.round(px-cx),sy=Math.round(py-cy)-6+Math.round(jy);
     if(P.jump){g.fillStyle='rgba(0,0,0,.3)';g.fillRect(sx+3,Math.round(py-cy)+12,10,3);}
     const fr=P.moving?(P.t<.5?(P.step?2:1):0):0;person(g,sx,sy,P.dir,fr,LOOK.player);

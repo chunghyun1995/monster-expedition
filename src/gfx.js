@@ -240,6 +240,9 @@ function drawTileOut(m,tx,ty,sx,sy){const c=tileAt(m,tx,ty),h=hash(tx,ty);PAL=m.
   case '^':cliff(m,tx,ty,sx,sy,h);break;
   case '%':lava(sx,sy,h);break;
   case 'E':pole(sx,sy,h);break;
+  case 'O':{if(m.pal&&m.pal.ash)cliff(m,tx,ty,sx,sy,h);else if(tileAt(m,tx,ty+1)==='~'||m.id==='route4'){R('#2f7d34',sx,sy,16,16);R('#1b4f26',sx,sy+12,16,4);}else cliff(m,tx,ty,sx,sy,h);
+    R('#2a1e18',sx+2,sy+4,12,12);R('#2a1e18',sx+4,sy+2,8,2);R('#120c0a',sx+4,sy+6,8,10);R('#5a4434',sx+2,sy+4,1,12);R('#5a4434',sx+13,sy+4,1,12);
+    if(G&&G.flags.legendQuest){const a=.35+.25*Math.sin(frame/12);R(`rgba(160,200,255,${a})`,sx+6,sy+9,4,4);R(`rgba(255,255,255,${a})`,sx+7,sy+10,2,2);}break;}
   case '.':ground(sx,sy,h);break;
   case ',':{R(PAL&&PAL.tg||TG,sx,sy,16,16);const sw=(m.rustle&&m.rustle.x===tx&&m.rustle.y===ty&&frame-m.rustle.f<12)?1:0;
     for(const[bx,by]of[[1,2],[8,1],[4,8],[11,9]]){R(TG2,sx+bx,sy+by+1,1,5);R(TG2,sx+bx+3,sy+by+1,1,5);R(TG2,sx+bx+1,sy+by+4,2,2);R(TG3,sx+bx+1+sw,sy+by,1,3);R(TG3,sx+bx+2-sw,sy+by+1,1,2);
@@ -266,10 +269,10 @@ function drawTileOut(m,tx,ty,sx,sy){const c=tileAt(m,tx,ty),h=hash(tx,ty);PAL=m.
     if(k==='C'||k==='M'){R('#2a3048',sx+2,sy+2,12,14);R('#9fd8ff',sx+3,sy+3,10,13);R('#2a3048',sx+8,sy+3,1,13);R('#e8f6ff',sx+4,sy+4,2,4);}
     else if(k==='G'||k==='B'){R('#2a2d38',sx+1,sy+2,14,14);R('#596080',sx+2,sy+3,12,13);R('#2a2d38',sx+8,sy+3,1,13);R('#8a90b0',sx+3,sy+4,4,1);}
     else{R('#3a2414',sx+3,sy+2,10,14);R('#7a5230',sx+4,sy+3,8,13);R('#5a3a20',sx+4,sy+8,8,1);R('#f2c94c',sx+10,sy+10,1,2);}break;}
-  case 'H':case 'K':case 'B':case 'C':case 'M':case 'G':building(m,c,tx,ty,sx,sy);break;
+  case 'H':case 'K':case 'B':case 'C':case 'M':case 'G':case 'T':building(m,c,tx,ty,sx,sy);break;
   default:tree(sx,sy,h);}}
 const BLD={H:{roof:'#d0583e',r2:'#a33a2a',wall:'#f2e8d0'},K:{roof:'#4f9a5a',r2:'#2f6a3a',wall:'#f2e8d0'},B:{roof:'#8b93ab',r2:'#5e6680',wall:'#e8ecf4'},
-  C:{roof:'#e2566f',r2:'#b63a52',wall:'#fff4f4'},M:{roof:'#3d7ad6',r2:'#2b5aa8',wall:'#f0f4ff'},G:{roof:'#7d8396',r2:'#555b70',wall:'#e8e4da'}};
+  C:{roof:'#e2566f',r2:'#b63a52',wall:'#fff4f4'},T:{roof:'#6a4ab0',r2:'#4a2a8a',wall:'#ece6f8'},M:{roof:'#3d7ad6',r2:'#2b5aa8',wall:'#f0f4ff'},G:{roof:'#7d8396',r2:'#555b70',wall:'#e8e4da'}};
 function bldAt(m,tx,ty){for(const[dx,dy]of[[-1,0],[1,0],[0,-1]]){const q=tileAt(m,tx+dx,ty+dy);if(BLD[q])return q;}return'H';}
 function wallTile(m,k,tx,ty,sx,sy){const b=BLD[k];R(b.wall,sx,sy,16,16);for(let y=3;y<14;y+=4)R(shade(b.wall,-.05),sx,sy+y,16,.5);R(shade(b.wall,-.12),sx,sy+14,16,2);R(shade(b.wall,.06),sx,sy,16,.5);
   const same=q=>q===k||q==='D';if(!same(tileAt(m,tx-1,ty)))R(shade(b.wall,-.25),sx,sy,2,16);if(!same(tileAt(m,tx+1,ty)))R(shade(b.wall,-.25),sx+14,sy,2,16);}
@@ -303,6 +306,7 @@ function drawTileIn(m,tx,ty,sx,sy){const c=tileAt(m,tx,ty),h=hash(tx,ty),fl=m.fl
   switch(c){
   case 'w':{const below=tileAt(m,tx,ty+1);const wc=m.wall||'#e8d8b8';R(wc,sx,sy,16,16);R(shade(wc,-.08),sx,sy+((tx&1)?0:8),16,8);
     if(below!=='w'){R(shade(wc,-.3),sx,sy+12,16,4);R(shade(wc,-.45),sx,sy+15,16,1);}else R(shade(wc,.15),sx,sy,16,1);break;}
+  case 'u':floor();R('#6a5a8a',sx+1,sy+1,14,14);for(let i=0;i<4;i++){R('#9a8ac0',sx+2,sy+2+i*3.5,12,2);R('#c8bce8',sx+2,sy+2+i*3.5,12,.5);}R('#ffd84a',sx+7,sy,2,1);break;
   case 'x':R('#000',sx,sy,16,16);break;
   case '%':lava(sx,sy,h);break;
   case 'm':floor();R('#c84a3a',sx+1,sy+3,14,11);R('#e86a5a',sx+2,sy+4,12,9);R('#f2c94c',sx+2,sy+8,12,1);break;

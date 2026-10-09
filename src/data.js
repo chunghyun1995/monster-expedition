@@ -87,6 +87,10 @@ const LS={
  rock:[[1,'tackle'],[1,'defcurl'],[5,'mudslap'],[9,'rockthrow'],[13,'rocktomb'],[18,'dig'],[24,'rockslide'],[30,'bulldoze']],
  shroom:[[1,'poisonsting'],[1,'absorb'],[6,'toxspore'],[11,'sleeppowder'],[16,'acid'],[22,'leechsting'],[28,'leaf']],
  mole:[[1,'scratch'],[1,'growl'],[5,'mudslap'],[9,'quick'],[14,'dig'],[20,'headbutt'],[26,'bulldoze']],
+ legFire:[[1,'ember'],[1,'rockthrow'],[20,'flamewheel'],[30,'rockslide'],[40,'firefang'],[50,'flameburst']],
+ legWater:[[1,'bubble'],[1,'growl'],[20,'watergun'],[30,'aquatail'],[40,'acid'],[50,'wave']],
+ legElec:[[1,'gust'],[1,'thundershock'],[20,'spark'],[30,'wing'],[40,'aerial'],[50,'thunder']],
+ legSky:[[1,'quick'],[1,'gust'],[30,'headbutt'],[40,'aerial'],[55,'petal'],[60,'thunder'],[70,'takedown']],
  jelly:[[1,'poisonsting'],[1,'bubble'],[7,'withdraw'],[12,'acid'],[17,'watergun'],[23,'toxspore'],[30,'wave']]};
 
 /* 몬스터: t 타입, b [HP,공격,방어,특공,특방,스피드], x 경험치, c 포획률, ev [진화Lv, 번호], st 단계, cat 분류, h 키(m), w 몸무게(kg) */
@@ -120,7 +124,11 @@ const SP={
  27:{n:'흙두더',t:['ground'],b:[35,55,45,35,45,80],x:58,c:190,ls:LS.mole,ev:[26,28],st:0,line:27,cat:'두더지',h:.3,w:4.5,d:'하루 종일 땅굴을 판다. 밭을 부드럽게 해 줘서 농부들이 반긴다.'},
  28:{n:'굴착왕',t:['ground'],b:[60,90,65,50,70,100],x:149,c:75,ls:LS.mole,st:1,line:27,cat:'두더지',h:.7,w:33,d:'강철 같은 발톱으로 바위산도 순식간에 뚫는다.'},
  29:{n:'물파리',t:['water','poison'],b:[40,40,35,50,100,70],x:67,c:190,ls:LS.jelly,ev:[30,30],st:0,line:29,cat:'해파리',h:.9,w:45.5,d:'투명한 몸으로 물속에 숨어 있다. 촉수에 독이 있다.'},
- 30:{n:'독물파리',t:['water','poison'],b:[80,70,65,80,120,100],x:180,c:60,ls:LS.jelly,st:1,line:29,cat:'해파리',h:1.6,w:55,d:'수십 개의 촉수를 자유롭게 다룬다. 바다의 무법자.'}};
+ 30:{n:'독물파리',t:['water','poison'],b:[80,70,65,80,120,100],x:180,c:60,ls:LS.jelly,st:1,line:29,cat:'해파리',h:1.6,w:55,d:'수십 개의 촉수를 자유롭게 다룬다. 바다의 무법자.'},
+ 31:{n:'염화룡',t:['fire','rock'],b:[90,110,95,105,85,95],x:270,c:3,ls:LS.legFire,st:2,line:31,legend:1,cat:'화산',h:2.4,w:280,d:'붉은재 화산 깊은 곳에서 잠든 불의 수호신. 숨을 내쉬면 용암이 끓어오른다.'},
+ 32:{n:'심해왕',t:['water'],b:[100,85,100,110,110,75],x:270,c:3,ls:LS.legWater,st:2,line:32,legend:1,cat:'수원',h:3.1,w:210,d:'모든 강물이 시작되는 수원에 산다는 물의 수호신. 한 번 울면 사흘 동안 비가 내린다.'},
+ 33:{n:'뇌명조',t:['elec','fly'],b:[85,90,80,115,90,120],x:270,c:3,ls:LS.legElec,st:2,line:33,legend:1,cat:'뇌운',h:2,w:52,d:'폭풍 봉우리의 먹구름 속을 나는 번개의 수호신. 날갯짓마다 천둥이 친다.'},
+ 34:{n:'천공신',t:['normal','fly'],b:[110,110,100,110,110,100],x:320,c:3,ls:LS.legSky,st:2,line:34,legend:1,cat:'하늘',h:4.2,w:350,d:'세 수호신이 깨어날 때 구름 위에 모습을 드러낸다는 하늘의 신. 이 지방을 처음 만들었다고 전해진다.'}};
 const DEX_N=Object.keys(SP).length;
 
 /* 성격 [이름, 오르는 능력, 내려가는 능력] (인덱스 1~5) */
@@ -129,6 +137,7 @@ const NATURES=[['씩씩함',1,5],['고집셈',1,3],['듬직함',2,1],['꼼꼼함
 /* 도구 */
 const ITEMS={
  ball:{n:'포획캡슐',p:'ball',price:200,ball:1,d:'야생 몬스터에게 던져서 붙잡는 캡슐.'},
+ hyper:{n:'하이퍼캡슐',p:'ball',price:1200,ball:2.5,d:'전설의 몬스터도 노려볼 수 있는 최고급 캡슐.'},
  great:{n:'슈퍼캡슐',p:'ball',price:600,ball:1.5,d:'포획캡슐보다 몬스터를 더 잘 붙잡을 수 있는 캡슐.'},
  potion:{n:'회복약',p:'heal',price:300,heal:20,d:'몬스터 1마리의 HP를 20 회복한다.'},
  super:{n:'고급회복약',p:'heal',price:700,heal:60,d:'몬스터 1마리의 HP를 60 회복한다.'},
@@ -137,7 +146,7 @@ const ITEMS={
  parheal:{n:'마비풀림약',p:'heal',price:200,cure:'par',d:'몬스터 1마리의 마비 상태를 치료한다.'},
  awake:{n:'잠깨는종',p:'heal',price:250,cure:'slp',d:'맑은 소리로 잠든 몬스터를 깨운다.'},
  fullheal:{n:'만능치료제',p:'heal',price:600,cure:'all',d:'몬스터 1마리의 모든 상태 이상을 치료한다.'},
- lvup:{n:'레벨업 물약',p:'heal',price:100,lvup:1,d:'마시면 몬스터의 레벨이 1 올라간다. 새 기술을 배우거나 진화할 수도 있다.'},
+ lvup:{n:'레벨업 물약',p:'heal',price:350,lvup:1,d:'마시면 몬스터의 레벨이 1 올라간다. 새 기술을 배우거나 진화할 수도 있다.'},
  revive:{n:'부활의깃털',p:'heal',price:1500,revive:.5,d:'기절한 몬스터를 HP 절반으로 되살린다.'},
  dex:{n:'몬스터도감',p:'key',d:'만난 몬스터와 붙잡은 몬스터를 기록하는 도감.'},
  pad:{n:'원정패드',p:'key',d:'시계·파티·지도·만보기 앱이 들어 있는 휴대 단말기.'},
@@ -148,7 +157,7 @@ const POCKETS=[['heal','회복'],['ball','캡슐'],['key','중요한 물건']];
 const TCLASS={kid:{n:'꼬마',m:16,look:'kid'},girl:{n:'소녀',m:20,look:'girl'},camper:{n:'캠퍼',m:20,look:'camper'},bugboy:{n:'곤충소년',m:16,look:'bug'},
   hiker:{n:'등산가',m:32,look:'hiker'},swimmer:{n:'수영선수',m:20,look:'swim'},fisher:{n:'낚시꾼',m:28,look:'fisher'},lass:{n:'아가씨',m:24,look:'lady'},
   leader:{n:'관장',m:100},rival:{n:'라이벌',m:35,look:'rival'},grunt:{n:'검은안개단원',m:26,look:'villain'},boss:{n:'검은안개단 두목',m:60,look:'boss'},
-  birdkeeper:{n:'새조련사',m:24,look:'camper'},engineer:{n:'정비공',m:28,look:'man'},ranger:{n:'산악구조대',m:32,look:'hiker'}};
+  birdkeeper:{n:'새조련사',m:24,look:'camper'},engineer:{n:'정비공',m:28,look:'man'},ranger:{n:'산악구조대',m:32,look:'hiker'},tower:{n:'탑의 수호자',m:12,look:'man'}};
 /* 라이벌 파티: 라이벌은 주인공의 스타터에 유리한 몬스터를 고른다 */
 const COUNTER={1:4,4:7,7:1,17:27}; // 17 찌릿쥐(이스터에그) → 라이벌은 흙두더
 function rivalTeam(stage){const r=G.rivalStarter;

@@ -333,7 +333,7 @@ async function optionsMenu(){const rows=[['텍스트 속도',['느림','보통',
 let optH=null;
 
 /* ================= 상점 ================= */
-function shopStock(){const s=['ball','lvup','potion','antidote','burnheal','parheal','awake'];if(G.badges[0])s.splice(1,0,'great'),s.splice(3,0,'super'),s.push('fullheal');if(G.badges[1])s.push('revive');if(G.badges[2])s.push('super','fullheal');return [...new Set(s)];}
+function shopStock(){const s=['ball','lvup','potion','antidote','burnheal','parheal','awake'];if(G.badges[0])s.splice(1,0,'great'),s.splice(3,0,'super'),s.push('fullheal');if(G.badges[1])s.push('revive');if(G.badges[2])s.push('super','fullheal');if(G.flags.clear2)s.push('hyper');return [...new Set(s)];}
 async function shop(){const o={name:'점원'};let first=1;
   while(true){const c=await ask(first?'어서 오세요! 무엇을 도와드릴까요?':'그 밖에 필요하신 건 없으세요?',['사러 왔어요','팔러 왔어요','괜찮아요'],o);
     first=0;if(c===0)await shopBuy();else if(c===1)await shopSell();else break;}
@@ -409,56 +409,12 @@ async function pcMenu(){sfx('menu');guideSoon('pc','top',`파티에는 6마리�
     else break;}
   sfx('back');await say('PC의 전원을 껐다.');await runPendingEvo();}
 
-/* ================= 상점 ================= */
-function shopStock(){const s=['ball','lvup','potion','antidote','burnheal','parheal','awake'];if(G.badges[0])s.splice(1,0,'great'),s.splice(3,0,'super'),s.push('fullheal');if(G.badges[1])s.push('revive');return s;}
-async function shop(){const o={name:'점원'};let first=1;
-  while(true){const c=await ask(first?'어서 오세요! 무엇을 도와드릴까요?':'그 밖에 필요하신 건 없으세요?',['사러 왔어요','팔러 왔어요','괜찮아요'],o);
-    first=0;if(c===0)await shopBuy();else if(c===1)await shopSell();else break;}
-  await say('감사합니다! 또 오세요!',o);}
-function shopTop(id,mode){const it=ITEMS[id];return`<div class="abs" style="inset:0;background:linear-gradient(#cfe0ff,#f2f6ff)"></div><div class="title-bar">몬스터 상점 · ${mode}<span class="r">${money(G.money)}</span></div>
-  ${it?`<img class="abs big" src="${itemIcon(id)}" style="left:${U(20)};top:${U(36)};width:${U(48)};height:${U(48)}"><div class="sheet" style="left:${U(84)};top:${U(30)};width:${U(164)};height:${U(60)}"><div style="font-size:${U(11)}">${it.n}</div><div style="font-size:${U(9)};color:#6a7190">가방에 ${G.bag[id]||0}개</div></div>
-  <div class="sheet desc" style="left:${U(8)};top:${U(98)};width:${U(240)};height:${U(50)}">${it.d}</div>`:''}`;}
-async function shopBuy(){const tp=page(TOP,'');let at=0;guideSoon('shop','bot','사고 싶은 물건을 고른 뒤 <b>▲ ▼</b>로 수량을 정해요. 배지를 모으면 파는 물건이 늘어나요.',{title:'상점'});
-  try{while(true){const st=shopStock();
-    const r=await list(st.map(k=>({html:`<img src="${itemIcon(k)}"><span>${ITEMS[k].n}</span><span class="r">${money(ITEMS[k].price)}</span>`})),
-      {rect:[4,4,248,150],rowH:20,start:at,backdrop:true,bg:'linear-gradient(#5a8ad8,#3d5aa8)',buttons:[{html:'그만두기',x:170,y:160,w:82,h:28,cls:'dark',val:-1}],onMove:i=>tp.innerHTML=shopTop(st[i],'사기')});
-    if(r<0)break;at=r;const id=st[r],it=ITEMS[id];const max=Math.min(99,Math.floor(G.money/it.price));
-    if(max<1){await say('돈이 부족하신 것 같아요.',{name:'점원'});continue;}
-    msg(`${J(it.n,'을')} 몇 개 사시겠어요?`,{name:'점원'});const n=await numberPick({max,price:it.price,title:it.n});hideMsg();if(!n)continue;
-    const ok=await ask(`${it.n} ${n}개, 총 ${money(n*it.price)}입니다. 괜찮으시겠어요?`,['예','아니오'],{name:'점원'});if(ok!==0)continue;
-    G.money-=n*it.price;G.bag[id]=(G.bag[id]||0)+n;sfx('save');tp.innerHTML=shopTop(id,'사기');await say('네, 여기 있습니다! 감사합니다!',{name:'점원'});
-    if(id==='ball'&&n>=10){G.bag.great=(G.bag.great||0)+1;await say('캡슐을 많이 사 주셔서 슈퍼캡슐을 하나 덤으로 드릴게요!',{name:'점원'});}}}
-  finally{tp.remove();}}
-async function shopSell(){const tp=page(TOP,'');
-  try{while(true){const ids=Object.keys(ITEMS).filter(k=>ITEMS[k].price&&G.bag[k]>0);
-    if(!ids.length){await say('팔 수 있는 물건이 없는 것 같네요.',{name:'점원'});break;}
-    const r=await list(ids.map(k=>({html:`<img src="${itemIcon(k)}"><span>${ITEMS[k].n}</span><span class="r">× ${G.bag[k]} · ${money(ITEMS[k].price/2)}</span>`})),
-      {rect:[4,4,248,150],rowH:20,backdrop:true,bg:'linear-gradient(#5aa86a,#3a7a4a)',buttons:[{html:'그만두기',x:170,y:160,w:82,h:28,cls:'dark',val:-1}],onMove:i=>tp.innerHTML=shopTop(ids[i],'팔기')});
-    if(r<0)break;const id=ids[r],it=ITEMS[id];const n=await numberPick({max:G.bag[id],price:it.price/2,title:it.n});if(!n)continue;
-    const ok=await ask(`${it.n} ${n}개를 ${money(n*it.price/2)}에 사겠습니다. 괜찮으세요?`,['예','아니오'],{name:'점원'});if(ok!==0)continue;
-    G.bag[id]-=n;G.money+=n*it.price/2;sfx('save');await say(`${money(n*it.price/2)}을 받았다!`);}}
-  finally{tp.remove();}}
-
-/* ================= 몬스터 센터 ================= */
-async function nurse(out,ox,oy){const o={name:'간호사'},n=npcById('nurse_'+G.map);
-  await say('어서 오세요! 몬스터 센터입니다.',o);
-  const r=await ask('몬스터의 체력을 회복시켜 드릴까요?',['예','아니오'],o);
-  if(r!==0){await say('또 들러 주세요!',o);return;}
-  await say('그럼 몬스터를 잠시 맡아 두겠습니다.',o);n.dir='left';const m=curMap();m.healAnim={n:G.party.length,f0:frame,on:true};
-  for(let i=0;i<G.party.length;i++){m.healAnim.n=i+1;sfx('click');await sleep(260);}
-  m.healAnim.blink=true;await Music.jingle('heal');m.healAnim=null;healParty();n.dir='down';
-  G.heal={map:out,x:ox,y:oy};
-  await say('기다리셨습니다! 맡겨 주신 몬스터는 모두 건강해졌어요.',o);n.bow=1;await sleep(400);n.bow=0;await say('또 들러 주세요!',o);}
-
-/* ================= PC 보관함 ================= */
-
-
 /* ================= 몬스터 합성 =================
    아무 몬스터 두 마리 → 한 단계 위 등급(진화 단계)의 무작위 타입 몬스터 1마리.
    등급 = min(2, 두 마리 중 높은 진화 단계 + 1). 레벨은 높은 쪽 +2. 둘 중 하나라도 이로치면 결과도 이로치. */
 const STAGE_N=['기본','1진화','최종진화'];
 function fusionStage(a,b){return Math.min(2,Math.max(SP[a.sid].st,SP[b.sid].st)+1);}
-function fusionPool(stage){return Object.keys(SP).map(Number).filter(s=>SP[s].st===stage&&s!==13&&(stage===2||SP[s].line>9));}
+function fusionPool(stage){return Object.keys(SP).map(Number).filter(s=>SP[s].st===stage&&s!==13&&!SP[s].legend&&(stage===2||SP[s].line>9));}
 function fusionResult(a,b){const pool=fusionPool(fusionStage(a,b)),types=[...new Set(pool.flatMap(s=>SP[s].t))];
   const t=types[rnd(types.length)],cand=pool.filter(s=>SP[s].t.includes(t));return cand[rnd(cand.length)];}
 function allMons(){return[...G.party.map((m,i)=>({m,where:'party',i})),...G.box.map((m,i)=>({m,where:'box',i}))];}

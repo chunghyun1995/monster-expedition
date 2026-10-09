@@ -360,6 +360,7 @@ async function dexEntryPop(sid){const sp=SP[sid];const p=page(TOP,`<div class="a
 /* ---------- 경험치 / 레벨업 / 기술 ---------- */
 async function gainExp(){const f=fm(),parts=[...B.part].filter(m=>m.hp>0&&G.party.includes(m)&&m.lv<100);if(!parts.length)return;
   const base=SP[f.sid].x*f.lv/7*(B.wild?1:1.5);
+  if(B.wild&&!B.o.legend){const gold=Math.max(1,Math.floor(base*.5));G.money+=gold;B.gold=(B.gold||0)+gold;}
   for(const m of parts){const g=Math.max(1,Math.floor(base/parts.length));await bsay(`${J(N(m),'은')} ${g} 경험치를 얻었다!`);await addExp(m,g,m===pm()&&B.p.show);}}
 async function addExp(m,g,active){let left=g;
   while(left>0&&m.lv<100){const need=expFor(m.lv+1)-m.exp,add=Math.min(left,need);m.exp+=add;left-=add;
@@ -388,6 +389,7 @@ async function learnMove(m,id){const nmv=MV[id].n;
 /* ---------- 전투 종료 ---------- */
 async function endBattle(res){const o=B.o;clearInterval(B.lowT);
   if(res==='win'){Music.play('victory');
+    if(B.wild&&B.gold){sfx('sel');await bsay(`${J(G.name,'은')} ${money(B.gold)}을 주웠다!`,true);}
     if(!B.wild){B.etr.show=true;B.etr.x=130;hudE.classList.add('out');await tween(420,k=>B.etr.x=130*(1-k),EASE.out);
       await bsay(`${J(tn(),'과')}의 승부에서 이겼다!`,true);if(o.lose)await say(o.lose,{name:tn(),keep:1});
       const lastLv=B.foe[B.foe.length-1].lv,prize=TCLASS[o.cls].m*lastLv;G.money+=prize;await bsay(`${J(G.name,'은')} 상금으로 ${money(prize)}을 손에 넣었다!`,true);}}
