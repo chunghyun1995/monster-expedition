@@ -1,6 +1,6 @@
 extends Node2D
 ## 타이틀: 배경 위에서 몬스터들이 저마다의 움직임으로 숨 쉬고, 주인공이 걸어 들어온다.
-## 이어하기 / 처음부터(오프닝) / 모션 보기 / 설정
+## 이어하기 / 처음부터(오프닝) / 설정 / 웹 게임 저장 코드로 불러오기
 
 var _busy := false
 
@@ -72,21 +72,17 @@ func _menu() -> void:
 			{"text": ("이어하기\n%s · 배지 %d · 도감 %d · %s" % [sv.name, _badges(sv), sv.caught.size(), Game.fmt_time(float(sv.get("play_ms", 0)))]) if not sv.is_empty() else "이어하기\n리포트 없음",
 				"rect": Rect2(60, vs.y - 520, vs.x - 120, 130), "color": Color(0.3, 0.5, 0.8), "disabled": sv.is_empty(), "size": 30},
 			{"text": "처음부터 시작", "rect": Rect2(60, vs.y - 375, vs.x - 120, 100), "color": Color(0.86, 0.36, 0.42), "size": 34},
-			{"text": "모션 보기", "rect": Rect2(60, vs.y - 260, (vs.x - 140) / 2, 90), "color": Color(0.5, 0.42, 0.75), "size": 30},
-			{"text": "설정", "rect": Rect2(80 + (vs.x - 140) / 2, vs.y - 260, (vs.x - 140) / 2, 90), "color": Color(0.42, 0.45, 0.52), "size": 30},
+			{"text": "설정", "rect": Rect2(60, vs.y - 260, vs.x - 120, 90), "color": Color(0.42, 0.45, 0.52), "size": 30},
 			{"text": "웹 게임 저장 코드로 불러오기", "rect": Rect2(60, vs.y - 155, vs.x - 120, 80), "color": Color(0.3, 0.55, 0.5), "size": 28}]
 		var i := await Msg.buttons(btns, -2, 0 if not sv.is_empty() else 1)
-		if i == 4:
+		if i == 3:
 			if await _import_code(sv):
 				return
 			sv = Game.read_save()
 			continue
-		if i == 3:
+		if i == 2:
 			await Menus.options_menu()
 			continue
-		if i == 2:
-			Game.change_scene("res://scenes/gallery.tscn")
-			return
 		if i == 1 and not sv.is_empty():
 			var c := await Msg.ask("기존 리포트가 있습니다. 처음부터 시작하면 리포트를 저장할 때 덮어쓰게 됩니다. 괜찮습니까?", ["처음부터 시작", "돌아가기"], "", 1)
 			if c != 0:
@@ -258,16 +254,16 @@ func _intro() -> void:
 ## 개발용: w:지도:x:y[:명령]  (새 테스트 게임으로 바로 시작)
 func _dev(arg: String) -> void:
 	var p := arg.split(":")
-	if p[0] == "gallery":
-		Game.change_scene("res://scenes/gallery.tscn")
-		return
+	if p[0] == "notips":     # 스토어 스크린샷용: 첫 사용 안내 끄기
+		Game.settings.tips = 0
+		p = p.slice(1)
 	if p[0] == "auto":
 		Game.auto_text = true
 		p = p.slice(1)
 	if p.size() < 1 or p[0] != "w":
 		_menu()
 		return
-	Game.new_game("테스트")
+	Game.new_game("하늘" if Game.settings.tips == 0 else "테스트")
 	Game.g.party = [Game.make_mon(1, 14), Game.make_mon(4, 12), Game.make_mon(7, 12)]
 	for k in ["starter", "dex", "pad", "shoes", "labIntro", "rival1", "rivalLeft"]:
 		Game.set_flag(k)
