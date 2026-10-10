@@ -100,10 +100,15 @@ jobs:
           "$GODOT" --headless --path . --export-release "Web" build/web/index.html
           "$GODOT" --headless --path . --install-android-build-template --export-release "Android APK" build/android/monster-expedition-godot.apk
           "$GODOT" --headless --path . --export-release "Android AAB" build/android/monster-expedition-godot.aab
+          # 에뮬레이터 테스트 전용(x86_64) — 배포하지 않음
+          "$GODOT" --headless --path . --export-release "Android APK Test" build/android/test-x86_64.apk
           ls -la build/web build/android
           test -s build/web/index.wasm
           test -s build/android/monster-expedition-godot.apk
           test -s build/android/monster-expedition-godot.aab
+          test -s build/android/test-x86_64.apk
+          echo "### 크기" >> "$GITHUB_STEP_SUMMARY"
+          du -h build/android/*.apk build/android/*.aab | sed 's/^/    /' >> "$GITHUB_STEP_SUMMARY"
 
       - name: 검사 (targetSdk 36 · 16KB 정렬 · 서명)
         env:
@@ -114,6 +119,8 @@ jobs:
           AAB=godot/build/android/monster-expedition-godot.aab
           "$BT/aapt2" dump badging "$APK" | grep -E "^package|sdkVersion|targetSdkVersion|native-code"
           "$BT/aapt2" dump badging "$APK" | grep -q "targetSdkVersion:'36'"
+          # 배포용 APK는 휴대폰용(arm64)만
+          "$BT/aapt2" dump badging "$APK" | grep -q "native-code: 'arm64-v8a'$"
           "$BT/zipalign" -c -P 16 -v 4 "$APK" | tail -3
           "$BT/apksigner" verify --print-certs "$APK" | grep -E "Signer #1 certificate (DN|SHA-256)"
           gh release download --repo google/bundletool --pattern 'bundletool-all-*.jar' --output "$RUNNER_TEMP/bundletool.jar"
@@ -130,6 +137,10 @@ jobs:
           path: |
             godot/build/android/monster-expedition-godot.apk
             godot/build/android/monster-expedition-godot.aab
+      - uses: actions/upload-artifact@v4
+        with:
+          name: godot-android-test
+          path: godot/build/android/test-x86_64.apk
 
   emulator-test:
     needs: build
@@ -137,7 +148,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: godot-android
+          name: godot-android-test
           path: dist
       - name: KVM 사용
         run: |
@@ -152,7 +163,7 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back none
           script: |
-            adb install -r dist/monster-expedition-godot.apk
+            adb install -r dist/test-x86_64.apk
             adb shell monkey -p io.github.chunghyun1995.monsterexpedition.godot -c android.intent.category.LAUNCHER 1
             sleep 25
             adb shell pidof io.github.chunghyun1995.monsterexpedition.godot
