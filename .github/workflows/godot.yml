@@ -150,6 +150,7 @@ jobs:
           arch: x86_64
           target: google_apis
           disable-animations: true
+          emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back none
           script: |
             adb install -r dist/monster-expedition-godot.apk
             adb shell monkey -p io.github.chunghyun1995.monsterexpedition.godot -c android.intent.category.LAUNCHER 1
@@ -158,6 +159,20 @@ jobs:
             adb logcat -d | grep -iE "godot|FATAL" | grep -iE "error|fatal|crash" | head -20 || true
             adb logcat -d | grep -q "FATAL EXCEPTION" && exit 1 || true
             adb exec-out screencap -p > shot.png
+            python3 -c "import zlib,struct,sys;d=open('shot.png','rb').read();print('screenshot bytes',len(d))"
+            adb logcat -d | grep -c "Program linking failed" || true
+      - name: 화면이 비어 있지 않은지 확인
+        run: |
+          pip install -q pillow
+          python3 - <<'PY'
+          from PIL import Image, ImageStat
+          im = Image.open('shot.png').convert('RGB')
+          st = ImageStat.Stat(im)
+          print('size', im.size, 'mean', [round(x) for x in st.mean], 'stddev', [round(x) for x in st.stddev])
+          colors = len(set(im.resize((90, 160)).getdata()))
+          print('colors', colors)
+          assert colors > 200, '화면이 거의 단색입니다 (렌더링 실패 의심)'
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
