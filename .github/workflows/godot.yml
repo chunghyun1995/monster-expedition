@@ -111,6 +111,10 @@ jobs:
           cat regression.log
           grep -q GODOT_REGRESSION_PASS regression.log
           ! grep -E 'SCRIPT ERROR:|Shader compilation failed' regression.log
+          "$GODOT" --headless --path . res://tests/new_survey.tscn > new-survey.log 2>&1
+          cat new-survey.log
+          grep -q NEW_SURVEY_PASS new-survey.log
+          ! grep -E 'SCRIPT ERROR:|Shader compilation failed' new-survey.log
           "$GODOT" --headless --path . --export-release "Web" build/web/index.html
           "$GODOT" --headless --path . --install-android-build-template --export-release "Android APK" build/android/monster-expedition-godot.apk
           "$GODOT" --headless --path . --export-release "Android AAB" build/android/monster-expedition-godot.aab

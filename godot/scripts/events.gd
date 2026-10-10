@@ -245,9 +245,10 @@ func give_starter(sid: int, _secret: bool) -> void:
 	await say("현장에서는 기술을 잘못 쓰면 장비가 다칠 수 있어. 출발 전에 안전 점검을 해 보자.", R)
 	await w.battle({"kind": "trainer", "cls": "rival", "name": R, "team": Game.rival_team(1), "no_lose": true, "look": "rival", "bg": "lab",
 		"lose": "점검 끝! 서로의 탐색 방식을 확인했어.", "win_msg": "이제 현장에서도 장비를 안전하게 다룰 수 있겠어."})
+	Game.heal_party()
 	Game.set_flag("rival1")
 	var o := "한결 조사관"
-	await say("안전 점검 완료. 생태기록과 원정패드에 오늘 의뢰를 등록했어.", o)
+	await say("안전 점검 완료. 동료의 체력과 기술을 회복했어. 생태기록과 원정패드에 오늘 의뢰를 등록하자.", o)
 	await w.give_item("dex")
 	Game.set_flag("dex")
 	await w.give_item("pad")
@@ -261,7 +262,7 @@ func give_starter(sid: int, _secret: bool) -> void:
 	await w.walk_npc(rv, ["down", "down", "down", "down", "down", "down"], 0.2)
 	Game.set_flag("rivalLeft")
 	rv.gone = true
-	Game.g.heal = {"map": "home", "x": 4, "y": 6}
+	Game.g.heal = {"map": "lab", "x": 5, "y": 8}
 
 
 func trig_cond_city_0() -> bool:
