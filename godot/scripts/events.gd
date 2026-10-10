@@ -946,7 +946,8 @@ func dev(cmd: String) -> void:
 		"selftest":
 			await selftest(parts.slice(1))
 		"battle":
-			await w.run_script(func() -> void: await w.battle({"kind": "wild", "team": [[17, 5]]}))
+			var sid := int(parts[1]) if parts.size() > 1 else 17     # battle:24 → 24번과 전투
+			await w.run_script(func() -> void: await w.battle({"kind": "wild", "team": [[sid, 5]]}))
 		"person":
 			await w.run_script(func() -> void: await w.battle({"kind": "npc", "name": "아저씨", "look": "man", "lv": 6, "npc": "dev", "lose": "아이고!", "win_msg": "허허"}))
 		"trainer":

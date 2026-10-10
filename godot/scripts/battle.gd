@@ -321,6 +321,8 @@ func _new_mon_pup(m: Dictionary, back: bool, pos: Vector2) -> Puppet:
 	var h := 245.0 if back else 215.0
 	h *= clampf(0.75 + float(s.get("h", 1.0)) * 0.25, 0.8, 1.25)
 	p.setup_mon(int(m.sid), back, h)
+	if p.size.x > 300.0:     # 옆으로 긴 몬스터(바위거북 등)가 화면 밖으로 나가지 않게
+		p.setup_mon(int(m.sid), back, h * 300.0 / p.size.x)
 	p.position = pos
 	if m.get("shiny", false):
 		p.mesh.modulate = Color(1.0, 0.92, 0.75)
