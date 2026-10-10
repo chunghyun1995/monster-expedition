@@ -92,6 +92,7 @@ func step(to: Vector2, d: String, dur: float, foot: bool, running: bool) -> void
 func turn(d: String) -> void:
 	if d == dir:
 		return
+	dir = d
 	var tw := create_tween()
 	tw.tween_property(body, "scale:x", 0.82, 0.05)
 	tw.tween_callback(func() -> void: show_frame(d, "idle", true))
