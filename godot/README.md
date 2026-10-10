@@ -18,6 +18,7 @@
 - `scripts/game.gd` 리포트(저장: user://report.save)·몬스터 계산 · `player.gd`, `npc.gd`, `fx.gd`(파티클), `touch_pad.gd`(화면 패드)
 - `data/game.json`: `node tools/godot-data.cjs`로 기존 게임 데이터에서 생성 · `data/bounds.json`: `python3 tools/godot-bounds.py`
 - `scripts/sound.gd`(autoload Sound) 소리: 웹 게임 `src/audio.js`의 칩튠 BGM 13곡·팡파르 8개·효과음 41개·울음소리 59종을 `node tools/render-audio.cjs`로 Chromium에서 그대로 녹음한 OGG(`assets/audio/`, 약 1.9MB) 재생. 설정에서 배경음 0~5·효과음 켜기/끄기
+- `scripts/savecode.gd`(SaveCode): 웹 게임 저장 코드(ME3·ME3U·ME2·ME2U, `…#c=` 링크) 읽기. deflate-raw 풀기를 GDScript로 직접 구현. 타이틀의 [웹 게임 저장 코드로 불러오기]에서 붙여 넣어 리포트로 가져옴
 - 글꼴: Galmuri11 (SIL OFL, `fonts/OFL-Galmuri.txt`)
 
 ## 빌드

@@ -73,8 +73,14 @@ func _menu() -> void:
 				"rect": Rect2(60, vs.y - 520, vs.x - 120, 130), "color": Color(0.3, 0.5, 0.8), "disabled": sv.is_empty(), "size": 30},
 			{"text": "처음부터 시작", "rect": Rect2(60, vs.y - 375, vs.x - 120, 100), "color": Color(0.86, 0.36, 0.42), "size": 34},
 			{"text": "모션 보기", "rect": Rect2(60, vs.y - 260, (vs.x - 140) / 2, 90), "color": Color(0.5, 0.42, 0.75), "size": 30},
-			{"text": "설정", "rect": Rect2(80 + (vs.x - 140) / 2, vs.y - 260, (vs.x - 140) / 2, 90), "color": Color(0.42, 0.45, 0.52), "size": 30}]
+			{"text": "설정", "rect": Rect2(80 + (vs.x - 140) / 2, vs.y - 260, (vs.x - 140) / 2, 90), "color": Color(0.42, 0.45, 0.52), "size": 30},
+			{"text": "웹 게임 저장 코드로 불러오기", "rect": Rect2(60, vs.y - 155, vs.x - 120, 80), "color": Color(0.3, 0.55, 0.5), "size": 28}]
 		var i := await Msg.buttons(btns, -2, 0 if not sv.is_empty() else 1)
+		if i == 4:
+			if await _import_code(sv):
+				return
+			sv = Game.read_save()
+			continue
 		if i == 3:
 			await Menus.options_menu()
 			continue
@@ -91,6 +97,84 @@ func _menu() -> void:
 			return
 		await _intro()
 		return
+
+
+## 웹 게임(브라우저·WebView 앱)에서 만든 저장 코드(ME3-…)나 불러오기 링크를 붙여 넣어 리포트로 가져온다
+func _import_code(sv: Dictionary) -> bool:
+	var vs := get_viewport().get_visible_rect().size
+	var layer := CanvasLayer.new()
+	layer.layer = 55
+	add_child(layer)
+	var bg := ColorRect.new()
+	bg.color = Color(0.06, 0.08, 0.14, 0.85)
+	bg.size = vs
+	layer.add_child(bg)
+	var p := UI.panel(layer, Rect2(24, 90, vs.x - 48, 690))
+	var title := UI.label(p, "웹 게임 저장 코드로 불러오기", Vector2(24, 20), 32)
+	title.size.x = p.size.x - 48
+	var help := UI.label(p, "웹 게임의 [리포트 → 기록하고 저장 코드 만들기]에서 복사한 코드(ME3-…)나 링크를 붙여 넣으세요.", Vector2(24, 70), 24, Color(0.3, 0.33, 0.42))
+	help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	help.custom_minimum_size = Vector2(p.size.x - 48, 80)
+	help.size = Vector2(p.size.x - 48, 80)
+	var te := TextEdit.new()
+	te.position = Vector2(24, 160)
+	te.size = Vector2(p.size.x - 48, 300)
+	te.placeholder_text = "ME3-XXXX-..."
+	te.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+	te.add_theme_font_size_override("font_size", 22)
+	te.add_theme_stylebox_override("normal", UI.box(Color(1, 1, 1), Color(0.55, 0.6, 0.7), 10, 3))
+	te.add_theme_stylebox_override("focus", UI.box(Color(1, 1, 1), Color(0.3, 0.55, 0.5), 10, 3))
+	te.add_theme_color_override("font_color", UI.INK)
+	te.add_theme_color_override("font_placeholder_color", Color(0.6, 0.62, 0.68))
+	te.add_theme_color_override("caret_color", UI.INK)
+	p.add_child(te)
+	var err := UI.label(p, "", Vector2(24, 470), 24, Color(0.8, 0.25, 0.3))
+	err.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	err.custom_minimum_size = Vector2(p.size.x - 48, 60)
+	err.size = Vector2(p.size.x - 48, 60)
+	var bw := (p.size.x - 48 - 24) / 3.0
+	var pick := [null]
+	var paste := UI.button(p, "붙여넣기", Rect2(24, 560, bw, 90), Color(0.45, 0.5, 0.65), 28)
+	paste.pressed.connect(func() -> void:
+		te.text = DisplayServer.clipboard_get()
+		Sound.sfx("cur"))
+	var ok := UI.button(p, "불러오기", Rect2(36 + bw, 560, bw, 90), Color(0.3, 0.6, 0.4), 28)
+	ok.pressed.connect(func() -> void: pick[0] = "ok")
+	var cc := UI.button(p, "취소", Rect2(48 + bw * 2, 560, bw, 90), Color(0.4, 0.42, 0.5), 28)
+	cc.pressed.connect(func() -> void: pick[0] = "cancel")
+	te.grab_focus()
+	var result := {}
+	while true:
+		pick[0] = null
+		while pick[0] == null:
+			if Input.is_action_just_pressed("ui_cancel") and not te.has_focus():
+				pick[0] = "cancel"
+			await get_tree().process_frame
+		if pick[0] == "cancel":
+			Sound.sfx("back")
+			break
+		var r := SaveCode.read(te.text)
+		if not r.ok:
+			Sound.sfx("bad")
+			err.text = str(r.err)
+			continue
+		result = r.g
+		Sound.sfx("sel")
+		break
+	layer.queue_free()
+	if result.is_empty():
+		return false
+	var info := "%s · 배지 %d · 도감 %d · %s" % [result.name, _badges(result), result.caught.size(), Game.fmt_time(float(result.play_ms))]
+	var q := "%s\n이 모험을 불러올까요?" % info
+	if not sv.is_empty():
+		q = "%s\n이 기기의 리포트(%s)는 코드의 내용으로 바뀌어요. 불러올까요?" % [info, sv.name]
+	if await Msg.ask(q, ["불러오기", "그만두기"], "", 0) != 0:
+		return false
+	Game.load_save(result)
+	Game.save_game()
+	await Msg.say("%s의 모험을 불러왔다!" % result.name)
+	Game.change_scene("res://scenes/world.tscn")
+	return true
 
 
 func _badges(sv: Dictionary) -> int:
