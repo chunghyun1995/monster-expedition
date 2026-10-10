@@ -205,6 +205,8 @@ def debug_checks():
     print(info, flush=True)
     report['game'] = info
     expect(info['title'] == '몬스터 원정대' and info['url'] == 'file:///android_asset/index.html', '게임 페이지 로드')
+    art = page.js("typeof ART !== 'undefined' && ART.ready && Object.keys(ART.images).length === 8")
+    expect(art, '오프라인 2.5D 이미지 8개 묶음 디코딩')
     # 아직 화면에 안 쓰인 글꼴은 구버전 WebView에서 check()가 false라서, 직접 불러와 디코딩되는지 본다
     fonts = page.js("""Promise.all(['16px Galmuri11', 'bold 16px Galmuri11', '16px Galmuri9'].map(f =>
       document.fonts.load(f).then(a => f + ':' + (a.length ? a.map(x => x.status).join('/') : 'none'),

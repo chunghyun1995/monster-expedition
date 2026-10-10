@@ -453,7 +453,7 @@ function drawEvolve(g){const gr=g.createRadialGradient(128,90,10,128,90,180);gr.
 
 /* ---------- 전투 그리기 ---------- */
 function drawBattle(g){const b=B;if(!b)return;g.save();if(b.shake)g.translate(Math.round((Math.random()-.5)*b.shake*2),Math.round((Math.random()-.5)*b.shake));
-  g.drawImage(battleBg(b.bg),0,0);if(b.dim>0){g.fillStyle=`rgba(8,8,28,${b.dim})`;g.fillRect(0,0,W,H);}const sl=1-b.slide,eo=-sl*260,po=sl*260;
+  g.drawImage(battleBg(b.bg),0,0,W,H);if(b.dim>0){g.fillStyle=`rgba(8,8,28,${b.dim})`;g.fillRect(0,0,W,H);}const sl=1-b.slide,eo=-sl*260,po=sl*260;
   platform(g,EPOS.x+eo,EPOS.y+2,60,13,b.bg);
   if(b.etr.show){const es=4*(b.etr.s==null?1:b.etr.s);g.save();if(b.etr.a!=null)g.globalAlpha=b.etr.a;g.translate(Math.round(EPOS.x+eo+b.etr.x-8*es),Math.round(EPOS.y+2-20*es+(b.etr.y||0)));g.scale(es,es);person(g,0,0,'down',0,LOOK[lookOf(b.o)]||LOOK.man);g.restore();}
   const e=b.e;if(e.show&&!e.blink&&fm())drawMon(g,fm().sid,EPOS.x+eo+e.x,EPOS.y+e.y,3,{alpha:e.alpha,shiny:fm().shiny,dark:e.dark,white:e.white,whiteCol:e.tint||'#ffffff',sx:e.sx,sy:e.sy,clipY:EPOS.y+3});

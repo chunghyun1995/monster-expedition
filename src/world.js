@@ -99,7 +99,7 @@ fieldKey=k=>{if(state!=='world'||busy||P.moving||ui.length)return;if(k==='a')int
 
 /* ---------- 필드 그리기 ---------- */
 function camera(){const m=curMap(),k=P.moving?P.t:0,px=lerp(P.x,P.tx,k)*T,py=lerp(P.y,P.ty,k)*T;
-  let cx=Math.round(px+8-W/2),cy=Math.round(py+8-H/2);
+  let cx=px+8-W/2,cy=py+8-H/2;
   cx=m.w*T<=W?Math.round((m.w*T-W)/2):clamp(cx,0,m.w*T-W);cy=m.h*T<=H?Math.round((m.h*T-H)/2):clamp(cy,0,m.h*T-H);return{cx,cy,px,py};}
 function grassOver(g,m,x,y,sx,sy){if(tileAt(m,x,y)!==',')return;R(TG,sx+1,sy+15,14,5,g);for(const bx of[2,5,9,12])R(TG3,sx+bx,sy+14+(bx&1),1,3,g);R(TG2,sx+1,sy+19,14,1,g);}
 function drawWorld(g){const m=curMap(),{cx,cy,px,py}=camera();R('#000',0,0,W,H,g);
@@ -109,13 +109,13 @@ function drawWorld(g){const m=curMap(),{cx,cy,px,py}=camera();R('#000',0,0,W,H,g
   for(const it of m.items)if(!G.flags[it.flag])capsule(g,it.x*T-cx+8,it.y*T-cy+10,0,{kind:it.item==='great'?'great':'ball'});
   if(m.id==='lab')for(const[sx0,sy0,sid]of STARTERS)if(!G.flags.starter||(sid!==G.starter&&sid!==G.rivalStarter))capsule(g,sx0*T-cx+8,sy0*T-cy+7);
   if(m.healAnim){const hx=4*T-cx,hy=2*T-cy;for(let i=0;i<m.healAnim.n;i++){const bx=hx+3+(i%3)*5,by=hy+4+Math.floor(i/3)*4;R(m.healAnim.blink&&(frame>>3)&1?'#ffffff':'#ffd84a',bx,by,3,3,g);}}
-  const ents=[];
+  const ents=[];artMapObjects(m,cx,cy,ents);
   for(const n of npcsOf(m)){const[dx,dy]=DV[n.dir],off=n.off||0;
-    ents.push({y:n.y*T+dy*off,f:()=>{const sx=Math.round(n.x*T+dx*off-cx),sy=Math.round(n.y*T+dy*off-cy)-6;
+    ents.push({y:n.y*T+dy*off,f:()=>{const sx=n.x*T+dx*off-cx,sy=n.y*T+dy*off-cy-6;
       if(n.mon){const b=Math.sin(frame/14+n.x)*1.5;g.fillStyle='rgba(0,0,0,.25)';g.beginPath();g.ellipse(sx+8,sy+19,10,3,0,0,7);g.fill();drawMon(g,n.mon,sx+8,sy+18+b,1.25);}
       else person(g,sx,sy+(n.bow?1:0),n.dir,n.walk?((frame>>3)&1)+1:0,LOOK[npcLook(n)]||LOOK.man);grassOver(g,m,n.x,n.y,sx,sy);if(n.emote)emote(g,sx,sy,n.emote);}});}
-  if(!P.hidden)ents.push({y:py+.5,f:()=>{const k=P.moving?P.t:0,jy=P.jump?-Math.sin(Math.PI*k)*10:0,sx=Math.round(px-cx),sy=Math.round(py-cy)-6+Math.round(jy);
-    if(P.jump){g.fillStyle='rgba(0,0,0,.3)';g.fillRect(sx+3,Math.round(py-cy)+12,10,3);}
+  if(!P.hidden)ents.push({y:py+.5,f:()=>{const k=P.moving?P.t:0,jy=P.jump?-Math.sin(Math.PI*k)*10:0,sx=px-cx,sy=py-cy-6+Math.round(jy);
+    if(P.jump){g.fillStyle='rgba(0,0,0,.3)';g.fillRect(sx+3,py-cy+12,10,3);}
     const fr=P.moving?(P.t<.5?(P.step?2:1):0):0;person(g,sx,sy,P.dir,fr,LOOK.player);
     if(!P.moving)grassOver(g,m,P.x,P.y,sx,sy);else if(P.t>.5)grassOver(g,m,P.tx,P.ty,sx,sy);if(P.emote)emote(g,sx,sy,P.emote);}});
   ents.sort((a,b)=>a.y-b.y).forEach(e=>e.f());
@@ -194,7 +194,7 @@ function drawTrans(g){const t=transFx;if(t.type==='flash'){g.fillStyle=t.col||'r
     g.fillStyle='#fff';g.font='bold 16px Galmuri11, sans-serif';g.textAlign='center';g.fillText(t.label,128,102);g.textAlign='left';}}}
 
 /* ---------- 아래 화면 배경 ---------- */
-function renderBot(){const g=bctx;g.setTransform(SC,0,0,SC,0,0);g.imageSmoothingEnabled=false;
+function renderBot(){const g=bctx;g.setTransform(SC,0,0,SC,0,0);g.imageSmoothingEnabled=true;
   if(botMode==='title'||botMode==='plain'||botMode==='credits'){drawTitleBot(g);return;}
   if(botMode==='battle'){g.fillStyle='#262b42';g.fillRect(0,0,W,H);g.fillStyle='#2e3450';for(let y=-20;y<H+20;y+=24)for(let x=-20;x<W+20;x+=24){const o=(frame*.25)%24;g.beginPath();g.arc(x+o,y+o,7,0,7);g.fill();}return;}
   const c=botMode==='menu'?['#3d5aa8','#4a68b8']:['#2f8a8a','#3a9a9a'];g.fillStyle=c[0];g.fillRect(0,0,W,H);g.fillStyle=c[1];
@@ -202,7 +202,7 @@ function renderBot(){const g=bctx;g.setTransform(SC,0,0,SC,0,0);g.imageSmoothing
 
 /* ---------- 메인 루프 ---------- */
 let lastT=performance.now();
-function render(){const g=ctx;g.setTransform(SC,0,0,SC,0,0);g.imageSmoothingEnabled=false;
+function render(){const g=ctx;g.setTransform(SC,0,0,SC,0,0);g.imageSmoothingEnabled=true;
   if(state==='world')drawWorld(g);else if(state==='battle')drawBattle(g);else if(state==='evolve')drawEvolve(g);else if(state==='intro')drawIntro(g);
   else if(state==='credits')drawCredits(g);else drawTitle(g);
   if(transFx)drawTrans(g);}
@@ -246,7 +246,7 @@ async function titleScreen(){checkUpdate();state='title';botMode='title';Music.p
     if(i===0){G=fitHp(sv);G.flags=G.flags||{};G.badges=G.badges||[0,0];busy=true;state='world';enterMap(G.map,G.x,G.y,G.dir||'down',{sign:1});Pad.show();await fadeTo(0);busy=false;return;}
     await intro();return;}}
 
-Pad.init();requestAnimationFrame(loop);titleScreen();
+// Startup waits for the embedded original art in art25d.js.
 
 /* 필드에서 처음 하는 일 안내 */
 function worldGuides(){const touch=matchMedia('(pointer:coarse)').matches;
