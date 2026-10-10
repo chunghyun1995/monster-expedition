@@ -1,0 +1,49 @@
+; 몬스터 원정대 — Godot 4.7 판 (모션 미리보기)
+; 기존 웹 게임(index.html)의 데이터와 2.5D 그림을 그대로 쓰고, 메시 변형·파티클·트윈으로 동작을 새로 만든다.
+
+config_version=5
+
+[application]
+
+config/quit_on_go_back=false
+
+config/name="몬스터 원정대"
+config/description="2.5D 몬스터 RPG — Godot 모션 미리보기"
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+config/icon="res://icon.png"
+boot_splash/bg_color=Color(0.078, 0.086, 0.122, 1)
+boot_splash/show_image=false
+
+[autoload]
+
+Data="*res://scripts/data.gd"
+Game="*res://scripts/game.gd"
+Msg="*res://scripts/msg.gd"
+Menus="*res://scripts/menus.gd"
+Sound="*res://scripts/sound.gd"
+
+[display]
+
+window/size/viewport_width=720
+window/size/viewport_height=1280
+window/size/window_width_override=405
+window/size/window_height_override=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=1
+
+[gui]
+
+theme/custom_font="res://fonts/Galmuri11.ttf"
+
+[input_devices]
+
+pointing/emulate_mouse_from_touch=true
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true
+environment/defaults/default_clear_color=Color(0.078, 0.086, 0.122, 1)

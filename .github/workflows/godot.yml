@@ -1,0 +1,219 @@
+# 몬스터 원정대 Godot 판 (모션 미리보기)
+#  - build: Godot 4.7.2로 웹 빌드 + 안드로이드 APK·AAB(Gradle 빌드, targetSdk 36, arm64·x86_64) 내보내기
+#           targetSdk·16KB 정렬·서명을 검사하고 아티팩트로 올림
+#  - emulator-test: Android 16 에뮬레이터에 설치해 실행 확인
+#  - release: main 브랜치면 "godot-번호" 사전 출시(prerelease)로 게시 (기존 WebView 앱 릴리스는 그대로 최신 유지)
+name: Godot
+
+on:
+  push:
+    paths:
+      - 'godot/**'
+      - '.github/workflows/godot.yml'
+  pull_request:
+    paths:
+      - 'godot/**'
+      - '.github/workflows/godot.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: godot-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: 4.7.2
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Godot·내보내기 템플릿 설치
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V=$GODOT_VERSION
+          cd "$RUNNER_TEMP"
+          gh release download "$V-stable" --repo godotengine/godot-builds \
+            --pattern "Godot_v$V-stable_linux.x86_64.zip" --pattern "Godot_v$V-stable_export_templates.tpz"
+          unzip -q "Godot_v$V-stable_linux.x86_64.zip"
+          echo "GODOT=$RUNNER_TEMP/Godot_v$V-stable_linux.x86_64" >> "$GITHUB_ENV"
+          T="$HOME/.local/share/godot/export_templates/$V.stable"
+          mkdir -p "$T"
+          unzip -q "Godot_v$V-stable_export_templates.tpz" -d tpl
+          mv tpl/templates/* "$T/"
+          ls "$T"
+
+      - name: Android SDK (플랫폼 36)
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" "platform-tools" > /dev/null
+          mkdir -p ~/.config/godot
+          cat > ~/.config/godot/editor_settings-4.7.tres <<EOF
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/android_sdk_path = "$ANDROID_HOME"
+          export/android/java_sdk_path = "$JAVA_HOME"
+          EOF
+          sed -i 's/^ *//' ~/.config/godot/editor_settings-4.7.tres
+
+      - name: 서명 키 준비
+        env:
+          KEYSTORE_B64: ${{ secrets.ME_KEYSTORE_BASE64 }}
+          ME_KEYSTORE_PASSWORD: ${{ secrets.ME_KEYSTORE_PASSWORD }}
+          ME_KEY_ALIAS: ${{ secrets.ME_KEY_ALIAS }}
+          ME_KEY_PASSWORD: ${{ secrets.ME_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "::warning::서명 키 시크릿이 없어 디버그 키로 서명합니다."
+            exit 0
+          fi
+          K="$RUNNER_TEMP/godot-release.jks"
+          printf '%s' "$KEYSTORE_B64" | tr -d ' \r\n' | base64 -d > "$K"
+          # Godot는 저장소 비밀번호 하나로 키도 연다: 키 비밀번호가 다르면 임시 사본에서 맞춘다
+          if [ -n "$ME_KEY_PASSWORD" ] && [ "$ME_KEY_PASSWORD" != "$ME_KEYSTORE_PASSWORD" ]; then
+            keytool -keypasswd -keystore "$K" -storepass "$ME_KEYSTORE_PASSWORD" -alias "$ME_KEY_ALIAS" \
+              -keypass "$ME_KEY_PASSWORD" -new "$ME_KEYSTORE_PASSWORD"
+          fi
+          {
+            echo "GODOT_ANDROID_KEYSTORE_RELEASE_PATH=$K"
+            echo "GODOT_ANDROID_KEYSTORE_RELEASE_USER=$ME_KEY_ALIAS"
+          } >> "$GITHUB_ENV"
+          echo "::add-mask::$ME_KEYSTORE_PASSWORD"
+          echo "GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=$ME_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+
+      - name: 내보내기 (웹·APK·AAB)
+        run: |
+          cd godot
+          # 버전 코드: 빌드 시각(분) — 매번 커진다
+          CODE=$(( ($(date +%s) - 1700000000) / 60 ))
+          sed -i "s/^version\/code=.*/version\/code=$CODE/; s/^version\/name=.*/version\/name=\"0.1-godot ($(git rev-parse --short HEAD))\"/" export_presets.cfg
+          mkdir -p build/web build/android
+          "$GODOT" --headless --path . --import > /dev/null 2>&1 || true
+          "$GODOT" --headless --path . --export-release "Web" build/web/index.html
+          "$GODOT" --headless --path . --install-android-build-template --export-release "Android APK" build/android/monster-expedition-godot.apk
+          "$GODOT" --headless --path . --export-release "Android AAB" build/android/monster-expedition-godot.aab
+          # 에뮬레이터 테스트 전용(x86_64) — 배포하지 않음
+          "$GODOT" --headless --path . --export-release "Android APK Test" build/android/test-x86_64.apk
+          ls -la build/web build/android
+          test -s build/web/index.wasm
+          test -s build/android/monster-expedition-godot.apk
+          test -s build/android/monster-expedition-godot.aab
+          test -s build/android/test-x86_64.apk
+          echo "### 크기" >> "$GITHUB_STEP_SUMMARY"
+          du -h build/android/*.apk build/android/*.aab | sed 's/^/    /' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 검사 (targetSdk 36 · 16KB 정렬 · 서명)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          BT="$ANDROID_HOME/build-tools/36.0.0"
+          APK=godot/build/android/monster-expedition-godot.apk
+          AAB=godot/build/android/monster-expedition-godot.aab
+          "$BT/aapt2" dump badging "$APK" | grep -E "^package|sdkVersion|targetSdkVersion|native-code"
+          "$BT/aapt2" dump badging "$APK" | grep -q "targetSdkVersion:'36'"
+          # 배포용 APK는 휴대폰용(arm64)만
+          "$BT/aapt2" dump badging "$APK" | grep -q "native-code: 'arm64-v8a'$"
+          "$BT/zipalign" -c -P 16 -v 4 "$APK" | tail -3
+          "$BT/apksigner" verify --print-certs "$APK" | grep -E "Signer #1 certificate (DN|SHA-256)"
+          gh release download --repo google/bundletool --pattern 'bundletool-all-*.jar' --output "$RUNNER_TEMP/bundletool.jar"
+          java -jar "$RUNNER_TEMP/bundletool.jar" validate --bundle "$AAB" | head -20
+          jarsigner -verify "$AAB" | tail -1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: godot-web
+          path: godot/build/web
+      - uses: actions/upload-artifact@v4
+        with:
+          name: godot-android
+          path: |
+            godot/build/android/monster-expedition-godot.apk
+            godot/build/android/monster-expedition-godot.aab
+      - uses: actions/upload-artifact@v4
+        with:
+          name: godot-android-test
+          path: godot/build/android/test-x86_64.apk
+
+  emulator-test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: godot-android-test
+          path: dist
+      - name: KVM 사용
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            adb install -r dist/test-x86_64.apk
+            adb shell monkey -p io.github.chunghyun1995.monsterexpedition.godot -c android.intent.category.LAUNCHER 1
+            sleep 25
+            adb shell pidof io.github.chunghyun1995.monsterexpedition.godot
+            adb logcat -d | grep -iE "godot|FATAL" | grep -iE "error|fatal|crash" | head -20 || true
+            adb logcat -d | grep -q "FATAL EXCEPTION" && exit 1 || true
+            adb exec-out screencap -p > shot.png
+            python3 -c "import zlib,struct,sys;d=open('shot.png','rb').read();print('screenshot bytes',len(d))"
+            adb logcat -d | grep -c "Program linking failed" || true
+      - name: 화면이 비어 있지 않은지 확인
+        run: |
+          pip install -q pillow
+          python3 - <<'PY'
+          from PIL import Image, ImageStat
+          im = Image.open('shot.png').convert('RGB')
+          st = ImageStat.Stat(im)
+          print('size', im.size, 'mean', [round(x) for x in st.mean], 'stddev', [round(x) for x in st.stddev])
+          colors = len(set(im.resize((90, 160)).getdata()))
+          print('colors', colors)
+          assert colors > 200, '화면이 거의 단색입니다 (렌더링 실패 의심)'
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: godot-emulator-shot
+          path: shot.png
+
+  release:
+    needs: [build, emulator-test]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: godot-android
+          path: dist
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: godot-${{ github.run_number }}
+          name: 몬스터 원정대 Godot 미리보기 ${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          prerelease: true
+          make_latest: false
+          files: |
+            dist/monster-expedition-godot.apk
+            dist/monster-expedition-godot.aab
+          body: |
+            Godot 4 엔진으로 옮긴 **모션 미리보기** 버전입니다. (기존 앱과 따로 설치되는 별도 앱)
+            - 새싹마을 ↔ 1번 도로, 야생 몬스터·트레이너·마을 사람과 전투, 캡슐 포획
+            - 메시 변형 모션: 숨쉬기·걷기·휘청임·돌진·넉백·흡수·흩어짐 등
+            - Android 7.0 이상, targetSdk 36, 16KB 페이지 정렬
+            - 커밋: ${{ github.sha }}

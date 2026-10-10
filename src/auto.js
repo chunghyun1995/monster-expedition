@@ -73,7 +73,7 @@ FB.climb.addEventListener('click',e=>{e.stopPropagation();audioInit();if(AUTO.cl
   sfx('sel');toast(`${towerState().cur}층부터 자동 등반을 다시 시작해요`);runScript(()=>autoClimb(towerState().cur,true));});
 FB.stop.addEventListener('click',e=>{e.stopPropagation();sfx('back');if(AUTO.hunt)stopHunt('자동 사냥을 멈췄어요.');if(AUTO.climb){AUTO.climb=false;toast('자동 등반을 멈춰요 (지금 층까지만)');}updFloat(true);});
 let floatKey='';
-function updFloat(force){const inWorld=G&&state==='world',inBattle=state==='battle',inTower=G&&(G.map==='towerLobby'||G.map==='towerFloor');
+function updFloat(force){const inWorld=G&&state==='world'&&!busy,inBattle=state==='battle',inTower=G&&(G.map==='towerLobby'||G.map==='towerFloor');
   const show={tower:inWorld&&!!G.flags.pad&&!inTower&&!AUTO.hunt,hunt:inWorld&&!!G.flags.pad&&!inTower&&!!(curMap()&&curMap().enc),auto:(inWorld&&!!G.flags.pad)||inBattle,stop:AUTO.hunt||AUTO.climb,climb:inWorld&&G.map==='towerFloor'&&!AUTO.climb};
   const k=JSON.stringify([show,AUTO.battle,AUTO.hunt,AUTO.climb]);if(!force&&k===floatKey)return;floatKey=k;
   for(const n in FB)FB[n].classList.toggle('hidden',!show[n]);FB.auto.classList.toggle('on',autoFight());FB.hunt.classList.toggle('on',AUTO.hunt);

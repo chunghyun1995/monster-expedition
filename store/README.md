@@ -4,7 +4,7 @@ Google Play Console에 그대로 올릴 수 있는 그림·문구와 등록 순�
 
 | 파일 | 용도 | 규격 |
 | --- | --- | --- |
-| `icon-512.png` | 앱 아이콘 | 512×512 PNG |
+| `icon-512.png` | 앱 아이콘 | 512×512 PNG (32비트, 알파 포함) |
 | `feature-graphic.png` | 그래픽 이미지 | 1024×500 PNG (투명 없음) |
 | `screenshots/*.png` | 휴대전화 스크린샷 5장(파일 이름 순서대로 올리기) | 1080×1920 PNG (9:16) |
 | AAB 파일 | 앱 업로드 파일 | [Releases](https://github.com/chunghyun1995/monster-expedition/releases/latest)의 `monster-expedition.aab` |
@@ -89,7 +89,7 @@ Play Console › 정책 › 앱 콘텐츠에서 아래처럼 답하면 됩니다
    신분증으로 본인 확인, 전화번호와 Android 기기 인증을 마칩니다. 스토어에 공개될 개발자 이름·연락처 이메일을 정합니다.
 2. **앱 만들기** — 앱 이름 `몬스터 원정대`, 기본 언어 한국어, 앱/게임 중 **게임**, **무료**를 고르고 정책에 동의합니다.
 3. **앱 콘텐츠 작성** — 위 2번 표대로 작성합니다.
-4. **스토어 등록정보** — 위 1번 문구와 `icon-512.png`, `feature-graphic.png`, `screenshots/` 7장을 올립니다.
+4. **스토어 등록정보** — 위 1번 문구와 `icon-512.png`, `feature-graphic.png`, `screenshots/` 5장을 올립니다.
 5. **비공개 테스트** — 테스트 › 비공개 테스트에서 트랙을 만들고 Releases의 `monster-expedition.aab`를 올립니다.
    - 처음 업로드할 때 **Play 앱 서명**을 설정합니다. 기본값(Google이 앱 서명 키를 만들고, 지금 개인 키는 업로드 키가 됨)이 가장 간단합니다.
      이 경우 플레이 스토어 버전과 GitHub의 APK는 서명이 달라 서로 덮어 설치할 수 없으니, 바꿀 때는 **저장 코드**로 리포트를 옮기세요.
