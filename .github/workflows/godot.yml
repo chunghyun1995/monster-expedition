@@ -78,8 +78,12 @@ jobs:
           ME_KEY_PASSWORD: ${{ secrets.ME_KEY_PASSWORD }}
         run: |
           if [ -z "$KEYSTORE_B64" ]; then
-            echo "::warning::서명 키 시크릿이 없어 디버그 키로 서명합니다."
-            exit 0
+            if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+              echo "::notice::PR 검증은 디버그 키를 사용합니다."
+              exit 0
+            fi
+            echo "::error::배포 빌드는 기존 업데이트 서명 키가 필요합니다."
+            exit 1
           fi
           K="$RUNNER_TEMP/godot-release.jks"
           printf '%s' "$KEYSTORE_B64" | tr -d ' \r\n' | base64 -d > "$K"
@@ -202,7 +206,7 @@ jobs:
 
   release:
     needs: [build, emulator-test]
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/fix/original-expedition-release') && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -213,8 +217,8 @@ jobs:
           path: dist
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.tag || format('godot-{0}', github.run_number) }}
-          name: 몬스터 원정대 Godot 판 ${{ inputs.tag || format('godot-{0}', github.run_number) }}
+          tag_name: ${{ inputs.tag || format('veloria-{0}', github.run_number) }}
+          name: 벨로리아 생태기록 ${{ inputs.tag || format('veloria-{0}', github.run_number) }}
           target_commitish: ${{ github.sha }}
           prerelease: true
           make_latest: false
@@ -222,22 +226,19 @@ jobs:
             dist/monster-expedition-godot.apk
             dist/monster-expedition-godot.aab
           body: |
-            Godot 4 엔진으로 새로 만든 **몬스터 원정대 전체 판**입니다. (패키지 io.github.chunghyun1995.monsterexpedition — 같은 키로 서명한 기존 WebView 앱을 덮어써 업데이트됩니다)
+            **벨로리아 생태기록 / VELORIA FIELDNOTES** — Godot Android 개정판
 
-            **게임 내용**
-            - 지도 40곳: 새싹마을부터 하늘봉마을까지 모든 마을·도로·동굴·건물 안
-            - 이야기 전체: 연구소 첫 몬스터, 라이벌 5번, 체육관 관장 5명, 검은안개단 발전소, 엔딩
-            - 엔딩 이후: 전설의 수호신 4마리, 무한의 탑 100층, 몬스터 합성
-            - 전투·포획·진화·상점·몬스터 쉼터·PC 보관함, 사람과 직접 승부
-            - 리포트 저장·이어하기
+            - 폭풍 이후 관측망 복구 이야기와 조사 역할 기반 첫 동료
+            - 새 인물 27종 앞·뒤 그림, 생물 3종 새 디자인
+            - 비구형 공명등의 연속 신호 조율, 흡수·축소·네 번 흔들기 제거
+            - 새 악보의 BGM 13곡·팡파르 8개, 효과음 42개·울음 34종
+            - 기존 UI 보정·최초 안내·자동전투·자동진행·무한의 탑 유지
+            - Android 의존성 고지와 라이선스 전문 포함
 
-            **소리**
-            - 원작 칩튠 그대로: 배경음 13곡, 팡파르 8개, 효과음 41개, 몬스터 울음소리 59종
-            - 설정에서 배경음 볼륨(0~5)·효과음 켜기/끄기
+            APK는 휴대폰 설치용(arm64), AAB는 Google Play 콘솔 업로드용입니다.
+            Android 7.0 이상 · targetSdk 36 · 16KB 정렬·서명 검사·Android 16 실행 검증.
+            기존 Android 패키지 ID와 업데이트 서명 키를 유지합니다.
 
-            **설치 파일**
-            - `monster-expedition-godot.apk`: 휴대폰에 바로 설치 (arm64)
-            - `monster-expedition-godot.aab`: Google Play 콘솔 업로드용
-
-            Android 7.0 이상 · targetSdk 36 · 16KB 페이지 정렬
+            확인된 유사 표현을 수정한 빌드이며 법적 비침해 보증은 아닙니다.
+            변경 및 출처 확인 범위: docs/ASSET_RECORD_2026-10-11.md
             커밋: ${{ github.sha }}

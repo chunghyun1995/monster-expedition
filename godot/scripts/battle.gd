@@ -1,6 +1,6 @@
 class_name Battle
 extends CanvasLayer
-## 전투: 기존 battle.js 의 규칙(데미지·명중·상태 이상·능력 변화·AI·도망·교체·경험치·상금·포획·빼앗기·화난 트레이너·
+## 전투: 기존 battle.js 의 규칙(데미지·명중·상태 이상·능력 변화·AI·도망·교체·경험치·상금·포획·빼앗기·화난 원정가·
 ## 사람과 맨손 승부·최후의 수단)을 그대로 옮기고, 메시 변형 퍼펫으로 동작을 새로 만들었다.
 
 const HERO_ACT := [{"n": "돌 던지기", "acc": 92, "lo": 0.16, "hi": 0.24, "d": "안정적"}, {"n": "몸통 박치기", "acc": 72, "lo": 0.28, "hi": 0.4, "d": "위력 높음"}]
@@ -117,8 +117,8 @@ func run(opts: Dictionary, world: World) -> String:
 		fm().met = {"map": w.m.name, "lv": int(fm().lv)}
 	VS = get_viewport().get_visible_rect().size
 	SH = VS.y - 520.0
-	FOE_POS = Vector2(VS.x * 0.7, SH * 0.47)
-	ME_POS = Vector2(VS.x * 0.3, SH * 0.97)
+	FOE_POS = Vector2(VS.x * 0.74, SH * 0.84)
+	ME_POS = Vector2(VS.x * 0.26, SH * 0.84)
 	layer = 10
 	_build()
 	Sound.music(str(o.get("music", "wild" if wild else "rival" if o.kind == "npc" else {"leader": "leader", "rival": "rival"}.get(str(o.get("cls", "")), "trainer"))))
@@ -202,19 +202,19 @@ func _build() -> void:
 func make_hud(side: String) -> void:
 	if huds.has(side):
 		huds[side].root.queue_free()
-	var bw := 400.0
-	var rect := Rect2(20, 26, bw, 116) if side == "e" else Rect2(VS.x - bw - 20, SH - 196, bw, 150)
-	var root := UI.panel(hud, rect, Color(0.99, 0.98, 0.94, 0.95))
-	var nm := UI.label(root, "", Vector2(20, 10), 30)
-	nm.size.x = bw - 150
+	var bw := (VS.x - 60.0) / 2.0
+	var rect := Rect2(VS.x - bw - 20, 24, bw, 150) if side == "e" else Rect2(20, 24, bw, 150)
+	var root := UI.panel(hud, rect, Color(0.94, 0.97, 0.94, 0.97), Color("#426b69"))
+	var nm := UI.label(root, "", Vector2(16, 10), 26)
+	nm.size.x = bw - 118
 	nm.clip_text = true
-	var lv := UI.label(root, "", Vector2(bw - 130, 12), 26, Color(0.3, 0.33, 0.4))
+	var lv := UI.label(root, "", Vector2(bw - 100, 12), 24, Color(0.3, 0.33, 0.4))
 	var bar_bg := ColorRect.new()
 	bar_bg.color = Color(0.25, 0.27, 0.3)
 	bar_bg.position = Vector2(80, 64)
 	bar_bg.size = Vector2(bw - 104, 18)
 	root.add_child(bar_bg)
-	UI.label(root, "HP", Vector2(26, 54), 24, Color(0.85, 0.55, 0.2))
+	UI.label(root, "체력", Vector2(16, 54), 20, Color(0.85, 0.55, 0.2))
 	var bar := ColorRect.new()
 	bar.position = Vector2(3, 3)
 	bar_bg.add_child(bar)
@@ -225,12 +225,14 @@ func make_hud(side: String) -> void:
 		hp_txt = UI.label(root, "", Vector2(80, 88), 26)
 		exp_bg = ColorRect.new()
 		exp_bg.color = Color(0.25, 0.27, 0.3)
-		exp_bg.position = Vector2(20, 132)
-		exp_bg.size = Vector2(bw - 40, 8)
+		exp_bg.position = Vector2(bw - 16, 58)
+		exp_bg.size = Vector2(8, 72)
 		root.add_child(exp_bg)
 		exp_bar = ColorRect.new()
-		exp_bar.color = Color(0.35, 0.65, 0.95)
-		exp_bar.size = Vector2(0, 8)
+		exp_bar.color = Color("#d8aa56")
+		exp_bar.size = Vector2(4, 0)
+		exp_bar.position = Vector2(2, 70)
+		UI.label(root, "성장", Vector2(bw - 60, 130), 16, Color("#79603b"))
 		exp_bg.add_child(exp_bar)
 	huds[side] = {"root": root, "nm": nm, "lv": lv, "bar": bar, "bw": bw - 110, "hp": hp_txt, "exp": exp_bar, "exp_bg": exp_bg, "rect": rect}
 	upd_hud(side)
@@ -252,12 +254,12 @@ func upd_hud(side: String, hp = null) -> void:
 	var mx: float
 	if side == "e" and foe_hero != null:
 		h.nm.text = str(o.name)
-		h.lv.text = "사람" if o.kind == "npc" else "트레이너"
+		h.lv.text = "사람" if o.kind == "npc" else "원정가"
 		v = float(foe_hero.hp if hp == null else hp)
 		mx = float(foe_hero.max)
 	elif side == "p" and hero != null:
 		h.nm.text = str(Game.g.name)
-		h.lv.text = "트레이너"
+		h.lv.text = "원정가"
 		v = float(hero.hp if hp == null else hp)
 		mx = float(hero.max)
 		if h.exp_bg:
@@ -276,7 +278,7 @@ func upd_hud(side: String, hp = null) -> void:
 			h.exp_bg.visible = true
 	var k := clampf(v / mx, 0, 1)
 	h.bar.size = Vector2(h.bw * k, 12)
-	h.bar.color = Color(0.24, 0.81, 0.35) if k > 0.5 else Color(0.95, 0.76, 0.19) if k > 0.2 else Color(0.91, 0.28, 0.23)
+	h.bar.color = Color("#3baba2") if k > 0.5 else Color("#d7a255") if k > 0.2 else Color("#c96d68")
 	if h.hp:
 		h.hp.text = "%d / %d" % [maxi(0, ceili(v)), int(mx)]
 
@@ -288,15 +290,15 @@ func set_exp(instant := false) -> void:
 	var lo := Game.exp_for(int(m.lv))
 	var hi := Game.exp_for(int(m.lv) + 1)
 	var k := 1.0 if int(m.lv) >= 100 else clampf(float(int(m.exp) - lo) / maxf(1, hi - lo), 0, 1)
-	var target: float = (huds.p.rect.size.x - 40) * k
+	var draw_growth := func(value: float) -> void:
+		huds.p.exp.size = Vector2(4, 68.0 * value)
+		huds.p.exp.position = Vector2(2, 70.0 - 68.0 * value)
 	if instant:
-		huds.p.exp.size.x = target
+		draw_growth.call(k)
 	else:
 		var tw := create_tween()
-		tw.tween_property(huds.p.exp, "size:x", target, 0.6)
-		while tw.is_running():
-			Sound.sfx("exp")
-			await get_tree().create_timer(0.05).timeout
+		tw.tween_method(draw_growth, huds.p.exp.size.y / 68.0, k, 0.6)
+		await tw.finished
 
 
 func anim_hp(side: String, m: Dictionary, to: float) -> void:
@@ -395,7 +397,7 @@ func send_player() -> void:
 	st.p = [0, 0, 0, 0, 0, 0]
 	if not part.has(p):
 		part.append(p)
-	bsay("가랏! %s!" % N(p))
+	bsay("%s, 함께 현장을 살피자." % N(p))
 	if me == null:
 		me = _person("player", true, 330.0, ME_POS + Vector2(-VS.x * 0.6, 40))
 	me.visible = true
@@ -405,7 +407,7 @@ func send_player() -> void:
 	await _throw_pose(me, 1)
 	if pp:
 		pp.queue_free()
-	pp = _new_mon_pup(p, true, ME_POS)
+	pp = _new_mon_pup(p, false, ME_POS)
 	pp.visible = false
 	var out := create_tween()
 	out.tween_property(me, "position:x", -260.0, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
@@ -419,17 +421,15 @@ func recall(side: String) -> void:
 	var p := pup(side)
 	if p == null:
 		return
-	Sound.sfx("absorb")
-	p.p("glow_color", Color(1, 0.4, 0.4))
+	Sound.sfx("exit")
 	var tw := create_tween()
-	p.tp(tw, "flash", 0.9, 0.15)
-	tw.tween_property(p, "scale", Vector2(0.05, 0.05), 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	tw.tween_property(p, "modulate:a", 0.0, 0.3)
+	tw.parallel().tween_property(p, "position:x", p.position.x + (-80.0 if side == "p" else 80.0), 0.3)
 	await tw.finished
 	p.visible = false
 	hide_hud(side)
 
 
-# ---------------- 사람 ----------------
 func _foe_hero_setup(lv: int) -> void:
 	var mx := 30 + lv * 4
 	foe_hero = {"lv": lv, "max": mx, "hp": mx, "healed": false}
@@ -564,8 +564,8 @@ func choose_action() -> Dictionary:
 		print("[battle]  choose")
 	while true:
 		Msg.say("%s 무엇을 할까?" % J(N(pm()), "은"), "", {"keep": true, "nowait": true})
-		var c := await _buttons([["싸운다", Color(0.86, 0.36, 0.36)], ["가방", Color(0.86, 0.62, 0.25)],
-			["몬스터", Color(0.33, 0.62, 0.42)], ["도망친다", Color(0.36, 0.48, 0.72)]], false, -3)
+		var c := await _buttons([["기술 지시", Color(0.22, 0.51, 0.52)], ["현장 장비", Color(0.63, 0.43, 0.26)],
+			["동행 교대", Color(0.39, 0.51, 0.36)], ["조사 철수", Color(0.40, 0.43, 0.56)]], false, -3)
 		if c == -3:
 			return {"type":"move", "mi":Auto.move_index(pm(),fm())}
 		match c:
@@ -582,7 +582,7 @@ func choose_action() -> Dictionary:
 					var hint := ""
 					if d.c != "x" and not f.is_empty():
 						var e := Data.eff(d.t, Game.sp(f.sid).t)
-						hint = "\n효과 없음" if e == 0 else "\n효과 굉장" if e > 1 else "\n효과 별로" if e < 1 else ""
+						hint = "\n피해 차단" if e == 0 else "\n상성 우세 · %s배" % str(e).trim_suffix(".0") if e > 1 else "\n상성 저항 · %s배" % str(e).trim_suffix(".0") if e < 1 else ""
 					opts.append(["%s\n%s %d/%d%s" % [d.n, Data.type_name(d.t), int(x.pp), int(d.pp), hint], Data.type_color(d.t).darkened(0.1), int(x.pp) <= 0])
 				Msg.say("어떤 기술을 쓸까?", "", {"keep": true, "nowait": true})
 				var k := await _buttons(opts, true, -3)
@@ -662,7 +662,7 @@ func do_turn(act: Dictionary):
 	var e_act := {"type": "item"} if leader_heal else {"type": "move", "id": ai_move(f, pm())}
 	if act.type == "run":
 		if not wild:
-			await bsay("안 돼! 트레이너와의 승부에서 등을 보일 수는 없다!", true)
+			await bsay("안 돼! 원정가와의 승부에서 등을 보일 수는 없다!", true)
 			return null
 		if try_run():
 			await _run_away()
@@ -851,18 +851,18 @@ func use_move(side: String, id: String, mi) -> void:
 		return
 	var r := dmg_calc(u, t, mv, st[side], st[ts])
 	if r.e == 0:
-		await bsay("%s에게는 효과가 없는 것 같다..." % bname(ts))
+		await bsay("%s의 속성이 이 기술의 피해를 차단했다." % bname(ts))
 		return
 	await move_anim(side, mv, r)
 	var before: int = int(t.hp)
 	await anim_hp(ts, t, t.hp - r.d)
 	var dealt: int = before - int(t.hp)
 	if r.crit:
-		await bsay("급소에 맞았다!")
+		await bsay("빈틈 포착 · 정밀 타격!")
 	if r.e > 1:
-		await bsay("효과가 굉장했다!")
+		await bsay("상성 우세 · 피해 배율 %s배" % str(r.e).trim_suffix(".0"))
 	elif r.e < 1:
-		await bsay("효과가 별로인 듯하다...")
+		await bsay("상성 저항 · 피해 배율 %s배" % str(r.e).trim_suffix(".0"))
 	if fx.has("drain") and u.hp > 0 and dealt > 0:
 		Sound.sfx("absorb")
 		await FX.projectile(stage, pup(ts).center(), pup(side).center(), "grass", 0.4, 40)
@@ -1019,35 +1019,36 @@ func use_item_battle(a: Dictionary) -> void:
 		upd_hud("p")
 
 
-func _capture_chance(cur_hp: float, max_hp: float, rate: float, ball: float, bonus: float) -> int:
-	var a := int(floor((3 * max_hp - 2 * cur_hp) * rate * ball * bonus / (3 * max_hp)))
-	if a >= 255:
-		return 4
-	var n := 0
-	var b := 1048560.0 / sqrt(sqrt(16711680.0 / maxf(1, a)))
-	while n < 4 and randi() % 65536 < b:
-		n += 1
-	return n
+func _capture_chance(cur_hp: float, max_hp: float, rate: float, strength: float, bonus: float) -> int:
+	var chance := resonance_probability(cur_hp, max_hp, rate, strength, bonus)
+	var roll := randf()
+	return 3 if roll < chance else mini(2, int((roll - chance) / maxf(0.001, 1.0 - chance) * 3.0))
+
+
+func resonance_probability(cur_hp: float, max_hp: float, rate: float, strength: float, bonus: float) -> float:
+	var calm := 1.0 - clampf(cur_hp / maxf(1.0, max_hp), 0.0, 1.0)
+	var affinity := pow(clampf(rate / 255.0, 0.0, 1.0), 0.72)
+	return clampf(affinity * (0.28 + 0.55 * calm) * maxf(0.0, strength) * maxf(0.0, bonus), 0.0, 0.97)
 
 
 func throw_ball(id: String) -> bool:
 	var e := fm()
 	var it: Dictionary = Data.D.items[id]
 	Game.g.bag[id] = int(Game.g.bag[id]) - 1
-	await bsay("%s %s 던졌다!" % [J(Game.g.name, "은"), J(it.n, "을")])
+	await bsay("%s 공명등으로 %s의 신호를 조율한다." % [Game.g.name, N(e)])
 	var bonus: float = {"slp": 2.0, "par": 1.5, "psn": 1.5, "brn": 1.5}.get(str(e.st), 1.0)
 	var n := _capture_chance(float(e.hp), float(Game.max_hp(e)), float(Game.sp(e.sid).c), float(it.ball), bonus)
 	var cap := await _capsule_throw(fp, id, n)
-	if n >= 4:
+	if n >= 3:
 		Sound.stop_music(true)
 		await Sound.jingle("caught")
-		await bsay("좋았어! %s 붙잡았다!" % J(N(e), "을"), true)
+		await bsay("공명 연결 완료. %s와 원정을 함께할 수 있다." % N(e), true)
 		var is_new = not Game.g.caught.has(int(e.sid))
 		Game.g.caught[int(e.sid)] = 1
 		Game.g.seen[int(e.sid)] = 1
 		e.ot = Game.g.name
 		if is_new:
-			await bsay("%s의 데이터가 몬스터 도감에 새로 등록되었다!" % N(e), true)
+			await bsay("현장 노트에 %s의 동행 신호를 기록했다." % N(e), true)
 		hide_hud("e")
 		Msg.hide_box()
 		if wild:
@@ -1062,11 +1063,11 @@ func throw_ball(id: String) -> bool:
 		if cap:
 			cap.queue_free()
 		return true
-	await bsay(["앗! 캡슐에서 빠져나와 버렸다!", "아앗! 붙잡았다고 생각했는데!", "아깝다! 조금만 더 하면 붙잡을 수 있었는데!", "으앗! 거의 다 붙잡았는데!"][mini(n, 3)])
+	await bsay(["신호가 흩어졌다. 주변의 움직임을 먼저 살펴보자.", "주파수가 어긋났다. 생물의 상태에 맞춰 다시 조율하자.", "연결이 잠시 닿았지만 유지되지 않았다."][mini(n, 2)])
 	return false
 
 
-## 사람과의 직접 대결에서 이기면 상대가 스스로 동료로 합류한다 (사람에게는 캡슐을 쓰지 않는다)
+## 사람과의 직접 대결에서 이기면 상대가 스스로 동료로 합류한다 (사람에게는 공명등을 쓰지 않는다)
 func _recruit() -> void:
 	var t: Dictionary = foe_hero
 	var sid := Game.human_sid(look_of())
@@ -1231,7 +1232,7 @@ func foe_hero_turn():
 		if o.kind == "npc":
 			await _run_away()
 			return "run"
-		await bsay("안 돼! 화가 난 트레이너에게 등을 보일 수는 없다!", true)
+		await bsay("안 돼! 화가 난 원정가에게 등을 보일 수는 없다!", true)
 		return null
 	if act.type == "switch":
 		await bsay("돌아와, %s!" % N(pm()))
@@ -1240,7 +1241,7 @@ func foe_hero_turn():
 		await send_player()
 	elif act.type == "item":
 		if Data.D.items[act.id].has("ball"):
-			await bsay("사람에게는 캡슐을 던질 수 없다! 대결에서 실력으로 이기자.", true)
+			await bsay("사람에게는 공명등을 던질 수 없다! 대결에서 실력으로 이기자.", true)
 			return null
 		else:
 			await use_item_battle(act)
@@ -1307,7 +1308,7 @@ func mon_vs_trainer(mi) -> void:
 	FX.number(stage, tr.center() + Vector2(0, -tr.size.y * 0.35), str(d), Color(1, 0.85, 0.3) if crit else Color.WHITE, 58 if crit else 46)
 	await _foe_hero_hp(t.hp - d)
 	if crit:
-		await bsay("급소에 맞았다!")
+		await bsay("빈틈 포착 · 정밀 타격!")
 	if mv.fx.has("drain") and u.hp > 0:
 		Sound.sfx("absorb")
 		await anim_hp("p", u, u.hp + maxi(1, d * int(mv.fx.drain) / 100))
@@ -1540,106 +1541,70 @@ func _ring(c: Vector2, col: Color) -> Node2D:
 
 
 func _capsule_open(from: Vector2, at: Vector2, p: Puppet) -> void:
-	var c := Capsule.make("ball", 23.0)
-	stage.add_child(c)
-	c.position = from
-	var to := at + Vector2(0, -p.size.y * 0.4)
-	var tw := create_tween()
-	tw.tween_method(func(k: float) -> void:
-		c.position = from.lerp(to, k) + Vector2(0, -sin(k * PI) * 90)
-		c.rotation = k * TAU * 1.5, 0.0, 1.0, 0.42)
-	await tw.finished
-	Sound.sfx("open")
-	FX.burst(stage, to, Color(1, 1, 1), Color(0.8, 0.95, 1.0), 24, 380.0, Vector2.ZERO, 0.45, 1.3, 180.0)
-	c.queue_free()
+	var beacon := Capsule.make("ball", 23.0)
+	stage.add_child(beacon)
+	beacon.position = from
+	var pulse := create_tween()
+	pulse.tween_property(beacon, "position", at + Vector2(-60,-30), 0.3).set_trans(Tween.TRANS_SINE)
+	await pulse.finished
+	beacon.open = true
+	beacon.queue_redraw()
+	FX.burst(stage, at + Vector2(0,-40), Color("#caffea"), Color("#57bdaa"), 16, 150.0, Vector2(0,-100), 0.4, 0.7, 90.0)
 	p.visible = true
-	p.p("flash", 1.0)
-	p.scale = Vector2(0.1, 0.1)
-	var t2 := create_tween()
-	t2.tween_property(p, "scale", Vector2(1.12, 1.12), 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	t2.parallel()
-	p.tp(t2, "flash", 0.0, 0.4)
-	t2.tween_property(p, "scale", Vector2.ONE, 0.1)
-	await t2.finished
+	p.scale = Vector2.ONE
+	p.modulate.a = 0.0
+	await create_tween().tween_property(p, "modulate:a", 1.0, 0.35).finished
+	beacon.queue_free()
 	await _cry(p)
 	var m := pm() if p == pp else fm()
 	if not m.is_empty() and m.get("shiny", false):
 		await _shiny_fx(p)
 
 
-func _capsule_throw(target: Puppet, kind: String, n: int) -> Capsule:
+func _capsule_throw(target: Puppet, kind: String, result_grade: int) -> Capsule:
 	var c := Capsule.make(kind if kind in ["great", "hyper"] else "ball", 23.0)
 	stage.add_child(c)
-	var from := Vector2(-40, SH * 0.9)
-	var to := target.center()
-	var home := target.position
-	Sound.sfx("throw")
-	var tw := create_tween()
-	tw.tween_method(func(k: float) -> void:
-		c.position = from.lerp(to, k) + Vector2(0, -sin(k * PI) * 260)
-		c.rotation = k * TAU * 2.0, 0.0, 1.0, 0.6)
-	await tw.finished
-	var bounce := create_tween()
-	bounce.tween_property(c, "position", to + Vector2(-30, -70), 0.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	bounce.parallel().tween_property(c, "rotation", -0.4, 0.2)
+	var from := Vector2(40, SH - 70)
+	var to := target.center() + Vector2(-target.size.x * 0.6 - 30, 20)
+	c.position = from
+	var drift := create_tween()
+	drift.tween_property(c, "position", to, 0.55).set_trans(Tween.TRANS_SINE)
+	await drift.finished
 	c.open = true
 	c.queue_redraw()
-	Sound.sfx("open")
-	get_tree().create_timer(0.15).timeout.connect(Sound.sfx.bind("absorb"))
-	target.p("glow_color", Color.WHITE)
-	var suck := create_tween()
-	target.tp(suck, "flash", 1.0, 0.2)
-	suck.tween_property(target, "scale", Vector2(0.05, 0.05), 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
-	suck.parallel().tween_property(target, "position", to + Vector2(-30, -70 + target.size.y * 0.4), 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	FX.burst(stage, to, Color(1, 1, 1), Color(1, 0.6, 0.6), 18, 180.0, Vector2.ZERO, 0.4, 1.0, 180.0)
-	await suck.finished
-	target.visible = false
+	# A single continuous tuning sweep; creature stays visible and at its original scale.
+	var line := Line2D.new()
+	line.width = 4
+	line.default_color = Color("#72e0d2")
+	line.points = PackedVector2Array([to, target.center()])
+	stage.add_child(line)
+	var readout := UI.label(hud, "공명 조율 중", Vector2(24, SH - 42), 24, Color("#c8f3e8"))
+	var gauge := ProgressBar.new()
+	gauge.position = Vector2(VS.x * 0.38, SH - 38)
+	gauge.size = Vector2(VS.x * 0.56, 18)
+	gauge.show_percentage = false
+	gauge.max_value = 100
+	hud.add_child(gauge)
+	Sound.sfx("sparkle")
+	target.p("glow_color", Color("#72e0d2"))
+	var tune := create_tween().set_parallel()
+	tune.tween_property(gauge, "value", 100.0 if result_grade >= 3 else 36.0 + result_grade * 17.0, 1.1)
+	target.tp(tune, "glow", 0.5, 1.1)
+	await tune.finished
+	line.queue_free()
+	readout.queue_free()
+	gauge.queue_free()
+	target.p("glow", 0.0)
 	c.open = false
 	c.queue_redraw()
-	var ground := Vector2(home.x - 30, home.y - 24)
-	var fall := create_tween()
-	fall.tween_property(c, "position", ground, 0.32).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
-	fall.parallel().tween_property(c, "rotation", 0.0, 0.32)
-	await fall.finished
-	Sound.sfx("land")
-	for i in mini(n, 3):
-		await get_tree().create_timer(0.38).timeout
-		Sound.sfx("wobble")
-		var wt := create_tween()
-		var side := -1.0 if i % 2 == 0 else 1.0
-		wt.tween_property(c, "rotation", 0.45 * side, 0.12).set_trans(Tween.TRANS_SINE)
-		wt.parallel().tween_property(c, "position:x", ground.x + 10 * side, 0.12)
-		wt.tween_property(c, "rotation", -0.2 * side, 0.12).set_trans(Tween.TRANS_SINE)
-		wt.parallel().tween_property(c, "position:x", ground.x - 4 * side, 0.12)
-		wt.tween_property(c, "rotation", 0.0, 0.1)
-		wt.parallel().tween_property(c, "position:x", ground.x, 0.1)
-		await wt.finished
-	await get_tree().create_timer(0.38).timeout
-	if n >= 4:
-		Sound.sfx("click")
-		FX.burst(stage, c.position + Vector2(0, -20), Color(1, 0.95, 0.5), Color(1, 0.8, 0.2), 14, 260.0, Vector2(0, 500), 0.7, 0.9, 50.0)
-		var dim := create_tween()
-		dim.tween_property(c, "scale", Vector2(1.15, 0.85), 0.06)
-		dim.tween_property(c, "scale", Vector2.ONE, 0.15).set_trans(Tween.TRANS_BACK)
-		await dim.finished
-		c.dim = true
-		c.queue_redraw()
+	if result_grade >= 3:
+		FX.burst(stage, target.center(), Color("#d4ffee"), Color("#5bbda9"), 18, 180.0, Vector2(0,-100), 0.5, 0.8, 100.0)
+		await _hop(target, 1, 12.0)
 		return c
-	Sound.sfx("breakout")
-	FX.burst(stage, c.position, Color(1, 1, 1), Color(1, 0.5, 0.5), 26, 420.0, Vector2(0, 300), 0.5, 1.2, 180.0)
+	var fade := create_tween()
+	fade.tween_property(c, "modulate:a", 0.0, 0.25)
+	await fade.finished
 	c.queue_free()
-	target.visible = true
-	target.position = home
-	target.scale = Vector2(0.2, 0.2)
-	var back := create_tween()
-	back.tween_property(target, "scale", Vector2.ONE, 0.3).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
-	back.parallel()
-	target.tp(back, "flash", 0.0, 0.35)
-	await back.finished
-	if target == tr:
-		await _angry(tr)
-	else:
-		await _hop(target, 2, 22.0)
 	return null
 
 
@@ -2133,3 +2098,4 @@ func _sit_down(p: Puppet) -> void:
 	p.modulate.a = 1.0
 	p.p("squash", 0.0)
 	p.p("bend", 0.0)
+

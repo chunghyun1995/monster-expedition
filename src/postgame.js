@@ -20,15 +20,15 @@ async function elderTalk(){const o={name:'하늘봉 장로'};const F=G.flags;
   if(!F.legendQuest){
     await say('오오, 정상에서의 승부, 잘 보았네. 자네라면 이 이야기를 들려줘도 되겠군.',o);
     await say('먼 옛날, 하늘의 신 천공신이 이 지방을 만들고 세 수호신에게 땅을 맡겼다네.',o);
-    await say('불의 염화룡, 물의 심해왕, 번개의 뇌명조... 세 수호신은 지금도 깊은 동굴에서 잠들어 있지.',o);
+    await say('불의 염화룡, 물의 심해왕, 번개의 자계수... 세 수호신은 지금도 깊은 동굴에서 잠들어 있지.',o);
     await say('세 수호신을 모두 깨우면, 천공신이 이 정상에 다시 모습을 드러낸다고 전해진다네.',o);
     for(const L of LEGENDS)await say(`${SP[L.sid].n}: ${L.where}`,o);
-    await say('동굴 입구는 이제 자네에게 열릴 걸세. 수호신들은 아주 강하니, 황금캡슐을 넉넉히 챙겨 가게.',o);
+    await say('동굴 입구는 이제 자네에게 열릴 걸세. 수호신들은 아주 강하니, 심층 공명등을 넉넉히 챙겨 가게.',o);
     F.legendQuest=1;await giveItem('hyper',3);sfx('sparkle');return;}
   const left=LEGENDS.filter(L=>!F['awake'+L.sid]);
   if(left.length){await say(`아직 깨어나지 않은 수호신이 ${left.length}마리 남았네.`,o);for(const L of left)await say(`${SP[L.sid].n}: ${L.where}`,o);return;}
   if(!F.cap34){await say('세 수호신이 모두 깨어났군! 하늘이 울리고 있어... 정상으로 가 보게!',o);return;}
-  await say('천공신과 함께하는 트레이너라니... 살아서 이런 날을 보게 될 줄이야.',o);
+  await say('천공신과 함께하는 원정가라니... 살아서 이런 날을 보게 될 줄이야.',o);
   await say('남쪽 무한의 탑에서 자네의 힘을 더 시험해 보는 것도 좋겠지.',o);}
 async function legendBattle(sid,lv,bg){const s=SP[sid];
   await say(sid===34?'구름이 갈라지며 거대한 그림자가 내려왔다...!':`${J(s.n,'이')} 깊은 잠에서 깨어나 이쪽을 노려본다...!`);cry(sid);await sleep(500);

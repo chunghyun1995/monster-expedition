@@ -140,14 +140,14 @@ function drawIntro(g){const gr=g.createRadialGradient(128,90,10,128,90,170);gr.a
   if(introFx.mon){const b=Math.abs(Math.sin(frame/14))*4;drawMon(g,10,182,150-b,3,{white:introFx.white});}
   if(introFx.player){const s=4*introFx.pscale;g.save();g.translate(128-8*s,150-20*s);g.scale(s,s);person(g,0,0,'down',0,LOOK.player);g.restore();}
   FX.draw(g);}
-async function intro(){state='intro';Music.play('intro');introFx={prof:1,mon:0,player:0,pscale:1,white:0};botMode='plain';const o={name:'한결 박사'};
+async function intro(){state='intro';Music.play('intro');introFx={prof:1,mon:0,player:0,pscale:1,white:0};botMode='plain';const o={name:'한결 조사관'};
   await fadeTo(0);
   await say('안녕! 몬스터의 세계에 온 걸 환영한단다!',o);
   await say('나는 한결. 사람들은 나를 몬스터 박사라고 부르지.',o);
   sfx('open');FX.burst(182,130,14,{c:['#fff','#ffd84a'],shape:'star',s:3,life:24,sp:2.2});introFx.mon=1;introFx.white=1;await tween(500,k=>introFx.white=1-k);cry(10);
   await say('이 세계에는 "몬스터"라고 불리는 신비한 생물들이 살고 있단다.',o);
   await say('사람들은 몬스터와 함께 생활하고, 때로는 힘을 합쳐 승부를 겨루기도 하지.',o);
-  await say('나는 몬스터를 연구하면서 이 지방의 몬스터 도감을 만들고 있단다.',o);
+  await say('나는 몬스터를 연구하면서 이 지방의 몬스터 생태기록을 만들고 있단다.',o);
   introFx.mon=0;introFx.prof=0;introFx.player=1;
   await say('그럼 이제 너에 대해 알려 주겠니? 이름이 무엇이니?',{...o,keep:1});
   const name=await nameInput({title:'당신의 이름을 알려 주세요',def:'',max:6,sug:['하늘','태양','바다','별이','민준','서연','지호','유나']});
@@ -159,7 +159,7 @@ async function intro(){state='intro';Music.play('intro');introFx={prof:1,mon:0,p
   hideMsg();introFx.player=0;busy=true;state='world';enterMap('home',7,3,'down',{quiet:1});Pad.show();
   await sleep(300);await fadeTo(0);showSign('우리 집');
   try{const mom=npcById('mom');mom.dir='right';await emoteOn(mom,'!');
-    await say(`일어났구나, ${name}! 한결 박사님이 연구소로 와 달라고 하셨단다.`,{name:'엄마'});
+    await say(`일어났구나, ${name}! 한결 조사관님이 연구소로 와 달라고 하셨단다.`,{name:'엄마'});
     await say('연구소는 마을 위쪽에 있는 큰 건물이야. 메뉴는 Enter 키나 아래 화면의 메뉴 버튼으로 열 수 있단다.',{name:'엄마'});
     await say('조심해서 다녀오렴!',{name:'엄마'});mom.dir='left';}finally{busy=false;hideMsg();}}
 function newGameData(name){G={v:2,name,id:String(rnd(65536)).padStart(5,'0'),money:3000,party:[],box:[],bag:{},map:'home',x:7,y:3,dir:'down',flags:{},seen:{},caught:{},
@@ -175,15 +175,15 @@ function drawCredits(g){const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop
   const px=W+40+list.length*70-(frame-CR.f0)*sp+40;g.save();g.translate(Math.max(px,110),120);g.scale(2,2);person(g,0,0,'right',((frame>>3)&1)+1,LOOK.player);g.restore();}
 async function credits(final){state='credits';Music.play('title');CR={f0:frame,list:Object.keys(G.caught).map(Number).sort((a,b)=>a-b)};if(!CR.list.length)CR.list=[G.starter];
   Pad.hide();botMode='credits';const roll=el(BOT,'abs','',[0,0,256,192]);roll.style.overflow='hidden';
-  const L=[['몬스터 원정대',''],['제작','chunghyun1995'],['프로그래밍 · 도트 · 음악','Claude'],['도와준 몬스터들',CR.list.map(s=>SP[s].n).join(' · ')],
-    ['관장들','단단 · 하라 · 화련 · 찌나 · 하늬'],['라이벌',RIVAL],['그리고 플레이해 준',`${G.name} 님`],['',''],['THE END','…그리고 원정은 계속된다!']];
+  const L=[['벨로리아 생태기록',''],['제작','chunghyun1995'],['프로그래밍 · 도트 · 음악','Claude'],['도와준 몬스터들',CR.list.map(s=>SP[s].n).join(' · ')],
+    ['현장 책임자들','단단 · 하라 · 화련 · 찌나 · 하늬'],['원정 동료',RIVAL],['그리고 플레이해 준',`${G.name} 님`],['',''],['THE END','…그리고 원정은 계속된다!']];
   const box=el(roll,'credits',L.map(([h,t])=>`<h3>${esc(h)}</h3><div>${esc(t)}</div>`).join(''));
   const total=Math.max(14000,CR.list.length*70/1.2*16.7+3000);
   await tween(total,k=>box.style.transform=`translateY(${U(-k*(192+box.offsetHeight/parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--u'))))})`);
   roll.remove();await fadeTo(1);state='world';
   if(final)enterMap('town5',12,4,'down',{quiet:1});else enterMap('town2',19,13,'down',{quiet:1});Pad.show();await fadeTo(0);
-  await say(final?'축하합니다! 다섯 개의 배지를 모으고 라이벌과의 마지막 승부까지 마쳐 몬스터 원정대를 클리어했습니다!':'축하합니다! 두 번째 배지를 얻었습니다!');
-  await say('도감을 모두 채우거나, 몬스터를 더 강하게 키워 보세요. 원정은 계속됩니다!');}
+  await say(final?'축하합니다! 다섯 개의 관측 인증를 모으고 원정 동료과의 마지막 승부까지 마쳐 벨로리아 생태기록를 클리어했습니다!':'축하합니다! 두 번째 관측 인증를 얻었습니다!');
+  await say('생태기록을 모두 채우거나, 몬스터를 더 강하게 키워 보세요. 원정은 계속됩니다!');}
 
 /* ---------- 전투 화면 전환 ---------- */
 function drawTrans(g){const t=transFx;if(t.type==='flash'){g.fillStyle=t.col||'rgba(255,255,255,.9)';g.fillRect(0,0,W,H);return;}const k=t.k;g.fillStyle='#000';
@@ -221,7 +221,7 @@ async function checkUpdate(){if(!/^https?:$/.test(location.protocol))return;
     bar.querySelector('button').addEventListener('click',e=>{e.stopPropagation();location.replace(location.pathname+'?v='+m[1]+location.hash);});
     document.body.appendChild(bar);}catch(e){}}
 async function titleScreen(){checkUpdate();state='title';botMode='title';Music.play('title');clearPages(BOT);
-  const lg=page(TOP,`<div class="logo"><h1>몬스터 원정대</h1><p>MONSTER EXPEDITION</p></div><div class="ver">Ver 3.0 · ${BUILD}</div>`);
+  const lg=page(TOP,`<div class="logo"><h1>벨로리아 생태기록</h1><p>VELORIA FIELDNOTES</p></div><div class="ver">Ver 3.0 · ${BUILD}</div>`);
   const st=page(BOT,`<div class="abs blink" style="left:0;right:0;top:${U(80)};text-align:center;color:#fff;font-size:${U(14)}">— 터치 또는 Z 키로 시작 —</div>
     <div class="abs" style="left:0;right:0;top:${U(170)};text-align:center;color:#8f9ad8;font-size:${U(7.5)}">오리지널 몬스터 RPG · 소리는 M 키로 켜고 끕니다</div>`);
   await new Promise(res=>{const h={tapA:1,key(k){if(k==='a'||k==='menu'){popH(h);sfx('sel');res();}}};pushH(h);st.addEventListener('click',()=>h.key('a'));});
@@ -232,14 +232,14 @@ async function titleScreen(){checkUpdate();state='title';botMode='title';Music.p
   while(true){const sv=readSave();
     if(linkCode){const lc=linkCode;linkCode=null;let g=null;
       try{g=await readSaveCode(lc);}catch(e){await say(`불러오기 링크를 읽지 못했어요. (${e.message})`);}
-      if(g){const c=await ask(`${g.name}의 모험(배지 ${(g.badges||[]).filter(Boolean).length} · 도감 ${Object.keys(g.caught||{}).length})을 불러올까요?${sv?' 이 기기의 기존 리포트는 덮어써집니다.':''}`,['불러오기','그만두기']);
+      if(g){const c=await ask(`${g.name}의 모험(관측 인증 ${(g.badges||[]).filter(Boolean).length} · 생태기록 ${Object.keys(g.caught||{}).length})을 불러올까요?${sv?' 이 기기의 기존 리포트는 덮어써집니다.':''}`,['불러오기','그만두기']);
         if(c===0){await startFromCode(g,lg);return;}}}
-    const btns=[{html:sv?`<div style="font-size:${U(12)}">이어하기</div><small>${esc(sv.name)} · 배지 ${(sv.badges||[]).filter(Boolean).length} · 도감 ${Object.keys(sv.caught||{}).length} · ${fmtTime(sv.playMs||0)}</small>`:'<div style="font-size:'+U(12)+'">이어하기</div><small>리포트 없음</small>',x:20,y:16,w:216,h:56,cls:'blue',disabled:!sv},
+    const btns=[{html:sv?`<div style="font-size:${U(12)}">이어하기</div><small>${esc(sv.name)} · 관측 인증 ${(sv.badges||[]).filter(Boolean).length} · 생태기록 ${Object.keys(sv.caught||{}).length} · ${fmtTime(sv.playMs||0)}</small>`:'<div style="font-size:'+U(12)+'">이어하기</div><small>리포트 없음</small>',x:20,y:16,w:216,h:56,cls:'blue',disabled:!sv},
       {html:`<div style="font-size:${U(12)}">처음부터 시작</div>`,x:20,y:78,w:216,h:36},{html:'<div>코드로 불러오기</div><small>다른 기기에서 이어 하기</small>',x:20,y:120,w:216,h:36,cls:'purple'},{html:'설정',x:20,y:162,w:216,h:24,cls:'dark'}];
     const i=await panel(btns,{start:sv?0:1,cancel:false});
     if(i===3){await optionsMenu();continue;}
     if(i===2){const g=await inputSaveCode();if(!g)continue;
-      if(sv){const c=await ask(`${g.name}의 모험(배지 ${(g.badges||[]).filter(Boolean).length} · 도감 ${Object.keys(g.caught||{}).length})을 불러옵니다. 이 기기의 기존 리포트는 덮어써집니다. 괜찮습니까?`,['불러오기','돌아가기'],{start:1});if(c!==0)continue;}
+      if(sv){const c=await ask(`${g.name}의 모험(관측 인증 ${(g.badges||[]).filter(Boolean).length} · 생태기록 ${Object.keys(g.caught||{}).length})을 불러옵니다. 이 기기의 기존 리포트는 덮어써집니다. 괜찮습니까?`,['불러오기','돌아가기'],{start:1});if(c!==0)continue;}
       await startFromCode(g,lg);return;}
     if(i===1&&sv){const c=await ask('기존 리포트가 있습니다. 처음부터 시작하면 리포트를 저장할 때 덮어쓰게 됩니다. 괜찮습니까?',['처음부터 시작','돌아가기'],{start:1});if(c!==0)continue;}
     lg.remove();await fadeTo(1);
@@ -251,7 +251,7 @@ async function titleScreen(){checkUpdate();state='title';botMode='title';Music.p
 /* 필드에서 처음 하는 일 안내 */
 function worldGuides(){const touch=matchMedia('(pointer:coarse)').matches;
   if(!guideSeen('move'))return guide('move','top',touch?'아래 <b>원형 패드</b>로 걸어 다닐 수 있어요. 짧게 누르면 방향만 바뀌어요.<br>사람이나 물건 앞에서 <b>A</b>를 누르면 말을 걸거나 조사해요.':'<b>방향키</b>로 걸어 다닐 수 있어요. 짧게 누르면 방향만 바뀌어요.<br>사람이나 물건 앞에서 <b>Z</b>를 누르면 말을 걸거나 조사해요.',{title:'이동과 조사'});
-  if(G.flags.pad&&!guideSeen('menu')&&document.querySelector('#padUI .btn.red'))return guide('menu','#padUI .btn.red',`여기서 <b>메뉴</b>를 열어요. 도감·몬스터·가방·리포트(저장)·설정이 들어 있어요.${touch?'':' 키보드는 <b>Enter</b>.'}`,{title:'메뉴'});
+  if(G.flags.pad&&!guideSeen('menu')&&document.querySelector('#padUI .btn.red'))return guide('menu','#padUI .btn.red',`여기서 <b>메뉴</b>를 열어요. 생태기록·몬스터·가방·리포트(저장)·설정이 들어 있어요.${touch?'':' 키보드는 <b>Enter</b>.'}`,{title:'메뉴'});
   if(G.flags.pad&&!guideSeen('padapp')&&document.querySelector('#padUI .nav'))return guide('padapp','#padUI .lcd',`원정패드의 <b>◀ ▶</b>로 시계 · 파티 · 지도 · 만보기 앱을 바꿔 볼 수 있어요.${touch?'':' 키보드는 <b>Q / E</b>.'}`,{title:'원정패드'});
   if(G.flags.shoes&&!guideSeen('run'))return guide('run','top',`<b>B${touch?'':'(X)'}</b>를 누른 채로 이동하면 질주신발로 빠르게 달릴 수 있어요.`,{title:'달리기'});
   if(G.flags.badge0&&!guideSeen('fuse'))return guide('fuse','top','몬스터 두 마리를 합치면 <b>한 단계 위 등급</b>의 무작위 타입 몬스터가 돼요. <b>메뉴 → 몬스터 → 합성하기</b>나 몬스터 쉼터의 합성 연구원에게서 할 수 있어요.',{title:'몬스터 합성'});}

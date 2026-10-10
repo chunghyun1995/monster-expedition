@@ -42,7 +42,7 @@ async function battle(o){const wild=o.kind==='wild',npc=o.kind==='npc';BATTLES++
   Music.play(o.music||(wild?'wild':npc?'rival':o.cls==='leader'?'leader':o.cls==='rival'?'rival':'trainer'));
   for(let i=0;i<2;i++){transFx={type:'flash'};await sleep(70);transFx=null;await sleep(80);}
   const tt=wild?(B.bg==='forest'?'spin':'bars'):(o.cls==='leader'||o.cls==='rival')?'vs':'iris';
-  transFx={type:tt,k:0,label:o.cls==='leader'?`관장 ${o.name}`:o.cls==='rival'?`라이벌 ${o.name}`:''};await tween(tt==='vs'?380:560,k=>transFx.k=k,EASE.in);if(tt==='vs')await sleep(800);
+  transFx={type:tt,k:0,label:o.cls==='leader'?`현장 책임자 ${o.name}`:o.cls==='rival'?`원정 동료 ${o.name}`:''};await tween(tt==='vs'?380:560,k=>transFx.k=k,EASE.in);if(tt==='vs')await sleep(800);
   state='battle';Pad.hide();botMode='battle';makeHud();transFx=null;hideMsg();FX.list=[];
   B.lowT=setInterval(()=>{if(B&&state==='battle'&&B.p.show){const m=pm();if(m&&m.hp>0&&m.hp<=maxHp(m)*.2)sfx('lowhp');}},1100);
   /* 등장 */
@@ -80,7 +80,7 @@ async function chooseAction(){
     guideSoon('battle','#botUI .btn.red','<b>싸운다</b>를 누르면 기술을 고를 수 있어요. 아래의 <b>가방</b>에선 회복약을, <b>몬스터</b>에선 교체를 할 수 있어요.',{title:'전투'});
     if(B.wild&&Object.keys(G.bag).some(k=>ITEMS[k]&&ITEMS[k].ball&&G.bag[k]>0))guideSoon('catch','#botUI .btn.yellow','야생 몬스터는 HP를 줄인 뒤 <b>가방 → 캡슐</b>을 던지면 붙잡을 수 있어요. 잠듦·마비 같은 상태 이상이면 더 잘 잡혀요!',{title:'포획'});
     if(B.foeHero&&Object.keys(G.bag).some(k=>ITEMS[k]&&ITEMS[k].ball&&G.bag[k]>0))guideSoon('catchHuman','#botUI .btn.yellow','사람도 <b>캡슐</b>로 붙잡을 수 있어요! 체력을 줄여 두면 더 잘 잡히고, 붙잡으면 <b>동료</b>가 되어 함께 싸워요.',{title:'사람 붙잡기'});
-    if(!B.wild&&!B.foeHero&&Object.keys(G.bag).some(k=>ITEMS[k]&&ITEMS[k].ball&&G.bag[k]>0))guideSoon('steal','#botUI .btn.yellow','상대 트레이너의 몬스터도 <b>캡슐</b>로 빼앗을 수 있어요. 대신 화가 난 트레이너가 <b>직접 덤벼들고</b>, 이 승부에서 지면 빼앗은 몬스터를 되찾아 가요!',{title:'몬스터 빼앗기'});
+    if(!B.wild&&!B.foeHero&&Object.keys(G.bag).some(k=>ITEMS[k]&&ITEMS[k].ball&&G.bag[k]>0))guideSoon('steal','#botUI .btn.yellow','상대 원정가의 몬스터도 <b>캡슐</b>로 빼앗을 수 있어요. 대신 화가 난 원정가가 <b>직접 덤벼들고</b>, 이 승부에서 지면 빼앗은 몬스터를 되찾아 가요!',{title:'몬스터 빼앗기'});
     if(autoFight()){await sleep(220);return{type:'move',mi:autoMoveIndex()};}
     const i=await panel([{html:`<span style="font-size:${U(20)}">싸운다</span>`,x:24,y:14,w:208,h:104,cls:'red',flash:1},
       {html:`<img src="${menuIcon('bag')}" style="width:${U(22)};height:${U(22)}"><span>가방</span>`,x:4,y:124,w:84,h:64,cls:'yellow'},
@@ -94,10 +94,10 @@ async function chooseMove(){const p=pm(),f=fm();
   if(p.moves.every(x=>x.pp<=0)){await bsay(`${J(N(p),'은')} 쓸 수 있는 기술이 없다!`,true);return'struggle';}
   msg(`${J(N(p),'은')}\n무엇을 할까?`);
   const btns=p.moves.map((x,j)=>{const d=MV[x.id],e=d.c==='x'||!f?null:effT(d.t,SP[f.sid].t);
-    return{html:`<span class="mn">${d.n}</span><span class="mi"><span>${TYPES[d.t].n} · ${CATN[d.c]}</span><span>PP ${x.pp}/${d.pp}</span></span><span class="hint">${e==null?'':e===0?'효과가 없다':e>1?'효과가 굉장하다':e<1?'효과가 별로다':''}</span>`,
+    return{html:`<span class="mn">${d.n}</span><span class="mi"><span>${TYPES[d.t].n} · ${CATN[d.c]}</span><span>PP ${x.pp}/${d.pp}</span></span><span class="hint">${e==null?'':e===0?'효과가 없다':e>1?'상성 우세':e<1?'상성 저항':''}</span>`,
       x:4+(j%2)*126,y:6+Math.floor(j/2)*68,w:122,h:62,cls:'mvbtn',disabled:x.pp<=0};});
   btns.push({html:'취소',x:4,y:146,w:248,h:40,cls:'dark'});
-  guideSoon('moves','#botUI .mvbtn','기술 버튼에는 <b>타입 · 분류 · 남은 PP</b>가 보여요. 상대에게 잘 통하면 <b>"효과가 굉장하다"</b>라고 미리 알려 줘요.',{title:'기술 고르기'});
+  guideSoon('moves','#botUI .mvbtn','기술 버튼에는 <b>타입 · 분류 · 남은 PP</b>가 보여요. 상대에게 잘 통하면 <b>"상성 우세"</b>라고 미리 알려 줘요.',{title:'기술 고르기'});
   const i=await panel(btns,{onOpen:h=>h.els.forEach((e,j)=>{if(j<p.moves.length){const c=TYPES[MV[p.moves[j].id].t].c;e.style.background=`linear-gradient(${shade(c,.3)},${shade(c,-.1)})`;e.style.borderColor=shade(c,-.5);}})});
   if(i<0||i===btns.length-1)return'back';return i;}
 
@@ -112,7 +112,7 @@ function aiMove(e,p){const av=e.moves.filter(x=>x.pp>0);if(!av.length)return'str
 async function doTurn(act){B.flinch={};B.moved={};
   const leaderHeal=B.o.leader&&!B.usedItem&&fm().hp>0&&fm().hp<=maxHp(fm())/4;
   const eAct=leaderHeal?{type:'item'}:{type:'move',id:aiMove(fm(),pm())};
-  if(act.type==='run'){if(!B.wild){await bsay('안 돼! 트레이너와의 승부에서 등을 보일 수는 없다!',true);return null;}
+  if(act.type==='run'){if(!B.wild){await bsay('안 돼! 원정가와의 승부에서 등을 보일 수는 없다!',true);return null;}
     if(tryRun()){sfx('run');await bsay('무사히 도망쳤다!',true);return'run';}await bsay('도망칠 수 없었다!');B.moved.p=1;}
   else if(act.type==='switch'){await bsay(`돌아와, ${N(pm())}!`);await recall('p');B.pi=act.idx;await sendPlayer();B.moved.p=1;}
   else if(act.type==='item'){if(ITEMS[act.id].ball){if(await throwBall(act.id)){if(B.wild)return'caught';await foeHeroStart();return null;}}else await useItemBattle(act);B.moved.p=1;}
@@ -162,7 +162,7 @@ async function useMove(side,id,mi){const u=SIDE(side),ts=OTHER(side),t=SIDE(ts);
   if(r.e===0){await bsay(`${bname(ts)}에게는 효과가 없는 것 같다...`);return;}
   await animMove(side,mv);sfx(r.e>1?'super':r.e<1?'weak':'hit');await hitReact(ts,r.e);
   const before=t.hp;await animHP(ts,t,t.hp-r.d);const dealt=before-t.hp;
-  if(r.crit)await bsay('급소에 맞았다!');if(r.e>1)await bsay('효과가 굉장했다!');else if(r.e<1)await bsay('효과가 별로인 듯하다...');
+  if(r.crit)await bsay('빈틈 포착 · 정밀 타격!');if(r.e>1)await bsay('상성 우세로 피해가 증폭됐다.');else if(r.e<1)await bsay('상성 저항으로 피해가 감소했다.');
   if(mv.fx.drain&&u.hp>0&&dealt>0){const hh=Math.max(1,Math.floor(dealt*mv.fx.drain/100));sfx('absorb');await drainFx(ts,side);await animHP(side,u,u.hp+hh);await bsay(`${bname(ts)}에게서 체력을 흡수했다!`);}
   if(mv.fx.recoil&&dealt>0){const rr=Math.max(1,Math.floor((id==='struggle'?maxHp(u):dealt)*mv.fx.recoil/100));await animHP(side,u,u.hp-rr);await bsay(`${J(bname(side),'은')} 반동으로 데미지를 입었다!`);}
   if(t.hp>0){if(mv.fx.st&&chance(mv.fx.st[1])&&canStatus(t,mv.fx.st[0]))await inflict(ts,mv.fx.st[0]);
@@ -361,15 +361,15 @@ async function throwBall(id){const e=fm(),it=ITEMS[id];G.bag[id]--;await bsay(`$
   if(n>=4){sfx('click');FX.burst(B.ball.x,B.ball.y,8,{c:'#ffd84a',shape:'star',s:3,life:24,sp:1.5});B.ball.dim=1;Music.stop(true);await Music.jingle('caught');
     await bsay(`좋았어! ${J(N(e),'을')} 붙잡았다!`,true);
     const isNew=!G.caught[e.sid];G.caught[e.sid]=1;G.seen[e.sid]=1;e.ot=G.name;
-    if(isNew){await bsay(`${N(e)}의 데이터가 몬스터 도감에 새로 등록되었다!`,true);await dexEntryPop(e.sid);}
-    // 트레이너의 몬스터는 이름 짓기 없이 바로 데려온다(지면 되찾아 가므로 기록해 둔다)
+    if(isNew){await bsay(`${N(e)}의 데이터가 몬스터 생태기록에 새로 등록되었다!`,true);await dexEntryPop(e.sid);}
+    // 원정가의 몬스터는 이름 짓기 없이 바로 데려온다(지면 되찾아 가므로 기록해 둔다)
     hudE.classList.add('out');if(B.wild)await nicknamePrompt(e);else{(B.stolen=B.stolen||[]).push(e);e.met=e.met||{map:curMap().name,lv:e.lv};}e.st=e.st||'';
     if(addMon(e)==='box')await bsay(`${J(N(e),'은')} 보관함으로 전송되었다!`,true);
     return true;}
   sfx('breakout');B.ball.open=1;B.e.show=true;B.e.white=1;FX.burst(ex,ey+10,10,{c:['#ffffff','#9fd8ff'],shape:'star',s:3,life:18,sp:2});
   await tween(220,k=>B.e.white=1-k);B.ball=null;cry(e.sid);
   await bsay(['앗! 캡슐에서 빠져나와 버렸다!','아앗! 붙잡았다고 생각했는데!','아깝다! 조금만 더 하면 붙잡을 수 있었는데!','으앗! 거의 다 붙잡았는데!'][Math.min(n,3)]);return false;}
-async function dexEntryPop(sid){const sp=SP[sid];const p=page(TOP,`<div class="abs" style="inset:0;background:linear-gradient(#e2566f,#b63a52)"></div><div class="title-bar" style="background:#241824">몬스터 도감 · 신규 등록</div>
+async function dexEntryPop(sid){const sp=SP[sid];const p=page(TOP,`<div class="abs" style="inset:0;background:linear-gradient(#e2566f,#b63a52)"></div><div class="title-bar" style="background:#241824">몬스터 생태기록 · 신규 등록</div>
   <div class="abs" style="left:${U(8)};top:${U(26)};width:${U(100)};height:${U(100)};border-radius:${U(6)};background:radial-gradient(#fff,#cfe8f8)"></div><img class="abs big" src="${monIcon(sid)}" style="left:${U(10)};top:${U(28)};width:${U(96)};height:${U(96)}">
   <div class="sheet" style="left:${U(114)};top:${U(26)};width:${U(134)};height:${U(100)}"><div style="font-size:${U(9)};color:#6a7190">No.${pad3(sid)}</div><div style="font-size:${U(13)}">${sp.n}</div><div style="font-size:${U(9)}">${sp.cat} 몬스터</div>${typesHtml(sid)}
   <div style="font-size:${U(9)};margin-top:${U(4)}">키 ${sp.h.toFixed(1)} m · ${sp.w.toFixed(1)} kg</div></div>
@@ -412,7 +412,7 @@ async function endBattle(res){const o=B.o;clearInterval(B.lowT);
       // 캡슐로 붙잡은 사람은 캡슐 안에 있으니 다시 나와서 말하지 않는다
       if(!B.captured){B.etr.show=true;B.etr.x=130;hudE.classList.add('out');await tween(420,k=>B.etr.x=130*(1-k),EASE.out);
         await bsay(`${J(tn(),'과')}의 승부에서 이겼다!`,true);if(o.lose)await say(o.lose,{name:tn(),keep:1});}
-      // 상금은 트레이너전만 (NPC와의 대결은 상금 없음)
+      // 상금은 원정가전만 (NPC와의 대결은 상금 없음)
       if(o.kind!=='npc'&&B.foe.length){const lastLv=B.foe[B.foe.length-1].lv,prize=TCLASS[o.cls].m*lastLv;G.money+=prize;await bsay(`${J(G.name,'은')} 상금으로 ${money(prize)}을 손에 넣었다!`,true);}}}
   else if(res==='lose'){
     if(B.stolen&&B.stolen.length)await giveBack();
@@ -463,8 +463,8 @@ function drawBattle(g){const b=B;if(!b)return;g.save();if(b.shake)g.translate(Ma
   if(b.ball){g.save();g.translate(b.ball.x,b.ball.y);g.scale(1.6,1.6);capsule(g,0,0,b.ball.r,{kind:b.ball.kind,open:b.ball.open});if(b.ball.dim){g.fillStyle='rgba(0,0,0,.25)';g.fillRect(-5,-5,10,10);}g.restore();}
   FX.draw(g);g.restore();if(b.flash>0){g.globalAlpha=b.flash;g.fillStyle=b.flashCol;g.fillRect(0,0,W,H);g.globalAlpha=1;}}
 
-/* ---------- 최후의 수단: 트레이너가 직접 싸운다 ----------
-   몬스터가 모두 쓰러지면 한 번, 트레이너가 직접 나설 수 있다. 쓰러지면 평소처럼 패배. */
+/* ---------- 최후의 수단: 원정가가 직접 싸운다 ----------
+   몬스터가 모두 쓰러지면 한 번, 원정가가 직접 나설 수 있다. 쓰러지면 평소처럼 패배. */
 const HERO_ACT=[{n:'돌 던지기',acc:92,lo:.16,hi:.24,d:'안정적'},{n:'몸통 박치기',acc:72,lo:.28,hi:.4,d:'위력 높음'}];
 async function heroStart(){B.heroUsed=1;
   const r=await ask(`${G.name}의 몬스터가 모두 쓰러졌다!\n마지막으로 ${J(G.name,'이')} 직접 맞서 볼까?`,['직접 맞선다!','포기한다'],{keep:1});
@@ -477,7 +477,7 @@ async function heroStart(){B.heroUsed=1;
   return true;}
 const tnOrWild=()=>B.foeHero?tn():B.wild?`야생 ${N(fm())}`:N(fm());
 function heroHud(hp){const h=B.hero,v=hp==null?h.hp:hp,p=clamp(v/h.max*100,0,100);
-  hudP.querySelector('.nm').textContent=G.name;hudP.querySelector('.lv').innerHTML=`<span class="stb" style="background:#e2566f">트레이너</span>`;
+  hudP.querySelector('.nm').textContent=G.name;hudP.querySelector('.lv').innerHTML=`<span class="stb" style="background:#e2566f">원정가</span>`;
   const bar=hudP.querySelector('.hpb i');bar.style.width=p+'%';bar.style.background=hpColor(p);hudP.querySelector('.hpt').textContent=`${Math.max(0,Math.ceil(v))} / ${h.max}`;}
 async function heroHP(to){const h=B.hero,from=h.hp;to=clamp(Math.round(to),0,h.max);h.hp=to;await tween(Math.min(900,300+Math.abs(from-to)/h.max*700),k=>heroHud(from+(to-from)*k));heroHud();}
 async function heroTurn(){const f=fm(),h=B.hero,vsT=!!B.foeHero;
@@ -486,7 +486,7 @@ async function heroTurn(){const f=fm(),h=B.hero,vsT=!!B.foeHero;
   const btns=[...HERO_ACT.map((a,i)=>({html:`<span class="mn">${a.n}</span><span class="mi"><span>${a.d}</span><span>명중 ${a.acc}</span></span>`,x:4+i*126,y:6,w:122,h:62,cls:'mvbtn hero'})),
     {html:heal?`<span>${ITEMS[heal].n} 마시기</span><small>남은 ${G.bag[heal]}개</small>`:'<span>회복약 없음</span>',x:4,y:74,w:122,h:56,cls:'yellow',disabled:!heal},
     {html:B.wild?'<span>도망치다</span>':'<span>버티기</span><small>방어 자세</small>',x:130,y:74,w:122,h:56,cls:'blue'}];
-  guideSoon('hero','#botUI .mvbtn','몬스터가 모두 쓰러져서 <b>트레이너가 직접</b> 싸우고 있어요! 트레이너가 쓰러지면 패배예요.',{title:'최후의 수단'});
+  guideSoon('hero','#botUI .mvbtn','몬스터가 모두 쓰러져서 <b>원정가가 직접</b> 싸우고 있어요! 원정가가 쓰러지면 패배예요.',{title:'최후의 수단'});
   const i=autoFight()?(await sleep(300),0):await panel(btns,{cancel:false,onOpen:hh=>hh.els.slice(0,2).forEach(e=>{e.style.background='linear-gradient(#ffb08a,#d8603a)';e.style.borderColor='#7a2a10';})});
   hideMsg();let guard=false;
   if(i<2){const a=HERO_ACT[i];await bsay(`${J(G.name,'은')} ${J(a.n,'을')} 했다!`);
@@ -518,9 +518,9 @@ async function heroTurn(){const f=fm(),h=B.hero,vsT=!!B.foeHero;
   return null;}
 function aiHeroMove(e){const av=e.moves.filter(x=>x.pp>0&&MV[x.id].p);return av.length?av[rnd(av.length)].id:e.moves[0].id;}
 
-/* ---------- 몬스터를 빼앗긴 트레이너가 직접 덤벼든다 ----------
-   트레이너전에서 캡슐로 상대 몬스터를 붙잡으면 바로 내 것이 되지만, 화가 난 트레이너가 남은 몬스터 대신 직접 싸운다.
-   트레이너를 쓰러뜨리면 승리. 내 몬스터와 나(최후의 수단)까지 모두 쓰러지면 빼앗은 몬스터를 되찾아 간다. */
+/* ---------- 몬스터를 빼앗긴 원정가가 직접 덤벼든다 ----------
+   원정가전에서 캡슐로 상대 몬스터를 붙잡으면 바로 내 것이 되지만, 화가 난 원정가가 남은 몬스터 대신 직접 싸운다.
+   원정가를 쓰러뜨리면 승리. 내 몬스터와 나(최후의 수단)까지 모두 쓰러지면 빼앗은 몬스터를 되찾아 간다. */
 const FOE_ACT=[{n:'주먹 날리기',acc:95,lo:.14,hi:.21},{n:'날아차기',acc:75,lo:.25,hi:.36}];
 function foeHeroSetup(lv){const max=30+lv*4;B.foeHero={lv,max,hp:max,healed:0};B.fi=-1;B.ball=null;B.e=blank();B.st.e=[0,0,0,0,0,0];}
 async function foeHeroStart(){foeHeroSetup(Math.max(...B.foe.map(m=>m.lv))+2);
@@ -533,14 +533,14 @@ async function npcHeroStart(){foeHeroSetup(B.o.lv||5);
   foeHeroHud();hudE.classList.remove('out');
   await bsay(`${J(tn(),'과')}의 대결이 시작됐다!`,true);}
 function foeHeroHud(hp){const t=B.foeHero,v=hp==null?t.hp:hp,p=clamp(v/t.max*100,0,100);
-  hudE.querySelector('.nm').textContent=B.o.name;hudE.querySelector('.lv').innerHTML=`<span class="stb" style="background:#e2566f">${B.o.kind==='npc'?'사람':'트레이너'}</span>`;
+  hudE.querySelector('.nm').textContent=B.o.name;hudE.querySelector('.lv').innerHTML=`<span class="stb" style="background:#e2566f">${B.o.kind==='npc'?'사람':'원정가'}</span>`;
   const bar=hudE.querySelector('.hpb i');bar.style.width=p+'%';bar.style.background=hpColor(p);}
 async function foeHeroHP(to){const t=B.foeHero,from=t.hp;to=clamp(Math.round(to),0,t.max);t.hp=to;
   await tween(Math.min(900,300+Math.abs(from-to)/t.max*700),k=>foeHeroHud(from+(to-from)*k));foeHeroHud();}
 async function trainerBlink(){B.shake=3;setTimeout(()=>B.shake=0,200);for(let i=0;i<4;i++){B.etr.show=!B.etr.show;await sleep(65);}B.etr.show=true;}
 async function foeHeroTurn(){const act=await chooseAction();B.flinch={};B.moved={};
   if(act.type==='run'){if(B.o.kind==='npc'){sfx('run');await bsay('무사히 도망쳤다!',true);return'run';}
-    await bsay('안 돼! 화가 난 트레이너에게 등을 보일 수는 없다!',true);return null;}
+    await bsay('안 돼! 화가 난 원정가에게 등을 보일 수는 없다!',true);return null;}
   if(act.type==='switch'){await bsay(`돌아와, ${N(pm())}!`);await recall('p');B.pi=act.idx;await sendPlayer();}
   else if(act.type==='item'){if(ITEMS[act.id].ball){if(await throwBallHuman(act.id))return'win';}else await useItemBattle(act);}
   else{await monVsTrainer(act.mi);if(B.foeHero.hp<=0)return await foeHeroDown();}
@@ -548,7 +548,7 @@ async function foeHeroTurn(){const act=await chooseAction();B.flinch={};B.moved=
   if(pm().hp>0)await endTurn(); // 독·화상 (상대 쪽은 몬스터가 없어 건너뛴다)
   if(pm().hp<=0)return await playerDown();
   return null;}
-/* 내 몬스터가 트레이너를 공격: 트레이너 체력에 대한 비율로, 위력·공격력·레벨 차이를 반영 */
+/* 내 몬스터가 원정가를 공격: 원정가 체력에 대한 비율로, 위력·공격력·레벨 차이를 반영 */
 async function monVsTrainer(mi){const u=pm(),t=B.foeHero;B.moved.p=1;
   if(u.st==='slp'){if(--u.slp<=0){u.st='';u.slp=0;updHud('p');await bsay(`${J(N(u),'은')} 잠에서 깨어났다!`);}
     else{await statusAnim('p','slp');await bsay(`${J(N(u),'은')} 쿨쿨 잠들어 있다.`);return;}}
@@ -564,11 +564,11 @@ async function monVsTrainer(mi){const u=pm(),t=B.foeHero;B.moved.p=1;
   const su=calc(u),ph=mv.c==='p',A=(ph?su[1]*mult(B.st.p[1]):su[3]*mult(B.st.p[3]))*(ph&&u.st==='brn'?.5:1);
   const crit=Math.random()<1/16,stab=SP[u.sid].t.includes(mv.t)?1.2:1;
   const d=Math.max(1,Math.round(t.max*(.1+mv.p/500)*Math.sqrt(A/(10+t.lv*1.6))*(.85+Math.random()*.3)*stab*(crit?1.5:1)));
-  await foeHeroHP(t.hp-d);if(crit)await bsay('급소에 맞았다!');
+  await foeHeroHP(t.hp-d);if(crit)await bsay('빈틈 포착 · 정밀 타격!');
   if(mv.fx.drain&&u.hp>0){const hh=Math.max(1,Math.floor(d*mv.fx.drain/100));sfx('absorb');await animHP('p',u,u.hp+hh);await bsay(`${tn()}에게서 체력을 흡수했다!`);}
   if(mv.fx.recoil){const rr=Math.max(1,Math.floor((id==='struggle'?maxHp(u):d)*mv.fx.recoil/100));await animHP('p',u,u.hp-rr);await bsay(`${J(N(u),'은')} 반동으로 데미지를 입었다!`);}
   if(u.hp<=0)await faint('p');}
-/* 트레이너의 행동: 체력이 적으면 한 번 회복, 아니면 주먹·발차기 (onHero: 내가 직접 싸우는 중) */
+/* 원정가의 행동: 체력이 적으면 한 번 회복, 아니면 주먹·발차기 (onHero: 내가 직접 싸우는 중) */
 async function trainerAct(onHero,guard){const t=B.foeHero;
   if(!t.healed&&t.hp<t.max*.3){t.healed=1;await bsay(`${J(tn(),'은')} 고급회복약을 벌컥벌컥 마셨다!`);sfx('heal');await foeHeroHP(t.hp+Math.round(t.max*.45));return;}
   const a=FOE_ACT[Math.random()<.6?0:1];await bsay(`${tn()}의 ${a.n}!`);
@@ -587,7 +587,7 @@ async function foeHeroDown(){sfx('faint');await tween(420,k=>B.etr.x=k*130);B.et
   await bsay(`${J(tn(),'은')} 털썩 주저앉았다!`,true);
   if(B.stolen&&B.stolen.length)await say('크윽... 졌다. 그 몬스터는 이제 네 거야. 잘 돌봐 줘...',{name:tn(),keep:1});
   return'win';}
-/* 사람(화난 트레이너·NPC)에게 캡슐 던지기: 붙잡으면 동료가 되어 파티(가득 차면 보관함)에 들어온다 */
+/* 사람(화난 원정가·NPC)에게 캡슐 던지기: 붙잡으면 동료가 되어 파티(가득 차면 보관함)에 들어온다 */
 async function throwBallHuman(id){const t=B.foeHero,it=ITEMS[id],sid=humanSid(lookOf(B.o)),name=B.o.name;G.bag[id]--;
   await bsay(`${J(G.name,'은')} ${J(it.n,'을')} 던졌다!`);
   sfx('throw');const kind=id==='great'?'great':'ball',ex=EPOS.x,ey=EPOS.y-52;B.ball={x:30,y:150,r:0,kind};
@@ -612,7 +612,7 @@ async function throwBallHuman(id){const t=B.foeHero,it=ITEMS[id],sid=humanSid(lo
   await bsay([`앗! ${J(name,'이')} 캡슐을 박차고 나왔다!`,'아앗! 붙잡았다고 생각했는데!','아깝다! 조금만 더 하면 붙잡을 수 있었는데!','으앗! 거의 다 붙잡았는데!'][Math.min(n,3)]);
   await say(['이게 무슨 짓이야?!','어딜 감히 나를 캡슐에!','휴, 큰일 날 뻔했네...','깜짝이야! 두 번 다시 안 들어가!'][rnd(4)],{name:tn(),keep:1});
   return false;}
-/* 패배: 빼앗았던 몬스터를 트레이너가 되찾아 간다 */
+/* 패배: 빼앗았던 몬스터를 원정가가 되찾아 간다 */
 async function giveBack(){const names=B.stolen.map(m=>N(m));
   for(const m of B.stolen)for(const list of[G.party,G.box]){const i=list.indexOf(m);if(i>=0)list.splice(i,1);}
   B.stolen=[];B.pi=0;
