@@ -99,7 +99,7 @@ async function partyScreen(mode,o={}){if(mode==='forced'&&typeof autoTalk!=='und
       if(c===0){if(m.hp<=0){await say(`${J(N(m),'은')} 싸울 수 있는 기력이 없다!`);continue;}if(i===B.pi){await say(`${J(N(m),'은')} 이미 싸우고 있다!`);continue;}return i;}
       if(c===1)await summary(G.party,i);continue;}
     /* field */
-    const c=await panel([{html:'정보 보기',x:40,y:14,w:176,h:36,cls:'blue'},{html:'순서 바꾸기',x:40,y:56,w:176,h:36,disabled:G.party.length<2},{html:'합성하기',x:40,y:98,w:176,h:36,cls:'purple',disabled:allMons().length<2},{html:'취소',x:40,y:140,w:176,h:32,cls:'dark'}],{backdrop:true,bg:'rgba(20,24,40,.55)'});
+    const c=await panel([{html:'정보 보기',x:40,y:14,w:176,h:36,cls:'blue'},{html:'순서 바꾸기',x:40,y:56,w:176,h:36,disabled:G.party.length<2},{html:'합성하기',x:40,y:98,w:176,h:36,cls:'purple',disabled:fuseMons().length<2||!!SP[m.sid].human},{html:'취소',x:40,y:140,w:176,h:32,cls:'dark'}],{backdrop:true,bg:'rgba(20,24,40,.55)'});
     if(c===0)await summary(G.party,i);
     else if(c===2){tp.innerHTML='';await fusionFlow({m,where:'party',i});at=Math.min(at,G.party.length-1);}
     else if(c===1){msg(`${J(N(m),'을')} 어디로 옮길까요?`);
@@ -118,7 +118,7 @@ async function summary(lst,idx){let pg=0,mi=0;const tp=page(TOP,''),bp=el(BOT,'a
       <img class="abs big" src="${monIcon(m.sid,m.shiny)}" style="left:${U(8)};top:${U(24)};width:${U(96)};height:${U(96)}">
       <div class="abs" style="left:${U(8)};top:${U(122)};width:${U(96)};text-align:center;font-size:${U(11)}">${esc(N(m))}${m.shiny?' <span style="color:#e2566f">★</span>':''}</div>
       <div class="sheet kv" style="left:${U(112)};top:${U(24)};width:${U(136)};height:${U(112)};padding:${U(5)} ${U(8)}">
-      <b>도감 No.</b><span>${pad3(m.sid)}</span><b>종류</b><span>${sp.n}</span><b>타입</b><span>${typesHtml(m.sid)}</span><b>어버이</b><span>${esc(m.ot||G.name)}</span>
+      <b>도감 No.</b><span>${sp.human?'—':pad3(m.sid)}</span><b>종류</b><span>${sp.n}</span><b>타입</b><span>${typesHtml(m.sid)}</span><b>어버이</b><span>${esc(m.ot||G.name)}</span>
       <b>ID No.</b><span>${G.id}</span><b>레벨</b><span>${m.lv}</span><b>성격</b><span>${nat[0]}</span></div>
       <div class="sheet desc" style="left:${U(8)};top:${U(142)};width:${U(240)};height:${U(44)};padding:${U(4)} ${U(8)}">${nat[0]} 성격.<br>${m.met?`${esc(m.met.map)}에서 Lv${m.met.lv}일 때 만났다.`:'운명적으로 만났다.'}</div>`;}
     else if(pg===1){const bar=(v,maxv)=>`<div class="bar"><i style="width:${clamp(v/maxv*100,4,100)}%"></i></div>`;
@@ -164,7 +164,7 @@ async function bagScreen(mode){const tp=page(TOP,''),prevBot=botMode;botMode='me
     <div class="sheet desc" style="left:${U(14)};top:${U(118)};width:${U(234)};height:${U(66)}">${it?it.d:'이 주머니에는 아무것도 없다.'}</div>`;};
   try{while(true){const ids=bagItems(bagPocket);
     const items=ids.map(k=>({html:`<img src="${itemIcon(k)}"><span>${ITEMS[k].n}</span><span class="r">${ITEMS[k].p==='key'?'':'× '+G.bag[k]}</span>`,
-      disabled:mode==='battle'&&(ITEMS[k].p==='key'||(ITEMS[k].ball&&!!B.foeHero))}));
+      disabled:mode==='battle'&&ITEMS[k].p==='key'}));
     const tabs=POCKETS.map((p,j)=>({html:p[1],x:4+j*84,y:4,w:80,h:24,cls:'tab'+(j===bagPocket?' on':''),val:-10-j}));
     guideSoon('bag','#botUI .btn.tab','가방은 <b>회복 · 캡슐 · 중요한 물건</b> 주머니로 나뉘어 있어요. 탭을 누르거나 <b>◀ ▶</b>로 바꿔요.',{title:'가방'});
     let moved=0;
@@ -197,7 +197,7 @@ async function applyItem(id,m,o={}){const it=ITEMS[id];G.bag[id]--;
   if(it.cure){m.st='';m.slp=0;sfx('heal');await say(`${N(m)}의 상태 이상이 나았다!`);}}
 
 /* ================= 도감 ================= */
-async function dexScreen(){const tp=page(TOP,''),prevBot=botMode;botMode='menu';guideSoon('dex','top','만난 몬스터는 <b>실루엣</b>, 붙잡은 몬스터는 <b>자세한 정보</b>가 기록돼요. 모든 칸을 채워 보세요!',{title:'도감'});const ids=Object.keys(SP).map(Number);let at=0;
+async function dexScreen(){const tp=page(TOP,''),prevBot=botMode;botMode='menu';guideSoon('dex','top','만난 몬스터는 <b>실루엣</b>, 붙잡은 몬스터는 <b>자세한 정보</b>가 기록돼요. 모든 칸을 채워 보세요!',{title:'도감'});const ids=Object.keys(SP).map(Number).filter(s=>!SP[s].human);let at=0;
   const show=(id,bounce)=>{const sp=SP[id],seen=G.seen[id],cg=G.caught[id];
     tp.innerHTML=`<div class="abs" style="inset:0;background:linear-gradient(#e2566f,#b63a52)"></div><div class="title-bar" style="background:linear-gradient(#3a2a3a,#241824)">몬스터 도감<span class="r">발견 ${Object.keys(G.seen).length} · 포획 ${Object.keys(G.caught).length}</span></div>
     <div class="abs" style="left:${U(8)};top:${U(24)};width:${U(100)};height:${U(100)};border-radius:${U(6)};background:${seen?'radial-gradient(#ffffff,#cfe8f8)':'#1d2030'};border:${U(2)} solid #3a2a3a"></div>
@@ -423,19 +423,22 @@ async function pcMenu(){sfx('menu');guideSoon('pc','top',`파티에는 6마리�
    등급 = min(2, 두 마리 중 높은 진화 단계 + 1). 레벨은 높은 쪽 +2. 둘 중 하나라도 반짝이(★)면 결과도 반짝이. */
 const STAGE_N=['기본','1진화','최종진화'];
 function fusionStage(a,b){return Math.min(2,Math.max(SP[a.sid].st,SP[b.sid].st)+1);}
-function fusionPool(stage){return Object.keys(SP).map(Number).filter(s=>SP[s].st===stage&&s!==13&&!SP[s].legend&&(stage===2||SP[s].line>9));}
+function fusionPool(stage){return Object.keys(SP).map(Number).filter(s=>SP[s].st===stage&&s!==13&&!SP[s].legend&&!SP[s].human&&(stage===2||SP[s].line>9));}
 function fusionResult(a,b){const pool=fusionPool(fusionStage(a,b)),types=[...new Set(pool.flatMap(s=>SP[s].t))];
   const t=types[rnd(types.length)],cand=pool.filter(s=>SP[s].t.includes(t));return cand[rnd(cand.length)];}
 function allMons(){return[...G.party.map((m,i)=>({m,where:'party',i})),...G.box.map((m,i)=>({m,where:'box',i}))];}
+// 합성 재료: 사람(붙잡은 트레이너·NPC)은 합성할 수 없다
+const fuseMons=()=>allMons().filter(x=>!SP[x.m.sid].human);
 /* 합성 재료 고르기 (파티 + 보관함) */
-async function pickFuseMon(excl,title){const c=allMons().filter(x=>!excl||x.m!==excl.m);if(!c.length)return null;
+async function pickFuseMon(excl,title){const c=fuseMons().filter(x=>!excl||x.m!==excl.m);if(!c.length)return null;
   const tp=page(TOP,'');
   try{const r=await list(c.map(x=>({html:`<img src="${monIcon(x.m.sid,x.m.shiny)}"><span>${esc(N(x.m))}</span><span class="r">${x.where==='party'?'파티':'보관함'} · ${STAGE_N[SP[x.m.sid].st]} · Lv${x.m.lv}</span>`})),
       {rect:[4,4,248,150],rowH:20,backdrop:true,bg:'linear-gradient(#7a6aa8,#4a3d72)',buttons:[{html:'그만두기',x:170,y:160,w:82,h:28,cls:'dark',val:-1}],
        onMove:i=>{tp.innerHTML=monTopPage(c[i].m,title);if(excl){const st=fusionStage(excl.m,c[i].m);tp.insertAdjacentHTML('beforeend',`<div class="sheet" style="left:${U(8)};top:${U(142)};width:${U(240)};height:${U(44)};display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:${U(9.5)};padding:${U(3)};z-index:3;background:#f6f2ff">${esc(N(excl.m))} + ${esc(N(c[i].m))}<div>→ <b style="color:#7a4ad8">${STAGE_N[st]}</b> 등급 몬스터 · 타입은 무작위</div></div>`);}}});
     return r<0?null:c[r];}finally{tp.remove();}}
 async function fusionFlow(first){const o={name:'합성 장치'};
-  if(allMons().length<2){await say('합성하려면 몬스터가 두 마리 이상 있어야 해요.');return false;}
+  if(first&&SP[first.m.sid].human){await say(`${J(N(first.m),'은')} 사람이라서 합성할 수 없어요!`);return false;}
+  if(fuseMons().length<2){await say('합성하려면 몬스터가 두 마리 이상 있어야 해요.');return false;}
   const a=first||await pickFuseMon(null,'첫 번째 재료');if(!a)return false;
   const b=await pickFuseMon(a,'두 번째 재료');if(!b)return false;
   if(G.party.length<=2&&a.where==='party'&&b.where==='party'&&G.party.length===2&&!G.box.length){} // 결과가 파티에 들어가므로 문제없음
@@ -467,6 +470,6 @@ async function fusionLab(){const o={name:'합성 연구원'};
     await say('아무 몬스터나 두 마리를 맡겨 주시면, 하나로 합쳐서 한 단계 위 등급의 몬스터로 만들어 드려요.',o);
     await say('어떤 타입이 나올지는 저도 몰라요! 레벨은 두 마리 중 높은 쪽보다 2 올라간답니다.',o);
     await say('참, 원정패드의 메뉴 → 몬스터 화면에서도 합성 장치를 쓸 수 있게 해 뒀어요!',o);}
-  if(allMons().length<2){await say('지금은 몬스터가 한 마리뿐이네요. 동료를 더 모아서 다시 와 주세요!',o);return;}
+  if(fuseMons().length<2){await say('지금은 몬스터가 한 마리뿐이네요. 동료를 더 모아서 다시 와 주세요!',o);return;}
   if(await ask('합성을 해 볼까요?',['합성한다','그만둔다'],o)!==0){await say('또 오세요!',o);return;}
   if(await fusionFlow())await say('소중히 키워 주세요!',o);else await say('또 오세요!',o);}

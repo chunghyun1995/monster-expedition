@@ -292,7 +292,7 @@ body.land #pad .mid{left:auto;right:8px;top:8px;transform:none}
   <div id="help"><b>방향키</b> 이동 · <b>Z</b> 확인 · <b>X</b> 취소(누른 채 이동하면 달리기) · <b>Enter</b> 메뉴 · <b>Q</b>/<b>E</b> 패드 앱 전환 · <b>M</b> 소리</div>
 </div>
 <script>
-const BUILD='56661e20';
+const BUILD='52bff925';
 // Copyright (c) 2009 Kazuhiko Arase
 // Licensed under the MIT license:
 // The word 'QR Code' is registered trademark of
@@ -486,7 +486,8 @@ const SFX={
 };
 function sfx(n){if(!AC||!SFX[n])return;try{SFX[n]();}catch(e){}}
 /* 울음소리: 종족 번호로 고유한 소리를 합성 */
-function cry(sid,o={}){if(!AC)return;const R=rng(sid*977+13),base=220+R()*500,len=(.35+R()*.35)*(o.faint?1.4:1),wav=['triangle','sine','triangle'][Math.floor(R()*3)];
+/* 울음소리 (사람은 울음소리 대신 짧은 효과음) */
+function cry(sid,o={}){if(!AC)return;if(SP[sid]&&SP[sid].human){if(!o.faint)sfx('sel');return;}const R=rng(sid*977+13),base=220+R()*500,len=(.35+R()*.35)*(o.faint?1.4:1),wav=['triangle','sine','triangle'][Math.floor(R()*3)];
   const pitch=o.faint?.7:1,t=AC.currentTime,g=AC.createGain(),o1=AC.createOscillator(),o2=AC.createOscillator(),lfo=AC.createOscillator(),lg=AC.createGain();
   o1.type=wav;o2.type='triangle';const f=base*pitch;
   o1.frequency.setValueAtTime(f,t);o1.frequency.linearRampToValueAtTime(f*(1.2+R()*.8),t+len*.25);o1.frequency.linearRampToValueAtTime(f*(.6+R()*.5),t+len);
@@ -602,7 +603,8 @@ const Music={cur:null,want:null,song:null,pos:0,next:0,timer:null,nodes:[],jingl
    data.js — 타입, 기술, 몬스터, 도구, 성격, 트레이너 (모두 오리지널)
    ========================================================= */
 const TYPES={normal:{n:'보통',c:'#a5a080'},fire:{n:'불꽃',c:'#ec7a2e'},water:{n:'물',c:'#6488ea'},grass:{n:'풀',c:'#70c24e'},
-  elec:{n:'전기',c:'#ecc01c'},rock:{n:'바위',c:'#b39c3c'},ground:{n:'땅',c:'#d6a456'},fly:{n:'바람',c:'#79b4e4'},bug:{n:'곤충',c:'#93ac22'},poison:{n:'독',c:'#9b45a6'}};
+  elec:{n:'전기',c:'#ecc01c'},rock:{n:'바위',c:'#b39c3c'},ground:{n:'땅',c:'#d6a456'},fly:{n:'바람',c:'#79b4e4'},bug:{n:'곤충',c:'#93ac22'},poison:{n:'독',c:'#9b45a6'},
+  human:{n:'사람',c:'#d9735b'}}; // 사람: 캡슐로 붙잡은 트레이너·NPC (상성은 모두 보통)
 const CHART={normal:{rock:.5},
   fire:{grass:2,bug:2,fire:.5,water:.5,rock:.5},
   water:{fire:2,rock:2,ground:2,water:.5,grass:.5},
@@ -670,6 +672,12 @@ const MV={};
  ['poisonsting','독바늘','poison','p',20,100,35,{st:['psn',30]},'독바늘로 찌른다. 독에 걸리게 할 때가 있다.'],
  ['acid','독액분사','poison','s',65,100,20,{st:['psn',30]},'독액을 뿜는다. 독에 걸리게 할 때가 있다.'],
  ['toxspore','독포자','poison','x',0,75,35,{status:'psn'},'독이 든 포자를 뿌려 상대를 독에 걸리게 한다.'],
+ // 사람 기술 (저장 코드가 기술 순서를 쓰므로 새 기술은 항상 맨 뒤에 붙인다)
+ ['punch','주먹 날리기','human','p',40,100,35,null,'주먹을 힘껏 날려 공격한다.'],
+ ['kick','날아차기','human','p',75,85,15,null,'높이 뛰어올라 발차기를 날린다.'],
+ ['bluster','버럭하기','human','x',0,100,30,{foe:[[1,-1]]},'버럭 소리를 질러 상대의 공격을 떨어뜨린다.'],
+ ['drink','회복약 마시기','human','x',0,0,5,{heal:50},'챙겨 둔 회복약을 마셔 체력을 절반 회복한다.'],
+ ['megapunch','필살 주먹','human','p',100,85,10,{flinch:20},'온 힘을 실은 주먹. 상대가 풀죽을 때가 있다.'],
 ].forEach(([id,n,t,c,p,a,pp,fx,d])=>MV[id]={id,n,t,c,p,a,pp,fx:fx||{},d});
 const CATN={p:'물리',s:'원소',x:'보조'};
 
@@ -691,7 +699,8 @@ const LS={
  legWater:[[1,'bubble'],[1,'growl'],[20,'watergun'],[30,'aquatail'],[40,'acid'],[50,'wave']],
  legElec:[[1,'gust'],[1,'thundershock'],[20,'spark'],[30,'wing'],[40,'aerial'],[50,'thunder']],
  legSky:[[1,'quick'],[1,'gust'],[30,'headbutt'],[40,'aerial'],[55,'petal'],[60,'thunder'],[70,'takedown']],
- jelly:[[1,'poisonsting'],[1,'bubble'],[7,'withdraw'],[12,'acid'],[17,'watergun'],[23,'toxspore'],[30,'wave']]};
+ jelly:[[1,'poisonsting'],[1,'bubble'],[7,'withdraw'],[12,'acid'],[17,'watergun'],[23,'toxspore'],[30,'wave']],
+ human:[[1,'punch'],[1,'bluster'],[6,'rockthrow'],[12,'kick'],[18,'focus'],[24,'drink'],[32,'takedown'],[40,'megapunch']]};
 
 /* 몬스터: t 타입, b [체력,공격,방어,원소공격,원소방어,속도], x 경험치, c 포획률, ev [진화Lv, 번호], st 단계, cat 분류, h 키(m), w 몸무게(kg) */
 const SP={
@@ -729,7 +738,41 @@ const SP={
  32:{n:'심해왕',t:['water'],b:[104,82,102,112,108,72],x:268,c:4,ls:LS.legWater,st:2,line:32,legend:1,cat:'수원',h:3.3,w:226,d:'모든 강물이 시작되는 수원에 산다는 물의 수호신. 한 번 울면 사흘 동안 비가 내린다.'},
  33:{n:'뇌명조',t:['elec','fly'],b:[88,86,78,118,92,118],x:268,c:4,ls:LS.legElec,st:2,line:33,legend:1,cat:'뇌운',h:2.2,w:58,d:'폭풍 봉우리의 먹구름 속을 나는 번개의 수호신. 날갯짓마다 천둥이 친다.'},
  34:{n:'천공신',t:['normal','fly'],b:[112,106,104,108,112,98],x:318,c:4,ls:LS.legSky,st:2,line:34,legend:1,cat:'하늘',h:4.4,w:372,d:'세 수호신이 깨어날 때 구름 위에 모습을 드러낸다는 하늘의 신. 이 지방을 처음 만들었다고 전해진다.'}};
-const DEX_N=Object.keys(SP).length;
+/* 사람: 화난 트레이너나 NPC를 캡슐로 붙잡으면 동료가 된다. 외형(LOOK)마다 한 종류, 번호 101부터.
+   도감·합성·무한의 탑에는 나오지 않는다. 저장 데이터가 번호를 쓰므로 순서를 바꾸지 말고 새 외형은 맨 뒤에 붙일 것.
+   [외형, 종류, 추가 타입, 능력치(체력·공격·방어·원소공격·원소방어·속도), 포획률, 키, 몸무게, 대표 기술, 설명] */
+const HUMANS=[
+ ['rival','라이벌',null,[80,88,72,78,72,90],45,1.6,52,'quick','언제나 한발 앞서려는 경쟁심 덩어리. 지는 건 싫어하지만 동료는 끝까지 챙긴다.'],
+ ['mom','어머니',null,[105,90,80,70,95,65],40,1.6,55,'sing','집안일로 단련된 체력의 소유자. 자장노래 한 소절이면 사나운 몬스터도 잠든다.'],
+ ['prof','박사',null,[85,70,80,110,100,60],35,1.7,64,'thunderwave','몬스터 도감을 만든 연구자. 젊은 시절 원정대 대장으로 이름을 날렸다.'],
+ ['aide','연구원',null,[65,55,65,85,80,60],90,1.7,60,'acid','실험 가운 주머니에 시약병이 가득하다. 실수로 엎지르는 일이 잦다.'],
+ ['kid','꼬마',null,[50,60,45,45,45,85],150,1.1,25,'quick','온 동네를 뛰어다니는 개구쟁이. 하루 종일 놀아도 지치지 않는다.'],
+ ['girl','소녀',null,[55,55,50,65,60,75],140,1.4,38,'tailwag','몬스터 이야기만 나오면 눈이 반짝인다. 귀여운 몬스터 사진을 잔뜩 모은다.'],
+ ['lady','아가씨',null,[60,55,55,75,75,70],120,1.6,48,'sing','도시를 걷는 멋쟁이. 승부도 우아하게 즐긴다.'],
+ ['old','할아버지',null,[70,60,70,75,85,35],100,1.6,58,'harden','오랜 세월을 산 지혜로운 노인. 젊은 시절 이름난 트레이너였다고 자랑한다.'],
+ ['granny','할머니',null,[75,50,65,80,90,35],100,1.5,46,'sing','옛날이야기를 들려주면 몬스터도 꾸벅꾸벅 존다. 손맛 좋은 간식을 늘 챙긴다.'],
+ ['camper','캠퍼',null,[70,75,65,55,60,65],110,1.7,62,'ember','숲에서 야영하며 몬스터와 함께 단련한다. 모닥불 피우기의 달인.'],
+ ['bug','곤충소년',null,[55,65,50,45,50,80],140,1.3,32,'stringshot','잠자리채 하나로 숲을 누비는 곤충 박사 꿈나무.'],
+ ['man','아저씨',null,[70,75,65,55,60,55],110,1.7,70,'headbutt','동네마다 꼭 한 명씩 있는 참견쟁이. 의외로 박치기가 세다.'],
+ ['hiker','등산가','rock',[85,90,85,45,55,45],90,1.8,85,'rockslide','산을 오르내리며 다진 강철 다리. 바위도 맨손으로 들어 올린다.'],
+ ['swim','수영선수','water',[65,70,60,60,60,85],110,1.8,68,'bubble','물속에서는 몬스터보다 빠르다. 한겨울에도 바다에 뛰어든다.'],
+ ['fisher','낚시꾼',null,[70,70,65,60,65,50],110,1.7,72,'watergun','하루 종일 물가에 앉아 있어도 지루해하지 않는 인내심의 소유자.'],
+ ['nurse','간호사',null,[110,45,65,75,95,55],70,1.6,50,'leechsting','지친 몬스터를 정성껏 돌보는 쉼터의 천사. 주사 한 방이 매섭다.'],
+ ['clerk','점원',null,[65,60,60,65,65,70],110,1.7,60,'quick','어떤 손님에게도 웃음을 잃지 않는 프로 점원. 계산이 번개처럼 빠르다.'],
+ ['guide','안내원',null,[75,70,75,55,65,50],110,1.8,75,'growl','도전자에게 공략법을 알려 주는 친절한 안내원. 사실 관장보다 말이 많다.'],
+ ['leaderRock','바위 관장','rock',[100,110,120,60,75,45],40,1.8,82,'rockslide','바위시티 체육관 관장. 바위처럼 흔들리지 않는 의지를 가졌다.'],
+ ['leaderWater','물 관장','water',[90,70,80,105,100,80],40,1.7,54,'wave','물결마을 체육관 관장. 물처럼 부드럽지만 화나면 해일처럼 무섭다.'],
+ ['sister','누나',null,[70,65,60,75,70,75],100,1.6,50,'growl','언제나 응원해 주는 든든한 누나. 몬스터 사진 찍기가 취미다.'],
+ ['leaderFire','불꽃 관장','fire',[90,115,75,100,75,85],40,1.7,58,'flamewheel','붉은재마을 체육관 관장. 불같은 성격이지만 정이 많다.'],
+ ['leaderElec','전기 관장','elec',[85,80,70,110,80,115],40,1.6,48,'spark','번개도시 체육관 관장. 생각보다 손이 먼저 나가는 번개 같은 사람.'],
+ ['leaderSky','바람 관장','fly',[95,100,85,90,90,100],40,1.7,52,'aerial','하늘봉마을 체육관 관장. 구름 위에서 바람을 읽는다.'],
+ ['villain','검은안개단원','poison',[70,85,65,60,55,75],90,1.7,66,'poisonsting','검은 안개처럼 몰려다니는 악당 조직의 단원. 혼자 있으면 의외로 겁이 많다.'],
+ ['boss','검은안개단 두목','poison',[105,115,95,100,90,80],25,1.9,90,'toxspore','검은안개단을 이끄는 두목. 몬스터를 조종하는 기계를 꿈꾼다.']];
+const HUMAN_SID={};
+HUMANS.forEach(([look,n,t2,b,c,h,w,sig,d],i)=>{const sid=101+i;HUMAN_SID[look]=sid;
+  SP[sid]={n,t:t2?['human',t2]:['human'],b,x:120,c,ls:[...LS.human,[1,sig]],st:2,line:0,human:look,cat:'사람',h,w,d};});
+const humanSid=look=>HUMAN_SID[look]||HUMAN_SID.man;
+const DEX_N=Object.keys(SP).filter(s=>!SP[s].human).length;
 
 /* 성격 [이름, 오르는 능력, 내려가는 능력] (인덱스 1~5) */
 const NATURES=[['씩씩함',1,5],['고집셈',1,3],['듬직함',2,1],['꼼꼼함',4,3],['날렵함',5,1],['영리함',3,1],['온화함',4,1],['성급함',5,2],['느긋함',0,0],['수줍음',0,0],['명랑함',5,3],['차분함',4,5]];
@@ -799,6 +842,7 @@ const hash=(x,y)=>(((x*73856093)^(y*19349663))>>>0)%65521;
 /* ================= 몬스터 도트 생성 ================= */
 const MONC={};
 function monCanvas(sid,back=false,shiny=false){const key=sid+(back?'b':'f')+(shiny?'s':'');if(MONC[key])return MONC[key];
+  if(SP[sid].human)return MONC[key]=humanCanvas(SP[sid].human,back);
   const s=SP[sid],st=s.st,line=s.line,Rp=rng(line*7919+11),Rs=rng(sid*131+7),NN=24,CX=12;
   const g=[...Array(NN)].map(()=>Array(12).fill(0));
   const set=(x,y,v)=>{x=Math.floor(x);y=Math.floor(y);if(x>=0&&x<12&&y>=0&&y<NN)g[y][x]=v;};
@@ -901,6 +945,9 @@ function monCanvas(sid,back=false,shiny=false){const key=sid+(back?'b':'f')+(shi
     const dark=gb(x,y-1)?-.78:gb(x,y+1)?-.55:-.66;
     x2.fillStyle=nb===6||nb===20?'#14141e':shade(COL[nb],dark);x2.fillRect(x,y,1,1);}
   return MONC[key]=c;}
+/* 사람(붙잡은 트레이너·NPC): 필드 인물 그림을 몬스터 칸(48x48, 발이 아래)에 맞춰 그린다. 뒷모습은 위쪽 방향 */
+function humanCanvas(look,back){const[cv,cg]=mkCanvas(36,44);cg.setTransform(2,0,0,2,2,2);personRaw(cg,0,0,back?'up':'down',0,LOOK[look]||LOOK.man);refineSprite(cv,cg);
+  const[c,g]=mkCanvas(48,48);g.drawImage(cv,6,4);return c;}
 /* 실루엣/하양 버전 */
 const TINTC={};
 function tinted(c,col){if(!c.__id)c.__id=Math.random().toString(36).slice(2);const k=c.__id+col;if(TINTC[k])return TINTC[k];
@@ -1396,7 +1443,8 @@ function place(e,[x,y,w,h]){e.style.left=U(x);e.style.top=U(y);if(w!=null)e.styl
 const dlg=el(TOP,'hidden','<span class="tx"></span><i class="nx hidden"></i>');dlg.id='dlg';
 const dtx=dlg.querySelector('.tx'),dnx=dlg.querySelector('.nx');let dtag=null,dlgTm=null;
 function msg(text,o={}){clearTimeout(dlgTm);dlgShow();setTag(o.name,o.look);const pg=paginate(text);dtx.textContent=pg[pg.length-1];dnx.classList.add('hidden');setTag(o.name,o.look);}
-function setTag(name,look){if(dtag){dtag.remove();dtag=null;}if(name){dtag=el(dlg,'tag',esc(name));}setPortrait(name,look);}
+let TALK_ALIAS=null; // [원래 이름, 대신 보여 줄 이름, 외형]: 붙잡힌 NPC 대신 일하는 사람의 이름표
+function setTag(name,look){if(TALK_ALIAS&&name===TALK_ALIAS[0]){name=TALK_ALIAS[1];look=TALK_ALIAS[2];}if(dtag){dtag.remove();dtag=null;}if(name){dtag=el(dlg,'tag',esc(name));}setPortrait(name,look);}
 /* 말하는 사람 얼굴: 이름으로 외형을 찾아 대화창 왼쪽 위에 표시 */
 const NAME_LOOK={'한결 박사':'prof','엄마':'mom','간호사':'nurse','점원':'clerk','합성 연구원':'aide','연구원':'aide','경비원':'guide','관장 단단':'leaderRock','관장 하라':'leaderWater','누나':'sister'};
 let dpor=null,dporKey='';
@@ -2314,7 +2362,7 @@ const TOWER_LOOKS=['man','hiker','camper','lady','swim','fisher','girl','kid','b
 function towerState(){return G.tower||(G.tower={best:0,cur:0});}
 function towerTeam(f){const R=rng(f*9973+7),pick=a=>a[Math.floor(R()*a.length)];
   if(f===100)return[[31,100],[32,100],[33,100],[6,100],[3,100],[9,100]];
-  const n=f<10?1:f<25?2:f<50?3:f<80?4:5,all=Object.keys(SP).map(Number).filter(s=>!SP[s].legend&&s!==13);
+  const n=f<10?1:f<25?2:f<50?3:f<80?4:5,all=Object.keys(SP).map(Number).filter(s=>!SP[s].legend&&!SP[s].human&&s!==13);
   const st=()=>{const r=R();if(f<16)return 0;if(f<36)return r<.6?0:1;if(f<70)return r<.6?1:2;return r<.25?1:2;};
   const team=[];for(let i=0;i<n;i++){const want=st();const pool=all.filter(s=>SP[s].st===want);team.push([pick(pool),f]);}
   if(f%10===0&&f<100)team[team.length-1]=[pick(all.filter(s=>SP[s].st===2)),f];
@@ -2458,7 +2506,7 @@ async function partyScreen(mode,o={}){if(mode==='forced'&&typeof autoTalk!=='und
       if(c===0){if(m.hp<=0){await say(`${J(N(m),'은')} 싸울 수 있는 기력이 없다!`);continue;}if(i===B.pi){await say(`${J(N(m),'은')} 이미 싸우고 있다!`);continue;}return i;}
       if(c===1)await summary(G.party,i);continue;}
     /* field */
-    const c=await panel([{html:'정보 보기',x:40,y:14,w:176,h:36,cls:'blue'},{html:'순서 바꾸기',x:40,y:56,w:176,h:36,disabled:G.party.length<2},{html:'합성하기',x:40,y:98,w:176,h:36,cls:'purple',disabled:allMons().length<2},{html:'취소',x:40,y:140,w:176,h:32,cls:'dark'}],{backdrop:true,bg:'rgba(20,24,40,.55)'});
+    const c=await panel([{html:'정보 보기',x:40,y:14,w:176,h:36,cls:'blue'},{html:'순서 바꾸기',x:40,y:56,w:176,h:36,disabled:G.party.length<2},{html:'합성하기',x:40,y:98,w:176,h:36,cls:'purple',disabled:fuseMons().length<2||!!SP[m.sid].human},{html:'취소',x:40,y:140,w:176,h:32,cls:'dark'}],{backdrop:true,bg:'rgba(20,24,40,.55)'});
     if(c===0)await summary(G.party,i);
     else if(c===2){tp.innerHTML='';await fusionFlow({m,where:'party',i});at=Math.min(at,G.party.length-1);}
     else if(c===1){msg(`${J(N(m),'을')} 어디로 옮길까요?`);
@@ -2477,7 +2525,7 @@ async function summary(lst,idx){let pg=0,mi=0;const tp=page(TOP,''),bp=el(BOT,'a
       <img class="abs big" src="${monIcon(m.sid,m.shiny)}" style="left:${U(8)};top:${U(24)};width:${U(96)};height:${U(96)}">
       <div class="abs" style="left:${U(8)};top:${U(122)};width:${U(96)};text-align:center;font-size:${U(11)}">${esc(N(m))}${m.shiny?' <span style="color:#e2566f">★</span>':''}</div>
       <div class="sheet kv" style="left:${U(112)};top:${U(24)};width:${U(136)};height:${U(112)};padding:${U(5)} ${U(8)}">
-      <b>도감 No.</b><span>${pad3(m.sid)}</span><b>종류</b><span>${sp.n}</span><b>타입</b><span>${typesHtml(m.sid)}</span><b>어버이</b><span>${esc(m.ot||G.name)}</span>
+      <b>도감 No.</b><span>${sp.human?'—':pad3(m.sid)}</span><b>종류</b><span>${sp.n}</span><b>타입</b><span>${typesHtml(m.sid)}</span><b>어버이</b><span>${esc(m.ot||G.name)}</span>
       <b>ID No.</b><span>${G.id}</span><b>레벨</b><span>${m.lv}</span><b>성격</b><span>${nat[0]}</span></div>
       <div class="sheet desc" style="left:${U(8)};top:${U(142)};width:${U(240)};height:${U(44)};padding:${U(4)} ${U(8)}">${nat[0]} 성격.<br>${m.met?`${esc(m.met.map)}에서 Lv${m.met.lv}일 때 만났다.`:'운명적으로 만났다.'}</div>`;}
     else if(pg===1){const bar=(v,maxv)=>`<div class="bar"><i style="width:${clamp(v/maxv*100,4,100)}%"></i></div>`;
@@ -2523,7 +2571,7 @@ async function bagScreen(mode){const tp=page(TOP,''),prevBot=botMode;botMode='me
     <div class="sheet desc" style="left:${U(14)};top:${U(118)};width:${U(234)};height:${U(66)}">${it?it.d:'이 주머니에는 아무것도 없다.'}</div>`;};
   try{while(true){const ids=bagItems(bagPocket);
     const items=ids.map(k=>({html:`<img src="${itemIcon(k)}"><span>${ITEMS[k].n}</span><span class="r">${ITEMS[k].p==='key'?'':'× '+G.bag[k]}</span>`,
-      disabled:mode==='battle'&&(ITEMS[k].p==='key'||(ITEMS[k].ball&&!!B.foeHero))}));
+      disabled:mode==='battle'&&ITEMS[k].p==='key'}));
     const tabs=POCKETS.map((p,j)=>({html:p[1],x:4+j*84,y:4,w:80,h:24,cls:'tab'+(j===bagPocket?' on':''),val:-10-j}));
     guideSoon('bag','#botUI .btn.tab','가방은 <b>회복 · 캡슐 · 중요한 물건</b> 주머니로 나뉘어 있어요. 탭을 누르거나 <b>◀ ▶</b>로 바꿔요.',{title:'가방'});
     let moved=0;
@@ -2556,7 +2604,7 @@ async function applyItem(id,m,o={}){const it=ITEMS[id];G.bag[id]--;
   if(it.cure){m.st='';m.slp=0;sfx('heal');await say(`${N(m)}의 상태 이상이 나았다!`);}}
 
 /* ================= 도감 ================= */
-async function dexScreen(){const tp=page(TOP,''),prevBot=botMode;botMode='menu';guideSoon('dex','top','만난 몬스터는 <b>실루엣</b>, 붙잡은 몬스터는 <b>자세한 정보</b>가 기록돼요. 모든 칸을 채워 보세요!',{title:'도감'});const ids=Object.keys(SP).map(Number);let at=0;
+async function dexScreen(){const tp=page(TOP,''),prevBot=botMode;botMode='menu';guideSoon('dex','top','만난 몬스터는 <b>실루엣</b>, 붙잡은 몬스터는 <b>자세한 정보</b>가 기록돼요. 모든 칸을 채워 보세요!',{title:'도감'});const ids=Object.keys(SP).map(Number).filter(s=>!SP[s].human);let at=0;
   const show=(id,bounce)=>{const sp=SP[id],seen=G.seen[id],cg=G.caught[id];
     tp.innerHTML=`<div class="abs" style="inset:0;background:linear-gradient(#e2566f,#b63a52)"></div><div class="title-bar" style="background:linear-gradient(#3a2a3a,#241824)">몬스터 도감<span class="r">발견 ${Object.keys(G.seen).length} · 포획 ${Object.keys(G.caught).length}</span></div>
     <div class="abs" style="left:${U(8)};top:${U(24)};width:${U(100)};height:${U(100)};border-radius:${U(6)};background:${seen?'radial-gradient(#ffffff,#cfe8f8)':'#1d2030'};border:${U(2)} solid #3a2a3a"></div>
@@ -2782,19 +2830,22 @@ async function pcMenu(){sfx('menu');guideSoon('pc','top',`파티에는 6마리�
    등급 = min(2, 두 마리 중 높은 진화 단계 + 1). 레벨은 높은 쪽 +2. 둘 중 하나라도 반짝이(★)면 결과도 반짝이. */
 const STAGE_N=['기본','1진화','최종진화'];
 function fusionStage(a,b){return Math.min(2,Math.max(SP[a.sid].st,SP[b.sid].st)+1);}
-function fusionPool(stage){return Object.keys(SP).map(Number).filter(s=>SP[s].st===stage&&s!==13&&!SP[s].legend&&(stage===2||SP[s].line>9));}
+function fusionPool(stage){return Object.keys(SP).map(Number).filter(s=>SP[s].st===stage&&s!==13&&!SP[s].legend&&!SP[s].human&&(stage===2||SP[s].line>9));}
 function fusionResult(a,b){const pool=fusionPool(fusionStage(a,b)),types=[...new Set(pool.flatMap(s=>SP[s].t))];
   const t=types[rnd(types.length)],cand=pool.filter(s=>SP[s].t.includes(t));return cand[rnd(cand.length)];}
 function allMons(){return[...G.party.map((m,i)=>({m,where:'party',i})),...G.box.map((m,i)=>({m,where:'box',i}))];}
+// 합성 재료: 사람(붙잡은 트레이너·NPC)은 합성할 수 없다
+const fuseMons=()=>allMons().filter(x=>!SP[x.m.sid].human);
 /* 합성 재료 고르기 (파티 + 보관함) */
-async function pickFuseMon(excl,title){const c=allMons().filter(x=>!excl||x.m!==excl.m);if(!c.length)return null;
+async function pickFuseMon(excl,title){const c=fuseMons().filter(x=>!excl||x.m!==excl.m);if(!c.length)return null;
   const tp=page(TOP,'');
   try{const r=await list(c.map(x=>({html:`<img src="${monIcon(x.m.sid,x.m.shiny)}"><span>${esc(N(x.m))}</span><span class="r">${x.where==='party'?'파티':'보관함'} · ${STAGE_N[SP[x.m.sid].st]} · Lv${x.m.lv}</span>`})),
       {rect:[4,4,248,150],rowH:20,backdrop:true,bg:'linear-gradient(#7a6aa8,#4a3d72)',buttons:[{html:'그만두기',x:170,y:160,w:82,h:28,cls:'dark',val:-1}],
        onMove:i=>{tp.innerHTML=monTopPage(c[i].m,title);if(excl){const st=fusionStage(excl.m,c[i].m);tp.insertAdjacentHTML('beforeend',`<div class="sheet" style="left:${U(8)};top:${U(142)};width:${U(240)};height:${U(44)};display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:${U(9.5)};padding:${U(3)};z-index:3;background:#f6f2ff">${esc(N(excl.m))} + ${esc(N(c[i].m))}<div>→ <b style="color:#7a4ad8">${STAGE_N[st]}</b> 등급 몬스터 · 타입은 무작위</div></div>`);}}});
     return r<0?null:c[r];}finally{tp.remove();}}
 async function fusionFlow(first){const o={name:'합성 장치'};
-  if(allMons().length<2){await say('합성하려면 몬스터가 두 마리 이상 있어야 해요.');return false;}
+  if(first&&SP[first.m.sid].human){await say(`${J(N(first.m),'은')} 사람이라서 합성할 수 없어요!`);return false;}
+  if(fuseMons().length<2){await say('합성하려면 몬스터가 두 마리 이상 있어야 해요.');return false;}
   const a=first||await pickFuseMon(null,'첫 번째 재료');if(!a)return false;
   const b=await pickFuseMon(a,'두 번째 재료');if(!b)return false;
   if(G.party.length<=2&&a.where==='party'&&b.where==='party'&&G.party.length===2&&!G.box.length){} // 결과가 파티에 들어가므로 문제없음
@@ -2826,7 +2877,7 @@ async function fusionLab(){const o={name:'합성 연구원'};
     await say('아무 몬스터나 두 마리를 맡겨 주시면, 하나로 합쳐서 한 단계 위 등급의 몬스터로 만들어 드려요.',o);
     await say('어떤 타입이 나올지는 저도 몰라요! 레벨은 두 마리 중 높은 쪽보다 2 올라간답니다.',o);
     await say('참, 원정패드의 메뉴 → 몬스터 화면에서도 합성 장치를 쓸 수 있게 해 뒀어요!',o);}
-  if(allMons().length<2){await say('지금은 몬스터가 한 마리뿐이네요. 동료를 더 모아서 다시 와 주세요!',o);return;}
+  if(fuseMons().length<2){await say('지금은 몬스터가 한 마리뿐이네요. 동료를 더 모아서 다시 와 주세요!',o);return;}
   if(await ask('합성을 해 볼까요?',['합성한다','그만둔다'],o)!==0){await say('또 오세요!',o);return;}
   if(await fusionFlow())await say('소중히 키워 주세요!',o);else await say('또 오세요!',o);}
 
@@ -2839,7 +2890,9 @@ const mult=s=>s>=0?(2+s)/2:2/(2-s);
 const EPOS={x:186,y:90},PPOS={x:66,y:160};
 const SIDE=s=>s==='p'?pm():fm();
 const OTHER=s=>s==='p'?'e':'p';
-const tn=()=>`${TCLASS[B.o.cls].n} ${B.o.name}`;
+const lookOf=o=>o.look||(o.cls&&TCLASS[o.cls]&&TCLASS[o.cls].look)||'man';
+const tn=()=>B.o.cls?`${TCLASS[B.o.cls].n} ${B.o.name}`:B.o.name;
+let BATTLES=0; // 배틀 횟수(NPC 대화 중에 배틀이 있었는지 확인용)
 const bname=s=>s==='e'?(B.wild?'야생 ':'상대 ')+N(fm()):N(pm());
 const center=s=>s==='e'?{x:EPOS.x+B.e.x,y:EPOS.y-34+B.e.y}:{x:PPOS.x+B.p.x,y:PPOS.y-62+B.p.y};
 function bsay(t,wait){return say(t,wait?{keep:1}:{keep:1,auto:520+t.length*16});}
@@ -2863,12 +2916,13 @@ function ballRow(side,show){let r=$('#br'+side);if(!r){r=el(TOP,'ballrow','');r.
   if(side==='e'){r.style.left=U(0);r.style.top=U(30);r.style.transform=show?'none':`translateX(${U(-120)})`;}else{r.style.right=U(0);r.style.top=U(118);r.style.transform=show?'none':`translateX(${U(120)})`;}}
 
 /* ---------- 전투 시작 ---------- */
-async function battle(o){const wild=o.kind==='wild';
-  B={o,wild,bg:o.bg||curMap().bg||'grass',foe:o.team.map(([s,l])=>makeMon(s,l,wild?{}:{shiny:false})),fi:0,pi:Math.max(0,G.party.findIndex(m=>m.hp>0)),
+async function battle(o){const wild=o.kind==='wild',npc=o.kind==='npc';BATTLES++;
+  if(!wild&&!o.npc&&TALKING&&!TALKING.mon&&TALKING.id!=='tw_guard')o.npc=TALKING.id; // 무한의 탑 수호자는 층마다 다른 사람
+  B={o,wild,bg:o.bg||curMap().bg||'grass',foe:(o.team||[]).map(([s,l])=>makeMon(s,l,wild?{}:{shiny:false})),fi:0,pi:Math.max(0,G.party.findIndex(m=>m.hp>0)),
     st:{p:[0,0,0,0,0,0],e:[0,0,0,0,0,0]},flinch:{},moved:{},slide:0,e:blank(),p:blank(),etr:{show:false,x:0},ptr:{show:false,x:0},ball:null,shake:0,flash:0,flashCol:'#fff',
     part:new Set(),runs:0,lvUp:new Set(),usedItem:0,result:null,lowT:null};
   if(wild)fm().met={map:curMap().name,lv:fm().lv};
-  Music.play(o.music||(wild?'wild':o.cls==='leader'?'leader':o.cls==='rival'?'rival':'trainer'));
+  Music.play(o.music||(wild?'wild':npc?'rival':o.cls==='leader'?'leader':o.cls==='rival'?'rival':'trainer'));
   for(let i=0;i<2;i++){transFx={type:'flash'};await sleep(70);transFx=null;await sleep(80);}
   const tt=wild?(B.bg==='forest'?'spin':'bars'):(o.cls==='leader'||o.cls==='rival')?'vs':'iris';
   transFx={type:tt,k:0,label:o.cls==='leader'?`관장 ${o.name}`:o.cls==='rival'?`라이벌 ${o.name}`:''};await tween(tt==='vs'?380:560,k=>transFx.k=k,EASE.in);if(tt==='vs')await sleep(800);
@@ -2879,6 +2933,7 @@ async function battle(o){const wild=o.kind==='wild';
   await tween(800,k=>B.slide=k,EASE.out);
   if(wild){const f=fm();G.seen[f.sid]=1;B.e.dark=false;B.e.white=1;await tween(260,k=>B.e.white=1-k);cry(f.sid);if(f.shiny)await shinyFx('e');
     updHud('e');hudE.classList.remove('out');await bsay(`앗! 야생 ${J(N(f),'이')} 나타났다!`);}
+  else if(npc)await npcHeroStart();
   else{ballRow('e',false);ballRow('p',false);await sleep(30);ballRow('e',true);ballRow('p',true);await bsay(`${J(tn(),'이')} 승부를 걸어왔다!`,true);ballRow('e',false);ballRow('p',false);await sendFoe();}
   await sendPlayer();
   let res=null;
@@ -2907,6 +2962,7 @@ async function chooseAction(){
   while(true){msg(`${J(N(pm()),'은')}\n무엇을 할까?`);
     guideSoon('battle','#botUI .btn.red','<b>싸운다</b>를 누르면 기술을 고를 수 있어요. 아래의 <b>가방</b>에선 회복약을, <b>몬스터</b>에선 교체를 할 수 있어요.',{title:'전투'});
     if(B.wild&&Object.keys(G.bag).some(k=>ITEMS[k]&&ITEMS[k].ball&&G.bag[k]>0))guideSoon('catch','#botUI .btn.yellow','야생 몬스터는 HP를 줄인 뒤 <b>가방 → 캡슐</b>을 던지면 붙잡을 수 있어요. 잠듦·마비 같은 상태 이상이면 더 잘 잡혀요!',{title:'포획'});
+    if(B.foeHero&&Object.keys(G.bag).some(k=>ITEMS[k]&&ITEMS[k].ball&&G.bag[k]>0))guideSoon('catchHuman','#botUI .btn.yellow','사람도 <b>캡슐</b>로 붙잡을 수 있어요! 체력을 줄여 두면 더 잘 잡히고, 붙잡으면 <b>동료</b>가 되어 함께 싸워요.',{title:'사람 붙잡기'});
     if(!B.wild&&!B.foeHero&&Object.keys(G.bag).some(k=>ITEMS[k]&&ITEMS[k].ball&&G.bag[k]>0))guideSoon('steal','#botUI .btn.yellow','상대 트레이너의 몬스터도 <b>캡슐</b>로 빼앗을 수 있어요. 대신 화가 난 트레이너가 <b>직접 덤벼들고</b>, 이 승부에서 지면 빼앗은 몬스터를 되찾아 가요!',{title:'몬스터 빼앗기'});
     if(autoFight()){await sleep(220);return{type:'move',mi:autoMoveIndex()};}
     const i=await panel([{html:`<span style="font-size:${U(20)}">싸운다</span>`,x:24,y:14,w:208,h:104,cls:'red',flash:1},
@@ -2981,6 +3037,7 @@ async function useMove(side,id,mi){const u=SIDE(side),ts=OTHER(side),t=SIDE(ts);
   if(mv.c==='x'){const fx=mv.fx;
     if(fx.status){const e=effT(mv.t,SP[t.sid].t);if(e===0||!canStatus(t,fx.status)){await animMove(side,mv,true);await bsay(t.st===fx.status?`${J(bname(ts),'은')} 이미 ${STATUS[fx.status].n} 상태다!`:'그러나 효과가 없었다...');return;}
       await animMove(side,mv);await inflict(ts,fx.status);return;}
+    if(fx.heal){await animMove(side,mv);await healSelf(side,u,fx.heal);return;}
     await animMove(side,mv);
     if(fx.foe)for(const[s,v]of fx.foe)await statChange(ts,s,v);
     if(fx.self)for(const[s,v]of fx.self)await statChange(side,s,v);return;}
@@ -3013,6 +3070,9 @@ async function statChange(side,s,v){const S=B.st[side],nm=bname(side);
 async function endTurn(){for(const side of['p','e']){const m=SIDE(side);if(!m||m.hp<=0)continue;
   if(m.st==='psn'||m.st==='brn'){await statusAnim(side,m.st);await animHP(side,m,m.hp-Math.max(1,Math.floor(maxHp(m)/8)));
     await bsay(`${J(bname(side),'은')} ${m.st==='psn'?'독':'화상'} 데미지를 입고 있다!`);if(m.hp<=0)await faint(side);}}}
+async function healSelf(side,u,pct){
+  if(u.hp>=maxHp(u)){await bsay('그러나 체력이 이미 가득하다!');return;}
+  sfx('heal');await animHP(side,u,u.hp+Math.max(1,Math.floor(maxHp(u)*pct/100)));await bsay(`${J(bname(side),'은')} 체력을 회복했다!`);}
 async function faint(side){const m=SIDE(side),S=B[side];if(!S.show)return;cry(m.sid,{faint:1});await sleep(300);sfx('faint');
   if(side==='e'&&(B.wild||B.fi>=B.foe.length-1))Music.play('victory');
   await tween(420,k=>S.y=k*96,EASE.in);S.show=false;S.y=0;(side==='p'?hudP:hudE).classList.add('out');
@@ -3058,6 +3118,12 @@ const AX={
   rings:async(c,col,n=3,at='T',grow=2)=>{for(let i=0;i<n;i++){FX.add({x:c[at].x,y:c[at].y,shape:'ring',c:col,s:5,life:18,grow});await sleep(110);}await sleep(160);},
   burst:(c,n,o,at='T')=>FX.burst(c[at].x,c[at].y,n,o)};
 const MOVE_FX={
+ /* ----- 사람 ----- */
+ punch:async c=>{await AX.dash(c,26,200);sfx('hit');AX.impact(c,'#ffffff',10);await AX.knock(c,8);},
+ kick:async c=>{await AX.hop(c,34,300);sfx('throw');await AX.dash(c,36,200);sfx('super');AX.impact(c,'#ffd84a',14);AX.shake(4,180);await AX.knock(c,12);},
+ bluster:async c=>{sfx('statdn');AX.wiggle(c,3,4,360);await AX.rings(c,'#ff7a5a',3,'U',3);},
+ drink:async c=>{await AX.aura(c,'rgba(120,230,140,.55)',520,'#c8ffd0');},
+ megapunch:async c=>{await AX.aura(c,'rgba(255,90,60,.5)',380,'#ffb070');await AX.dash(c,40,240);sfx('super');AX.impact(c,'#ff5a3a',18);AX.shake(6,260);await AX.knock(c,16);},
  /* ----- 보통 ----- */
  tackle:async c=>{sfx('throw');await AX.dash(c,30,220);sfx('hit');AX.impact(c);await AX.knock(c);},
  scratch:async c=>{await AX.dash(c,14,160);sfx('hit');FX.add({x:c.T.x+4,y:c.T.y,shape:'claw',c:'#ff5a7a',s:18,life:14,fade:1});await AX.knock(c,6);await sleep(80);},
@@ -3225,11 +3291,15 @@ async function learnMove(m,id){const nmv=MV[id].n;
 async function endBattle(res){const o=B.o;clearInterval(B.lowT);
   if(res==='win'){Music.play('victory');
     if(B.wild&&B.gold){sfx('sel');await bsay(`${J(G.name,'은')} ${money(B.gold)}을 주웠다!`,true);}
-    if(!B.wild){B.etr.show=true;B.etr.x=130;hudE.classList.add('out');await tween(420,k=>B.etr.x=130*(1-k),EASE.out);
-      await bsay(`${J(tn(),'과')}의 승부에서 이겼다!`,true);if(o.lose)await say(o.lose,{name:tn(),keep:1});
-      const lastLv=B.foe[B.foe.length-1].lv,prize=TCLASS[o.cls].m*lastLv;G.money+=prize;await bsay(`${J(G.name,'은')} 상금으로 ${money(prize)}을 손에 넣었다!`,true);}}
+    if(!B.wild){
+      // 캡슐로 붙잡은 사람은 캡슐 안에 있으니 다시 나와서 말하지 않는다
+      if(!B.captured){B.etr.show=true;B.etr.x=130;hudE.classList.add('out');await tween(420,k=>B.etr.x=130*(1-k),EASE.out);
+        await bsay(`${J(tn(),'과')}의 승부에서 이겼다!`,true);if(o.lose)await say(o.lose,{name:tn(),keep:1});}
+      // 상금은 트레이너전만 (NPC와의 대결은 상금 없음)
+      if(o.kind!=='npc'&&B.foe.length){const lastLv=B.foe[B.foe.length-1].lv,prize=TCLASS[o.cls].m*lastLv;G.money+=prize;await bsay(`${J(G.name,'은')} 상금으로 ${money(prize)}을 손에 넣었다!`,true);}}}
   else if(res==='lose'){
     if(B.stolen&&B.stolen.length)await giveBack();
+    if(o.kind==='npc'&&o.winMsg){B.etr.show=true;B.etr.x=0;await say(o.winMsg,{name:tn(),keep:1});}
     if(o.noLose){B.etr.show=true;B.etr.x=130;await tween(420,k=>B.etr.x=130*(1-k));if(o.winMsg)await say(o.winMsg,{name:tn(),keep:1});}
     else{await bsay(`${G.name}에게는 싸울 수 있는 몬스터가 없다!`,true);const lost=Math.floor(G.money/2);G.money-=lost;
       await bsay(B.wild?`${J(G.name,'은')} 허둥지둥 ${money(lost)}을 떨어뜨리고 말았다...`:`${J(G.name,'은')} 상금으로 ${money(lost)}을 건네주었다...`,true);await bsay('...... 눈앞이 캄캄해졌다!',true);}}
@@ -3237,7 +3307,8 @@ async function endBattle(res){const o=B.o;clearInterval(B.lowT);
   [hudE,hudP,$('#bre'),$('#brp')].forEach(e=>e&&e.remove());hudE=hudP=null;hideMsg();FX.list=[];
   const lv=[...B.lvUp],noLose=o.noLose;B=null;state='world';clearDirs();Pad.show();
   if(res==='lose'&&!noLose){healParty();enterMap(G.heal.map,G.heal.x,G.heal.y,'up',{quiet:1});await fadeTo(0);
-    if(G.heal.map==='home'){await say(`${G.name}! 무사했구나... 푹 쉬었으니 이제 괜찮을 거야.`,{name:'엄마'});}
+    if(G.heal.map==='home'){if(G.flags.cap_mom)await say(`${J(G.name,'아')}, 쓰러져서 실려 왔다며? 아줌마가 푹 쉬게 해 줬단다.`,{name:'옆집 아주머니',look:'granny'});
+      else await say(`${G.name}! 무사했구나... 푹 쉬었으니 이제 괜찮을 거야.`,{name:'엄마'});}
     else{await say('기다리셨습니다! 맡겨 주신 몬스터는 모두 건강해졌어요.',{name:'간호사'});}
     await say('몬스터들이 기운을 되찾았다! 무리하지 말고 다시 원정을 떠나자.');return res;}
   if(res==='lose'&&noLose)healParty();
@@ -3267,7 +3338,7 @@ function drawEvolve(g){const gr=g.createRadialGradient(128,90,10,128,90,180);gr.
 function drawBattle(g){const b=B;if(!b)return;g.save();if(b.shake)g.translate(Math.round((Math.random()-.5)*b.shake*2),Math.round((Math.random()-.5)*b.shake));
   g.drawImage(battleBg(b.bg),0,0);if(b.dim>0){g.fillStyle=`rgba(8,8,28,${b.dim})`;g.fillRect(0,0,W,H);}const sl=1-b.slide,eo=-sl*260,po=sl*260;
   platform(g,EPOS.x+eo,EPOS.y+2,60,13,b.bg);
-  if(b.etr.show){g.save();g.translate(Math.round(EPOS.x+eo+b.etr.x-32),EPOS.y-78);g.scale(4,4);person(g,0,0,'down',0,LOOK[b.o.look]||LOOK.man);g.restore();}
+  if(b.etr.show){const es=4*(b.etr.s==null?1:b.etr.s);g.save();if(b.etr.a!=null)g.globalAlpha=b.etr.a;g.translate(Math.round(EPOS.x+eo+b.etr.x-8*es),Math.round(EPOS.y+2-20*es+(b.etr.y||0)));g.scale(es,es);person(g,0,0,'down',0,LOOK[lookOf(b.o)]||LOOK.man);g.restore();}
   const e=b.e;if(e.show&&!e.blink&&fm())drawMon(g,fm().sid,EPOS.x+eo+e.x,EPOS.y+e.y,3,{alpha:e.alpha,shiny:fm().shiny,dark:e.dark,white:e.white,whiteCol:e.tint||'#ffffff',sx:e.sx,sy:e.sy,clipY:EPOS.y+3});
   platform(g,PPOS.x+po,PPOS.y-4,74,15,b.bg);
   if(b.ptr.show){g.save();g.translate(Math.round(PPOS.x+po+b.ptr.x-32),PPOS.y-78);g.scale(4,4);person(g,0,0,'up',0,LOOK.player);g.restore();}
@@ -3334,22 +3405,27 @@ function aiHeroMove(e){const av=e.moves.filter(x=>x.pp>0&&MV[x.id].p);return av.
    트레이너전에서 캡슐로 상대 몬스터를 붙잡으면 바로 내 것이 되지만, 화가 난 트레이너가 남은 몬스터 대신 직접 싸운다.
    트레이너를 쓰러뜨리면 승리. 내 몬스터와 나(최후의 수단)까지 모두 쓰러지면 빼앗은 몬스터를 되찾아 간다. */
 const FOE_ACT=[{n:'주먹 날리기',acc:95,lo:.14,hi:.21},{n:'날아차기',acc:75,lo:.25,hi:.36}];
-async function foeHeroStart(){const lv=Math.max(...B.foe.map(m=>m.lv))+2,max=30+lv*4;
-  B.foeHero={lv,max,hp:max,healed:0};B.fi=-1;B.ball=null;B.e=blank();B.st.e=[0,0,0,0,0,0];
+function foeHeroSetup(lv){const max=30+lv*4;B.foeHero={lv,max,hp:max,healed:0};B.fi=-1;B.ball=null;B.e=blank();B.st.e=[0,0,0,0,0,0];}
+async function foeHeroStart(){foeHeroSetup(Math.max(...B.foe.map(m=>m.lv))+2);
   Music.play('rival');B.etr.show=true;B.etr.x=130;sfx('run');await tween(420,k=>B.etr.x=130*(1-k),EASE.out);
   await say('이런 미친놈! 뭐하는 짓이야!',{name:tn(),keep:1});
   foeHeroHud();hudE.classList.remove('out');
   await bsay(`화가 난 ${J(tn(),'이')} 직접 덤벼들었다!`,true);}
+/* NPC와의 대결: 처음부터 NPC가 직접 싸운다(몬스터 없음). 캡슐로 붙잡으면 동료가 된다 */
+async function npcHeroStart(){foeHeroSetup(B.o.lv||5);
+  foeHeroHud();hudE.classList.remove('out');
+  await bsay(`${J(tn(),'과')}의 대결이 시작됐다!`,true);}
 function foeHeroHud(hp){const t=B.foeHero,v=hp==null?t.hp:hp,p=clamp(v/t.max*100,0,100);
-  hudE.querySelector('.nm').textContent=B.o.name;hudE.querySelector('.lv').innerHTML=`<span class="stb" style="background:#e2566f">트레이너</span>`;
+  hudE.querySelector('.nm').textContent=B.o.name;hudE.querySelector('.lv').innerHTML=`<span class="stb" style="background:#e2566f">${B.o.kind==='npc'?'사람':'트레이너'}</span>`;
   const bar=hudE.querySelector('.hpb i');bar.style.width=p+'%';bar.style.background=hpColor(p);}
 async function foeHeroHP(to){const t=B.foeHero,from=t.hp;to=clamp(Math.round(to),0,t.max);t.hp=to;
   await tween(Math.min(900,300+Math.abs(from-to)/t.max*700),k=>foeHeroHud(from+(to-from)*k));foeHeroHud();}
 async function trainerBlink(){B.shake=3;setTimeout(()=>B.shake=0,200);for(let i=0;i<4;i++){B.etr.show=!B.etr.show;await sleep(65);}B.etr.show=true;}
 async function foeHeroTurn(){const act=await chooseAction();B.flinch={};B.moved={};
-  if(act.type==='run'){await bsay('안 돼! 화가 난 트레이너에게 등을 보일 수는 없다!',true);return null;}
+  if(act.type==='run'){if(B.o.kind==='npc'){sfx('run');await bsay('무사히 도망쳤다!',true);return'run';}
+    await bsay('안 돼! 화가 난 트레이너에게 등을 보일 수는 없다!',true);return null;}
   if(act.type==='switch'){await bsay(`돌아와, ${N(pm())}!`);await recall('p');B.pi=act.idx;await sendPlayer();}
-  else if(act.type==='item')await useItemBattle(act);
+  else if(act.type==='item'){if(ITEMS[act.id].ball){if(await throwBallHuman(act.id))return'win';}else await useItemBattle(act);}
   else{await monVsTrainer(act.mi);if(B.foeHero.hp<=0)return await foeHeroDown();}
   if(pm().hp>0)await trainerAct(false);
   if(pm().hp>0)await endTurn(); // 독·화상 (상대 쪽은 몬스터가 없어 건너뛴다)
@@ -3365,6 +3441,7 @@ async function monVsTrainer(mi){const u=pm(),t=B.foeHero;B.moved.p=1;
   await bsay(`${N(u)}의 ${mv.n}!`);
   if(mv.a&&rnd(100)>=mv.a){sfx('miss');await bsay(`그러나 ${N(u)}의 공격은 빗나갔다!`);return;}
   if(!mv.p){await animMove('p',mv);
+    if(mv.fx.heal){await healSelf('p',u,mv.fx.heal);return;}
     if(mv.fx.self){for(const[s,v]of mv.fx.self)await statChange('p',s,v);}else await bsay(`하지만 ${J(tn(),'은')} 아랑곳하지 않는다!`);return;}
   await animMove('p',mv);sfx('hit');await trainerBlink();
   const su=calc(u),ph=mv.c==='p',A=(ph?su[1]*mult(B.st.p[1]):su[3]*mult(B.st.p[3]))*(ph&&u.st==='brn'?.5:1);
@@ -3391,8 +3468,33 @@ async function playerDown(){if(!G.party.some(m=>m.hp>0)){if(!B.heroUsed&&await h
   B.pi=await partyScreen('forced');await sendPlayer();return null;}
 async function foeHeroDown(){sfx('faint');await tween(420,k=>B.etr.x=k*130);B.etr.show=false;hudE.classList.add('out');
   await bsay(`${J(tn(),'은')} 털썩 주저앉았다!`,true);
-  await say('크윽... 졌다. 그 몬스터는 이제 네 거야. 잘 돌봐 줘...',{name:tn(),keep:1});
+  if(B.stolen&&B.stolen.length)await say('크윽... 졌다. 그 몬스터는 이제 네 거야. 잘 돌봐 줘...',{name:tn(),keep:1});
   return'win';}
+/* 사람(화난 트레이너·NPC)에게 캡슐 던지기: 붙잡으면 동료가 되어 파티(가득 차면 보관함)에 들어온다 */
+async function throwBallHuman(id){const t=B.foeHero,it=ITEMS[id],sid=humanSid(lookOf(B.o)),name=B.o.name;G.bag[id]--;
+  await bsay(`${J(G.name,'은')} ${J(it.n,'을')} 던졌다!`);
+  sfx('throw');const kind=id==='great'?'great':'ball',ex=EPOS.x,ey=EPOS.y-52;B.ball={x:30,y:150,r:0,kind};
+  await tween(520,k=>{B.ball.x=30+(ex-30)*k;B.ball.y=150+(ey-150)*k-Math.sin(k*Math.PI)*60;B.ball.r=k*14;});
+  B.ball.open=1;sfx('open');FX.burst(ex,ey+10,10,{c:['#ff8a8a','#ffffff'],shape:'star',s:2,life:16,sp:1.8});
+  sfx('absorb');await tween(320,k=>{B.etr.s=1-k*.9;B.etr.a=1-k;});B.etr.show=false;B.etr.s=B.etr.a=null;B.ball.open=0;
+  await tween(300,k=>{B.ball.y=ey+Math.abs(Math.sin(k*Math.PI*1.5))*-10*(1-k)+k*30;B.ball.r=0;});sfx('land');
+  const M=t.max,a=Math.floor((3*M-2*t.hp)*SP[sid].c*it.ball/(3*M));
+  let n=0;if(a>=255)n=4;else{const b=1048560/Math.sqrt(Math.sqrt(16711680/Math.max(1,a)));while(n<4&&rnd(65536)<b)n++;}
+  for(let i=0;i<Math.min(n,3);i++){await sleep(420);sfx('wobble');await tween(360,k=>B.ball.r=Math.sin(k*Math.PI*2)*.45);}
+  await sleep(420);
+  if(n>=4){sfx('click');FX.burst(B.ball.x,B.ball.y,8,{c:'#ffd84a',shape:'star',s:3,life:24,sp:1.5});B.ball.dim=1;Music.stop(true);await Music.jingle('caught');
+    hudE.classList.add('out');await bsay(`좋았어! ${J(name,'을')} 붙잡았다!`,true);
+    const m=makeMon(sid,Math.min(100,t.lv),{shiny:false,ot:G.name,met:{map:curMap().name,lv:Math.min(100,t.lv)}});
+    m.nick=name;m.hp=Math.max(1,Math.round(maxHp(m)*t.hp/t.max));
+    B.captured=m;B.o.captured=true;if(B.o.npc)G.flags['cap_'+B.o.npc]=1;
+    await bsay(`${J(name,'이')} 동료가 되었다!`,true);
+    if(addMon(m)==='box')await bsay(`${J(name,'은')} 보관함으로 전송되었다!`,true);
+    B.ball=null;return true;}
+  sfx('breakout');B.ball.open=1;B.etr.show=true;B.etr.a=.3;FX.burst(ex,ey+10,10,{c:['#ffffff','#9fd8ff'],shape:'star',s:3,life:18,sp:2});
+  await tween(220,k=>B.etr.a=.3+.7*k);B.etr.a=null;B.ball=null;
+  await bsay([`앗! ${J(name,'이')} 캡슐을 박차고 나왔다!`,'아앗! 붙잡았다고 생각했는데!','아깝다! 조금만 더 하면 붙잡을 수 있었는데!','으앗! 거의 다 붙잡았는데!'][Math.min(n,3)]);
+  await say(['이게 무슨 짓이야?!','어딜 감히 나를 캡슐에!','휴, 큰일 날 뻔했네...','깜짝이야! 두 번 다시 안 들어가!'][rnd(4)],{name:tn(),keep:1});
+  return false;}
 /* 패배: 빼앗았던 몬스터를 트레이너가 되찾아 간다 */
 async function giveBack(){const names=B.stolen.map(m=>N(m));
   for(const m of B.stolen)for(const list of[G.party,G.box]){const i=list.indexOf(m);if(i>=0)list.splice(i,1);}
@@ -3409,7 +3511,7 @@ const P={x:0,y:0,tx:0,ty:0,dir:'down',moving:false,t:0,step:0,run:false,jump:fal
 const DV={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
 const OPP={up:'down',down:'up',left:'right',right:'left'};
 const curMap=()=>MAPS[G.map];
-const npcOn=n=>!n.hide&&(!n.cond||n.cond());
+const npcOn=n=>!n.hide&&(!n.cond||n.cond())&&!npcGone(n); // 캡슐로 붙잡힌 NPC는 사라진다(npcfight.js)
 const npcsOf=m=>m.npcs.filter(npcOn);
 const npcById=id=>curMap().npcs.find(n=>n.id===id);
 function npcAt(m,x,y){return npcsOf(m).find(n=>(n.x===x&&n.y===y)||(n.mv&&n.mx===x&&n.my===y));}
@@ -3477,17 +3579,19 @@ async function trainerSpot(n){Music.play(n.trainer?(n.trainer.cls==='lass'||n.tr
   if(n.sight&&!n.trainer){await n.sight(n);return;}await trainerTalk(n);}
 const tname=n=>`${TCLASS[n.trainer.cls].n} ${n.trainer.name}`;
 async function trainerTalk(n){const t=n.trainer;for(const l of t.intro)await say(l,{name:tname(n)});
-  const r=await battle({kind:'trainer',cls:t.cls,name:t.name,team:t.team,lose:t.lose,look:n.look,bg:curMap().bg});
+  const r=await battle({kind:'trainer',cls:t.cls,name:t.name,team:t.team,lose:t.lose,look:n.look,bg:curMap().bg,npc:n.id});
   if(r==='win')G.flags[n.id]=1;}
 async function wildEncounter(m){const tot=m.enc.reduce((s,e)=>s+e[3],0);let r=Math.random()*tot,pick=m.enc[0];
   for(const e of m.enc){if((r-=e[3])<0){pick=e;break;}}
   await battle({kind:'wild',team:[[pick[0],pick[1]+rnd(pick[2]-pick[1]+1)]],bg:m.bg});}
 async function interact(){const m=curMap(),[dx,dy]=DV[P.dir];let x=P.x+dx,y=P.y+dy;const c=tileAt(m,x,y);
   let n=npcAt(m,x,y);if(!n&&c==='K')n=npcAt(m,x+dx,y+dy);
-  if(n){if(n.mv)return;await runScript(async()=>{const d0=n.dir;n.dir=OPP[P.dir];
-      if(n.trainer&&!G.flags[n.id])await trainerTalk(n);
+  if(n){if(n.mv)return;await runScript(async()=>{const d0=n.dir;n.dir=OPP[P.dir];const b0=BATTLES,m0=G.map;TALKING=n;
+      try{if(substOf(n))await substTalk(n);
+      else if(n.trainer&&!G.flags[n.id])await trainerTalk(n);
       else if(n.trainer)await talk(n.trainer.after,{name:tname(n)});
       else if(n.talk)await n.talk(n);else await talk(n.text,{name:n.name,look:n.look});
+      if(BATTLES===b0&&G.map===m0&&npcOn(n))await npcFightChoice(n);}finally{TALKING=null;} // 이번 대화에서 배틀이 없었으면: 싸우자 / 대화를 그만한다
       if(n.wander)n.dir=d0;});return;}
   const it=itemAt(m,x,y);if(it){await runScript(async()=>{G.flags[it.flag]=1;await giveItem(it.item,it.n);});return;}
   const key=x+','+y,ob=m.obj[key];
@@ -3514,7 +3618,7 @@ function drawWorld(g){const m=curMap(),{cx,cy,px,py}=camera();R('#000',0,0,W,H,g
   for(const n of npcsOf(m)){const[dx,dy]=DV[n.dir],off=n.off||0;
     ents.push({y:n.y*T+dy*off,f:()=>{const sx=Math.round(n.x*T+dx*off-cx),sy=Math.round(n.y*T+dy*off-cy)-6;
       if(n.mon){const b=Math.sin(frame/14+n.x)*1.5;g.fillStyle='rgba(0,0,0,.25)';g.beginPath();g.ellipse(sx+8,sy+19,10,3,0,0,7);g.fill();drawMon(g,n.mon,sx+8,sy+18+b,1.25);}
-      else person(g,sx,sy+(n.bow?1:0),n.dir,n.walk?((frame>>3)&1)+1:0,LOOK[n.look]||LOOK.man);grassOver(g,m,n.x,n.y,sx,sy);if(n.emote)emote(g,sx,sy,n.emote);}});}
+      else person(g,sx,sy+(n.bow?1:0),n.dir,n.walk?((frame>>3)&1)+1:0,LOOK[npcLook(n)]||LOOK.man);grassOver(g,m,n.x,n.y,sx,sy);if(n.emote)emote(g,sx,sy,n.emote);}});}
   if(!P.hidden)ents.push({y:py+.5,f:()=>{const k=P.moving?P.t:0,jy=P.jump?-Math.sin(Math.PI*k)*10:0,sx=Math.round(px-cx),sy=Math.round(py-cy)-6+Math.round(jy);
     if(P.jump){g.fillStyle='rgba(0,0,0,.3)';g.fillRect(sx+3,Math.round(py-cy)+12,10,3);}
     const fr=P.moving?(P.t<.5?(P.step?2:1):0):0;person(g,sx,sy,P.dir,fr,LOOK.player);
@@ -3656,6 +3760,146 @@ function worldGuides(){const touch=matchMedia('(pointer:coarse)').matches;
   if(G.flags.pad&&!guideSeen('padapp')&&document.querySelector('#padUI .nav'))return guide('padapp','#padUI .lcd',`원정패드의 <b>◀ ▶</b>로 시계 · 파티 · 지도 · 만보기 앱을 바꿔 볼 수 있어요.${touch?'':' 키보드는 <b>Q / E</b>.'}`,{title:'원정패드'});
   if(G.flags.shoes&&!guideSeen('run'))return guide('run','top',`<b>B${touch?'':'(X)'}</b>를 누른 채로 이동하면 질주신발로 빠르게 달릴 수 있어요.`,{title:'달리기'});
   if(G.flags.badge0&&!guideSeen('fuse'))return guide('fuse','top','몬스터 두 마리를 합치면 <b>한 단계 위 등급</b>의 무작위 타입 몬스터가 돼요. <b>메뉴 → 몬스터 → 합성하기</b>나 몬스터 쉼터의 합성 연구원에게서 할 수 있어요.',{title:'몬스터 합성'});}
+
+/* =========================================================
+   npcfight.js — NPC와 대결: 대화가 끝나면 "싸우자 / 대화를 그만한다"
+   NPC가 몬스터 없이 직접 싸우고(battle kind 'npc'), 캡슐로 붙잡으면 동료(사람)가 된다.
+   붙잡힌 NPC는 맵에서 사라지고, 시설·이야기를 맡은 NPC 자리에는 대신 일하는 사람이 나타나 같은 일을 한다.
+   ========================================================= */
+
+/* ---------- 붙잡힌 NPC와 대타 ---------- */
+// 시설·이야기를 맡은 NPC(talk가 있는 NPC)가 붙잡히면 대신 나타나는 사람 [이름, 외형, 첫인사]
+const SUBST={
+ nurse:['새 간호사','nurse','전에 계시던 간호사 선생님이 갑자기 사라지셔서 제가 대신 왔어요!'],
+ clerk:['새 점원','clerk','전 점원이 손님한테 붙잡혀 갔다나 뭐라나... 아무튼 제가 이어서 일해요!'],
+ fuse:['새 합성 연구원','aide','선배가 원정을 떠났다고 해서 제가 연구를 이어받았어요.'],
+ mom:['옆집 아주머니','granny','@아, 네 엄마가 갑자기 안 보인다며? 걱정 말렴, 아줌마가 집을 봐 주고 있단다.'],
+ sister:['누나 친구','girl','세은이가 갑자기 연락이 안 돼서 와 봤어. 대신 내가 도와줄게!'],
+ prof:['박사님 조수','aide','박사님이 캡슐에 들어가 버리셨다니... 연구는 제가 이어 가겠습니다!'],
+ granny:['이웃 할머니','granny','이 집 할멈이 마실을 나가서 내가 대신 집을 보고 있단다.'],
+ wife:['이웃 아주머니','mom','이 집 아주머니가 안 계셔서 제가 대신 와 있어요.'],
+ boss:['검은안개단 부두목','villain','두목님이 사라지셨다! 이제부터 내가 검은안개단을 이끈다!'],
+ t5_elder:['장로님 제자','old','스승님께서 자리를 비우셨네. 전설 이야기는 내가 대신 전해 주지.'],
+ tw_rec:['새 탑 안내원','aide','전 안내원이 갑자기 사라져서 제가 대신 탑을 안내해 드려요.'],
+ leader:['관장 대리','guide','관장님이 자리를 비우셔서 제가 대신 체육관을 지키고 있습니다!']};
+const SUBST_REFUSE='저, 저까지 잡아가시면 여기 일은 누가 해요?! 싸움은 사양할게요!';
+let TALKING=null; // 지금 말을 건 NPC: 관장·두목처럼 대화 중에 시작된 배틀에서 붙잡으면 그 NPC가 붙잡힌 것으로 기록
+const npcCaught=n=>!!(G&&G.flags['cap_'+n.id]);
+function substOf(n){if(!npcCaught(n)||!n.talk)return null;
+  const k=SUBST[n.id]?n.id:/^leader\d/.test(n.id)?'leader':n.id.replace(/_.*$/,'');
+  const s=SUBST[k]||['대신 온 '+n.name,n.look,`${J(n.name,'이')} 자리를 비워서 제가 대신 맡고 있어요.`];return{name:s[0],look:s[1],hello:s[2]};}
+const npcGone=n=>npcCaught(n)&&!n.talk;                  // 붙잡혀서 사라진 NPC (대타가 없는 NPC)
+const npcLook=n=>{const s=substOf(n);return s?s.look:n.look;};
+const npcName=n=>{const s=substOf(n);return s?s.name:n.trainer?tname(n):n.name;};
+/* 대타가 원래 NPC의 일을 한다: 대화창 이름표만 대타로 바꿔 보여 준다 (엄마 대신 온 아주머니는 따로 말한다) */
+const SUBST_TALK={mom:async s=>{const o={name:s.name,look:s.look};await say('피곤해 보이는구나. 잠깐 쉬었다 가렴.',o);
+  await fadeTo(1);healParty();await Music.jingle('heal');await fadeTo(0);G.heal={map:'home',x:4,y:6};
+  await say('몬스터들이 기운을 되찾았다!');await say('네 엄마 몫까지 아줌마가 응원할게!',o);}};
+async function substTalk(n){const s=substOf(n);await say(fmtName(s.hello),{name:s.name,look:s.look});
+  if(SUBST_TALK[n.id]){await SUBST_TALK[n.id](s);return;}
+  TALK_ALIAS=[n.name,s.name,s.look];try{await n.talk(n);}finally{TALK_ALIAS=null;}}
+
+/* ---------- 싸우자 했을 때의 반응 ----------
+   go: 싸우자 했을 때, lose: NPC가 졌을 때, win: NPC가 이겼을 때, lv: 레벨 보정(파티 최고 레벨 기준)
+   @ = 주인공 이름, @아/@이/@은/@을/@과 = 주인공 이름 + 조사 */
+const FIGHT={
+ mom:{go:['@아, 엄마랑 싸우자고...? 뭘 잘못 먹었니...?','...좋아. 오늘 저녁은 반찬 없는 줄 알아!'],lv:5,lose:'어머, 우리 @이 이렇게 컸구나... 엄마는 기쁘다...',win:'엄마를 이기려면 아직 멀었단다. 얼른 씻고 자렴!'},
+ sister:{go:['나랑 한판 붙자고? 후후, 누나는 봐주는 거 없다~!'],lv:2,lose:'와, 진짜 많이 컸네! 이건 사진으로 남겨 둬야겠다!',win:'아직은 누나가 한 수 위지? 힘내라, 동생!'},
+ prof:{go:['이런 건방진 녀석... 연륜의 무서움을 보여 주마!'],lv:8,lose:'허허... 청출어람이로구나. 도감 완성은 자네에게 맡기겠네.',win:'아직 배울 게 많구먼. 도감이나 더 채워 오게!'},
+ aide1:{go:['네? 저랑요? 마침 실험 데이터가 필요했는데... 좋아요!'],lose:'실험 실패... 그래도 데이터는 잘 받았어요...',win:'가설이 증명됐어요! 논문으로 써야지!'},
+ aide2:{go:['연구원도 몸이 재산이에요! 밤새 실험한 체력을 보여 드리죠!'],lose:'역시 밤샘은 몸에 안 좋아...',win:'후후, 연구실 체력을 얕보지 마세요!'},
+ t_girl:{go:['나랑? 좋아, 풀숲에서 갈고닦은 실력 보여 줄게!'],lv:-2},
+ t_man:{go:['허허, 요즘 젊은이는 겁이 없구먼! 아저씨 박치기 맛 좀 볼 텐가?']},
+ r1_tip:{go:['야생 몬스터 말고 나를 잡겠다고? 허허, 어디 해 보게!']},
+ c_old:{go:['이 늙은이가 왕년에 바위시티 최강이었다는 걸 모르는 게로구먼!'],lv:2},
+ c_girl:{go:['어머, 데이트 신청인 줄 알았는데... 싸움이라니 실망이에요!']},
+ c_kid:{go:['나랑 싸우자고? 좋아! 대신 엄마한테 이르기 없기다!'],lv:-3},
+ c_guard:{go:['경비원에게 싸움을 걸다니, 간도 크군! 공무 집행 방해로 처리하겠다!'],lv:2},
+ granny:{go:['아이고, 이 할미랑 싸우자고? 허리 좀 펴고... 자, 덤비거라!']},
+ ch_kid:{go:['우리 형이 관장이라고 했지? 나도 형한테 배운 게 있다구!'],lv:-2},
+ g1_guide:{go:['안내원도 싸울 줄 안다고! 바위처럼 단단하게 알려 주지!'],lv:2},
+ g2_guide:{go:['또 만났군! 이번엔 물 흐르듯 몸으로 알려 주지!'],lv:2},
+ g3_guide:{go:['여기 덥지? 더 뜨겁게 해 주지! 각오해!'],lv:2},
+ g4_guide:{go:['전기가 돌아와서 힘이 넘친다고! 찌릿하게 상대해 주지!'],lv:2},
+ g5_guide:{go:['마지막 체육관 안내원의 실력, 바람처럼 보여 주지!'],lv:2},
+ leader1:{go:['다시 도전하겠다고? 이번엔 몬스터 없이, 바위 같은 주먹으로 상대해 주마!'],lv:5,lose:'크윽... 바위도 깨지는 날이 있군.',win:'아직 단단함이 부족하다!'},
+ leader2:{go:['몬스터 없이 맨몸으로요? 후후, 물처럼 흘려보내 드릴게요.'],lv:5,lose:'물살에 휩쓸린 건 저였네요...',win:'파도는 맞서는 게 아니라 타는 거랍니다.'},
+ leader3:{go:['하! 좋아, 그 패기 마음에 든다! 같이 불타오르자!'],lv:5,lose:'불씨가 꺼져 버렸어... 하지만 즐거웠다!',win:'아직 불꽃이 약해! 더 뜨겁게 와라!'},
+ leader4:{go:['찌릿찌릿~ 맨손 승부도 자신 있다구! 감전 주의!'],lv:5,lose:'으앗, 방전돼 버렸어...',win:'번개보다 빠른 나를 따라잡긴 무리였지?'},
+ leader5:{go:['바람은 형태가 없어요. 잡을 수 있다면 잡아 보세요.'],lv:5,lose:'바람이... 멎었네요.',win:'바람을 읽지 못했군요.'},
+ r2_girl:{go:['숲에서 놀던 실력 보여 줄게! 개굴물보다 빠르다구!'],lv:-2},
+ w_fisher:{go:['오늘 입질이 없다 싶더니 큰 놈이 걸렸구먼! 낚아 주마!']},
+ w_lady:{go:['물결마을 아가씨는 얌전한 줄 알았죠? 후훗.']},
+ w_kid:{go:['나 수영도 잘하고 싸움도 잘해! 덤벼!'],lv:-3},
+ t2_gate:{go:['배지가 있어도 나를 이기지 않으면 못 지나간다! ...농담이야. 그래도 한판 붙어 볼까?'],lv:2},
+ wife:{go:['어머머, 이 아줌마한테 싸움을 걸어? 국자 맛 좀 볼래?']},
+ r3_old:{go:['화산길보다 뜨거운 이 늙은이의 열정을 보여 주지!']},
+ t3_old:{go:['온천에서 다진 이 몸, 아직 쌩쌩하다네!']},
+ t3_lady:{go:['검은 옷 사람들인 줄 알고 깜짝 놀랐잖아요! 혼내 줄 거예요!']},
+ t3_kid:{go:['불꽃처럼 뜨거운 내 주먹을 받아라!'],lv:-3},
+ h3_m:{go:['온천 달걀 대신 할미 꿀밤을 먹고 싶은 게로구나!']},
+ r4_kid:{go:['전기처럼 빠르게 끝내 줄게!'],lv:-3},
+ t4_man:{go:['정전 때문에 안 그래도 화가 나 있었는데 잘 됐다!']},
+ t4_man2:{go:['전기를 고쳐 준 은인이랑 싸우라고? ...좋아, 이것도 보답이다!']},
+ t4_girl:{go:['찌나 언니한테 배운 찌릿 펀치를 보여 줄게!']},
+ h4_m:{go:['정전 때문에 스트레스가 쌓였는데... 너로 풀어야겠다!']},
+ boss:{go:['크크크... 감히 이 흑운에게 덤비겠다고? 검은 안개 속으로 사라져라!'],lv:6,lose:'이, 이럴 수가... 검은안개단의 두목이 맨손 승부에서 지다니...',win:'크하하! 애송이 따위가!'},
+ t5_old:{go:['구름 위에서 다져진 이 다리 힘을 보여 주마!']},
+ t5_girl:{go:['하늘봉마을 소녀는 바람처럼 날렵하다구!']},
+ t5_elder:{go:['허허... 수호신들의 시험보다 이 늙은이가 더 무서울 게야.'],lv:10,lose:'허허, 수호신들이 자네를 인정할 만하구먼.',win:'아직 하늘의 뜻을 받기엔 이르네.'},
+ h5_m:{go:['오늘의 날씨를 알려 드리죠. 맑은 뒤 한 대 맞음!']},
+ tw_rec:{go:['탑에 오르기 전에 저부터 넘어가시겠다고요? 좋습니다!'],lv:3},
+ t5_summit:{go:['몬스터 없이 맨손으로? 좋아, 너한텐 주먹으로도 안 져!'],lv:3,lose:'칫... 맨손 승부까지 지다니. 다음엔 꼭 이긴다!',win:'봤지? 이게 진짜 실력이야!'}};
+// 같은 일을 하는 NPC(쉼터·상점 등 여러 곳에 있는 NPC)
+const FIGHT_ROLE={
+ nurse:{go:['어머, 싸우자고요? 다친 몬스터는 제가 다 고쳐 드릴 테니... 마음껏 다쳐 보세요!'],lv:3,lose:'간호사가 쓰러지면 큰일인데...',win:'자, 치료해 드릴게요. 다음부턴 조심하세요!'},
+ clerk:{go:['손님, 그건 판매 품목이 아닌데요... 하지만 특별히 서비스해 드리죠!'],lose:'오늘 장사는 여기까지인가 봐요...',win:'감사합니다, 또 오세요!'},
+ fuse:{go:['저를 합성 재료로 쓰시려고요?! 그렇게는 안 되죠!'],lose:'합성... 당하는 줄 알았어요...',win:'연구원을 얕보면 안 돼요!'}};
+// 이긴 트레이너에게 다시 싸우자 하면 (트레이너 클래스별)
+const FIGHT_CLASS={
+ kid:'또 하자고? 이번엔 몬스터 없이 맨손 승부다!',girl:'몬스터 없이도 나 강하거든?',camper:'캠프파이어처럼 활활 타오르는 주먹을 받아라!',
+ bugboy:'곤충 잡듯 너도 잡아 주지!',hiker:'산에서 단련한 이 몸으로 직접 상대해 주마!',swimmer:'물 밖에서도 내가 더 빠르다고!',
+ fisher:'이번엔 내가 너를 낚아 주마!',lass:'어머, 이번엔 제가 직접 상대해 드릴게요.',grunt:'검은안개단원은 맨손으로도 무섭다! 각오해라!',
+ birdkeeper:'새처럼 날렵한 몸놀림을 보여 주지!',engineer:'공구 없이도 너쯤은 손봐 줄 수 있다!',ranger:'구조대 체력 훈련의 성과를 보여 주마!'};
+// 외형별 기본 반응과 레벨 보정
+const FIGHT_LOOK={
+ kid:{go:'싸움? 좋아, 나 잘해!',lose:'으앙! 엄마한테 이를 거야!',win:'내가 이겼다! 메롱~',lv:-3},
+ girl:{go:'나랑 싸우자고? 각오는 됐지?',lose:'흑... 너무해!',win:'흥, 나를 얕보지 마!',lv:-2},
+ lady:{go:'어머, 무례하시네요. 그럼 사양 않겠어요.',lose:'이런 꼴을 보이다니...',win:'실례했어요, 호호.'},
+ old:{go:'허허, 이 늙은이가 아직 녹슬지 않았다는 걸 보여 주마!',lose:'세월엔 장사 없구먼...',win:'젊은이, 아직 멀었네!',lv:1},
+ granny:{go:'아이고, 할미랑 싸우자고? 허리 좀 펴고... 자, 오너라!',lose:'아이고 허리야...',win:'이 할미가 이겼다! 사탕 하나 줄까?',lv:1},
+ man:{go:'허허, 겁 없는 녀석이구먼! 아저씨 맛 좀 볼 텐가?',lose:'아이고, 운동 좀 해 둘걸...',win:'아저씨 아직 안 죽었다!'},
+ mom:{go:'어머머, 아줌마한테 싸움을 걸어?',lose:'아이고, 요즘 애들 힘이 세네...',win:'아줌마를 얕보면 안 되지!',lv:2},
+ aide:{go:'연구원도 몸이 재산이에요! 각오하세요!',lose:'실험 실패...',win:'가설이 증명됐네요!'},
+ guide:{go:'안내원도 싸울 줄 안다고! 몸으로 알려 주지!',lose:'공략법이... 통하지 않았어...',win:'이게 바로 공략이다!',lv:2},
+ fisher:{go:'오늘 큰 놈이 걸렸구먼!',lose:'놓친 고기가 더 크다더니...',win:'월척이다!'},
+ hiker:{go:'산사나이의 주먹을 받아라!',lose:'산사태 같은 공격이었다...',win:'산은 정직하지!',lv:2},
+ camper:{go:'모닥불처럼 타오르는 주먹이다!',lose:'모닥불이 꺼졌어...',win:'캠핑으로 다진 체력이라고!'},
+ bug:{go:'곤충 잡듯 잡아 주지!',lose:'잠자리채가 부러졌어...',win:'잡았다!',lv:-2},
+ swim:{go:'물 밖에서도 빠르다고!',lose:'숨이 차...',win:'수영으로 다진 체력이다!'},
+ villain:{go:'검은안개단을 얕보지 마라!',lose:'두, 두목님께 혼나겠다...',win:'크크크, 덤빈 게 잘못이다!',lv:1},
+ rival:{go:'좋아, 맨손 승부다! 너한텐 안 져!',lose:'칫... 다음엔 꼭 이긴다!',win:'봤지? 이게 진짜 실력이야!',lv:3},
+ boss:{go:'크크크... 덤벼라!',lose:'이럴 수가...',win:'애송이 따위가!',lv:6},
+ prof:{go:'허허, 한번 겨뤄 볼까?',lose:'허허, 훌륭하구먼.',win:'아직 멀었네!',lv:8},
+ sister:{go:'봐주는 거 없다~!',lose:'많이 컸네!',win:'아직은 내가 위지?',lv:2},
+ nurse:{go:'마음껏 다쳐 보세요!',lose:'간호사가 쓰러지면 큰일인데...',win:'치료해 드릴게요!',lv:3},
+ clerk:{go:'특별히 서비스해 드리죠!',lose:'오늘 장사는 여기까지...',win:'또 오세요!'}};
+const fmtName=l=>l.replace(/@(아|이|은|을|과)?/g,(m,p)=>p?J(G.name,p):G.name);
+function fightLines(n){const role=n.id.replace(/_.*$/,''),look=FIGHT_LOOK[n.look]||FIGHT_LOOK.man;
+  const f=FIGHT[n.id]||FIGHT_ROLE[role]||(n.trainer&&FIGHT_CLASS[n.trainer.cls]?{go:[FIGHT_CLASS[n.trainer.cls]],lose:'크윽, 맨손 승부에서도 지다니...',win:'어때, 맨손 승부도 만만치 않지?'}:{});
+  return{go:(f.go||[look.go]).map(fmtName),lose:fmtName(f.lose||look.lose),win:fmtName(f.win||look.win),lv:f.lv!=null?f.lv:(look.lv||0)};}
+
+/* ---------- 대화가 끝난 뒤: 싸우자 / 대화를 그만한다 ---------- */
+async function npcFightChoice(n){
+  if(n.mon||n.id==='tw_guard'||!G.party.some(m=>m.hp>0))return; // 몬스터 NPC·탑의 수호자는 제외, 싸울 몬스터가 있어야 함
+  const name=npcName(n),look=npcLook(n);
+  const r=await ask(`${J(name,'과')} 무엇을 할까?`,['싸우자','대화를 그만한다'],{start:1});
+  if(r!==0)return;
+  if(substOf(n)){await say(SUBST_REFUSE,{name,look});return;}
+  const f=fightLines(n);for(const l of f.go)await say(l,{name,look});
+  const top=Math.max(...G.party.map(m=>m.lv));
+  await battle({kind:'npc',name:n.trainer?n.trainer.name:n.name,cls:n.trainer?n.trainer.cls:undefined,look:n.look,
+    lv:clamp(top+f.lv,2,100),npc:n.id,lose:f.lose,winMsg:f.win,bg:curMap().bg});}
 
 /* =========================================================
    auto.js — 자동 전투 · 자동 사냥 · 탑 자동 등반 · 필드 플로팅 버튼

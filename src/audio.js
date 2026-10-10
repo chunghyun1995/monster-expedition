@@ -80,7 +80,8 @@ const SFX={
 };
 function sfx(n){if(!AC||!SFX[n])return;try{SFX[n]();}catch(e){}}
 /* 울음소리: 종족 번호로 고유한 소리를 합성 */
-function cry(sid,o={}){if(!AC)return;const R=rng(sid*977+13),base=220+R()*500,len=(.35+R()*.35)*(o.faint?1.4:1),wav=['triangle','sine','triangle'][Math.floor(R()*3)];
+/* 울음소리 (사람은 울음소리 대신 짧은 효과음) */
+function cry(sid,o={}){if(!AC)return;if(SP[sid]&&SP[sid].human){if(!o.faint)sfx('sel');return;}const R=rng(sid*977+13),base=220+R()*500,len=(.35+R()*.35)*(o.faint?1.4:1),wav=['triangle','sine','triangle'][Math.floor(R()*3)];
   const pitch=o.faint?.7:1,t=AC.currentTime,g=AC.createGain(),o1=AC.createOscillator(),o2=AC.createOscillator(),lfo=AC.createOscillator(),lg=AC.createGain();
   o1.type=wav;o2.type='triangle';const f=base*pitch;
   o1.frequency.setValueAtTime(f,t);o1.frequency.linearRampToValueAtTime(f*(1.2+R()*.8),t+len*.25);o1.frequency.linearRampToValueAtTime(f*(.6+R()*.5),t+len);

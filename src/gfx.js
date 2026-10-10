@@ -9,6 +9,7 @@ const hash=(x,y)=>(((x*73856093)^(y*19349663))>>>0)%65521;
 /* ================= 몬스터 도트 생성 ================= */
 const MONC={};
 function monCanvas(sid,back=false,shiny=false){const key=sid+(back?'b':'f')+(shiny?'s':'');if(MONC[key])return MONC[key];
+  if(SP[sid].human)return MONC[key]=humanCanvas(SP[sid].human,back);
   const s=SP[sid],st=s.st,line=s.line,Rp=rng(line*7919+11),Rs=rng(sid*131+7),NN=24,CX=12;
   const g=[...Array(NN)].map(()=>Array(12).fill(0));
   const set=(x,y,v)=>{x=Math.floor(x);y=Math.floor(y);if(x>=0&&x<12&&y>=0&&y<NN)g[y][x]=v;};
@@ -111,6 +112,9 @@ function monCanvas(sid,back=false,shiny=false){const key=sid+(back?'b':'f')+(shi
     const dark=gb(x,y-1)?-.78:gb(x,y+1)?-.55:-.66;
     x2.fillStyle=nb===6||nb===20?'#14141e':shade(COL[nb],dark);x2.fillRect(x,y,1,1);}
   return MONC[key]=c;}
+/* 사람(붙잡은 트레이너·NPC): 필드 인물 그림을 몬스터 칸(48x48, 발이 아래)에 맞춰 그린다. 뒷모습은 위쪽 방향 */
+function humanCanvas(look,back){const[cv,cg]=mkCanvas(36,44);cg.setTransform(2,0,0,2,2,2);personRaw(cg,0,0,back?'up':'down',0,LOOK[look]||LOOK.man);refineSprite(cv,cg);
+  const[c,g]=mkCanvas(48,48);g.drawImage(cv,6,4);return c;}
 /* 실루엣/하양 버전 */
 const TINTC={};
 function tinted(c,col){if(!c.__id)c.__id=Math.random().toString(36).slice(2);const k=c.__id+col;if(TINTC[k])return TINTC[k];
