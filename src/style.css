@@ -252,3 +252,7 @@ body.land #pad .mid{left:auto;right:8px;top:8px;transform:none}
 @keyframes fbPulse{to{transform:scale(1.06)}}
 .fb.climb{background:radial-gradient(circle at 40% 30%,#efe6ff,#b8a0f0)}
 .fb.climb i{background:linear-gradient(#ffd84a,#e8902a);clip-path:polygon(0 100%,0 70%,30% 70%,30% 40%,60% 40%,60% 10%,100% 10%,100% 100%)}
+
+/* Generated smooth miniature art */
+.art25d canvas#top,.art25d canvas#bot,.art25d img{image-rendering:auto}
+.art25d .portrait{background:linear-gradient(145deg,#cfdfd5,#8ba99b);border-color:#dbc798}

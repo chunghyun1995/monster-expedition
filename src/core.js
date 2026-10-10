@@ -3,7 +3,7 @@
    core.js — 공통 유틸, 설정, 입력, 화면 크기
    ========================================================= */
 const $=s=>document.querySelector(s);
-const W=256,H=192,T=16,SC=2; // SC: 캔버스 내부 해상도 배율(반 픽셀 디테일용)
+const W=256,H=192,T=16,SC=4; // Smooth 2.5D art, same logical game coordinates.
 const rnd=n=>Math.floor(Math.random()*n);
 const chance=p=>Math.random()*100<p;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
