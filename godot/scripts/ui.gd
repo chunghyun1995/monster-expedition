@@ -44,9 +44,15 @@ static func label(parent: Node, text: String, pos: Vector2, size := 30, color :=
 static func button(parent: Node, text: String, rect: Rect2, color: Color, size := 32) -> Button:
 	var b := Button.new()
 	b.text = text
+	b.clip_text = true
 	b.position = rect.position
 	b.size = rect.size
-	b.add_theme_font_size_override("font_size", size)
+	var fitted := size
+	var font := ThemeDB.get_default_theme().get_font("font", "Label")
+	for line in text.split("\n"):
+		while fitted > 16 and font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, fitted).x > rect.size.x - 48:
+			fitted -= 1
+	b.add_theme_font_size_override("font_size", fitted)
 	b.add_theme_color_override("font_color", Color.WHITE)
 	b.add_theme_color_override("font_hover_color", Color.WHITE)
 	b.add_theme_color_override("font_pressed_color", Color(1, 1, 0.85))
@@ -65,6 +71,25 @@ static func button(parent: Node, text: String, rect: Rect2, color: Color, size :
 	b.button_down.connect(func() -> void: b.pivot_offset = b.size / 2; b.create_tween().tween_property(b, "scale", Vector2(0.95, 0.95), 0.06))
 	b.button_up.connect(func() -> void: b.create_tween().tween_property(b, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT))
 	return b
+
+
+## Container-managed width and vertical scrolling keep long descriptions readable.
+static func scroll_text(parent: Node, value: String, rect: Rect2, font_size := 28) -> ScrollContainer:
+	var scroll := ScrollContainer.new()
+	scroll.name = "DescriptionScroll"
+	scroll.position = rect.position
+	scroll.size = rect.size
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	parent.add_child(scroll)
+	var label := Label.new()
+	label.name = "WrappedDescription"
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", INK)
+	label.text = value
+	scroll.add_child(label)
+	return scroll
 
 
 ## 기다리기 (게임 시간과 무관)

@@ -22,6 +22,8 @@ Game="*res://scripts/game.gd"
 Msg="*res://scripts/msg.gd"
 Menus="*res://scripts/menus.gd"
 Sound="*res://scripts/sound.gd"
+Guides="*res://scripts/guides.gd"
+Auto="*res://scripts/auto.gd"
 
 [display]
 

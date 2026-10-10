@@ -59,6 +59,7 @@ func _ready() -> void:
 	menu_btn.focus_mode = Control.FOCUS_NONE
 	menu_btn.pressed.connect(open_menu)
 	Msg.place("field")
+	Auto.bind_world(self)
 	var g: Dictionary = Game.g
 	enter_map(g.map, Vector2i(int(g.x), int(g.y)), g.dir, {"quiet": true})
 	if Game.dev != "":
@@ -451,7 +452,13 @@ func free_cell(c: Vector2i, d: String) -> bool:
 # =====================================================================
 func _process(delta: float) -> void:
 	_update_cam(false)
-	if busy or moving or Msg.is_open():
+	if busy or moving or Msg.is_open() or Guides.overlay != null:
+		return
+	if Guides.should_show("move"):
+		run_script(func() -> void: await Guides.show_once("move", Rect2(20, TouchPad.reserved_top(Msg.vs()), 260, 300)))
+		return
+	if Game.flag("shoes") and Guides.should_show("run"):
+		run_script(func() -> void: await Guides.show_once("run"))
 		return
 	_wander(delta)
 	var d := ""
@@ -578,7 +585,11 @@ func _on_step() -> void:
 	Game.g.steps = int(Game.g.steps) + 1
 	var key := "%d,%d" % [P.x, P.y]
 	if m.warps.has(key):
-		await do_warp(m.warps[key], tile(P.x, P.y) == "D")
+		var destination: Array = m.warps[key]
+		if str(Game.g.map) == "towerLobby" and key == "5,9" and Game.g.has("towerRet"):
+			var back: Dictionary = Game.g.towerRet
+			destination = [back.map, back.x, back.y, back.dir]
+		await do_warp(destination, tile(P.x, P.y) == "D")
 		return
 	if await check_trig():
 		return
@@ -876,14 +887,16 @@ func nickname_prompt(mon: Dictionary) -> void:
 
 func banner(t: String) -> void:
 	var vs := get_viewport().get_visible_rect().size
-	var p := UI.panel(ui, Rect2(vs.x / 2 - 210, -90, 420, 80), Color(0.98, 0.96, 0.88))
+	var p := UI.panel(ui, Rect2(vs.x / 2 - 210, 216 if Game.flag("pad") else 110, 420, 80), Color(0.98, 0.96, 0.88))
+	p.name = "LocationBanner"
+	p.modulate.a = 0.0
 	var l := UI.label(p, t, Vector2(0, 14), 32)
 	l.size = Vector2(420, 50)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var tw := p.create_tween()
-	tw.tween_property(p, "position:y", 110.0, 0.4).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(p, "modulate:a", 1.0, 0.25)
 	tw.tween_interval(1.4)
-	tw.tween_property(p, "position:y", -100.0, 0.3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tw.tween_property(p, "modulate:a", 0.0, 0.3)
 	tw.tween_callback(p.queue_free)
 
 
@@ -918,6 +931,7 @@ func battle(o: Dictionary) -> String:
 	var b := Battle.new()
 	add_child(b)
 	var r: String = await b.run(o, self)
+	if r == "lose": Auto.stop()
 	var leveled: Array = b.leveled
 	b.queue_free()
 	Msg.place("field")

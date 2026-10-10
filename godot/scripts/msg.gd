@@ -113,7 +113,11 @@ func say(t: String, who := "", opts := {}) -> void:
 		_arrow_tw.tween_property(arrow, "position:y", y0 + 8, 0.35).set_trans(Tween.TRANS_SINE)
 		_arrow_tw.tween_property(arrow, "position:y", y0, 0.35).set_trans(Tween.TRANS_SINE)
 		_waiting = true
-		await _advanced
+		while _waiting:
+			if Auto.talk_enabled():
+				await get_tree().create_timer(0.65).timeout
+				if Auto.talk_enabled(): _advance()
+			await get_tree().process_frame
 		_arrow_tw.kill()
 		arrow.position.y = y0
 		arrow.visible = false
@@ -149,6 +153,11 @@ func _advance() -> void:
 ## 질문 + 버튼. B는 마지막 항목(cancel_idx)
 func ask(t: String, options: Array, who := "", start := 0, cancel_idx := -2) -> int:
 	await say(t, who, {"keep": true, "nowait": true})
+	var auto_answer = Auto.answer(t, options)
+	if auto_answer != null:
+		await get_tree().create_timer(0.3).timeout
+		hide_box()
+		return int(auto_answer)
 	if Game.auto_text:
 		await get_tree().create_timer(0.05).timeout
 		hide_box()
@@ -224,12 +233,15 @@ func list(items: Array, opts := {}) -> int:
 	bg.size = s
 	layer.add_child(bg)
 	var preview := Control.new()
-	preview.size = Vector2(s.x, top)
+	preview.size = Vector2(s.x, maxf(0.0, top - 64))
 	layer.add_child(preview)
 	layer.set_meta("preview", preview)
 	var panel := UI.panel(layer, Rect2(12, top + 8, s.x - 24, s.y - top - 120), Color(0.97, 0.97, 0.95), Color(0.3, 0.36, 0.48))
 	if opts.has("title"):
 		var tl := UI.label(layer, opts.title, Vector2(28, top - 40), 30, Color.WHITE)
+		tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		tl.size = Vector2(s.x - 56, 38)
+		tl.clip_text = true
 		tl.add_theme_constant_override("outline_size", 8)
 		tl.add_theme_color_override("font_outline_color", Color(0.1, 0.12, 0.2))
 	var sc := ScrollContainer.new()
@@ -284,10 +296,17 @@ func list(items: Array, opts := {}) -> int:
 		btns.append(b)
 	# 아래 버튼들 (닫기 등)
 	var extra: Array = opts.get("buttons", [["닫기", -1]] if opts.get("cancel", true) else [])
-	var bw := (s.x - 24 - 12 * (extra.size() - 1)) / maxf(1, extra.size())
+	var weights: Array = opts.get("button_weights", [])
+	var total := 0.0
+	for j in extra.size():
+		total += float(weights[j]) if j < weights.size() else 1.0
+	var available := s.x - 24 - 12 * (extra.size() - 1)
+	var bx := 12.0
 	for j in extra.size():
 		var e: Array = extra[j]
-		var b := UI.button(layer, e[0], Rect2(12 + j * (bw + 12), s.y - 100, bw, 84), e[2] if e.size() > 2 else Color(0.38, 0.4, 0.48), 30)
+		var bw := available * (float(weights[j]) if j < weights.size() else 1.0) / maxf(1.0, total)
+		var b := UI.button(layer, e[0], Rect2(bx, s.y - 100, bw, 84), e[2] if e.size() > 2 else Color(0.38, 0.4, 0.48), 30)
+		bx += bw + 12
 		var v = e[1]
 		b.pressed.connect(func() -> void: _pick = v)
 	if btns.size():

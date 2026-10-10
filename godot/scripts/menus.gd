@@ -60,9 +60,7 @@ func mon_preview(m: Dictionary, title := "") -> void:
 	var mv: Array = []
 	for x in m.moves:
 		mv.append(Data.move(x.id).n)
-	var ml := UI.label(pn, " · ".join(mv), Vector2(x0, 222), 24, Color(0.25, 0.3, 0.4))
-	ml.size.x = pn.size.x - x0 - 16
-	ml.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UI.scroll_text(pn, " · ".join(mv), Rect2(x0, 222, pn.size.x - x0 - 16, maxf(40,pn.size.y-242)), 24)
 	if title != "":
 		var tl := UI.label(p, title, Vector2(24, 50), 30, Color.WHITE)
 		tl.add_theme_constant_override("outline_size", 8)
@@ -73,6 +71,7 @@ func mon_preview(m: Dictionary, title := "") -> void:
 # 시작 메뉴
 # =====================================================================
 func main_menu(w: World) -> void:
+	await Guides.show_once("menu")
 	Sound.sfx("menu")
 	var at := 0
 	while true:
@@ -123,6 +122,17 @@ func run_pending_evo() -> void:
 # =====================================================================
 ## mode: field | battle | forced | item | deposit → 고른 번호 (-1 = 취소)
 func party_screen(mode: String, opts := {}) -> int:
+	await Guides.show_once("party")
+	if mode == "forced" and Auto.fight_enabled():
+		var best := -1
+		var hp := -1.0
+		for i in Game.g.party.size():
+			var mon: Dictionary = Game.g.party[i]
+			var ratio := float(mon.hp) / Game.max_hp(mon)
+			if mon.hp > 0 and i != int(opts.get("current", -1)) and ratio > hp:
+				best = i
+				hp = ratio
+		return best
 	if Game.auto_text:
 		await get_tree().process_frame
 		if mode == "field":
@@ -184,6 +194,7 @@ func party_screen(mode: String, opts := {}) -> int:
 
 ## 요약: 몬스터 정보 · 능력치 · 기술
 func summary(lst: Array, idx: int) -> void:
+	await Guides.show_once("summary")
 	var layer := CanvasLayer.new()
 	layer.layer = 61
 	add_child(layer)
@@ -234,7 +245,7 @@ func _sum_render(ctx: Dictionary) -> void:
 	root.add_child(stage)
 	var pup := Puppet.new()
 	stage.add_child(pup)
-	pup.setup_mon(int(m.sid), false, 300.0)
+	pup.setup_mon(int(m.sid), false, 260.0 / (1.15 if sp.has("human") else 1.0))
 	UI.label(root, "%s%s  Lv%d" % [Game.name_of(m), " ★" if m.get("shiny", false) else "", int(m.lv)], Vector2(30, 30), 40)
 	var info := UI.panel(root, Rect2(20, 520, s.x - 40, s.y - 700))
 	var lines: Array = []
@@ -257,9 +268,7 @@ func _sum_render(ctx: Dictionary) -> void:
 			var d: Dictionary = Data.move(x.id)
 			lines.append("%s [%s·%s] PP %d/%d  위력 %s 명중 %s" % [d.n, Data.type_name(d.t), Data.D.catn[d.c], int(x.pp), int(d.pp), str(d.p) if int(d.p) else "-", str(d.a) if int(d.a) else "-"])
 			lines.append("   " + str(d.d))
-	var l := UI.label(info, "\n".join(lines), Vector2(26, 20), 28)
-	l.size.x = info.size.x - 52
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UI.scroll_text(info, "\n".join(lines), Rect2(26, 20, info.size.x - 52, info.size.y - 40))
 	var tabs := ["정보", "능력치", "기술"]
 	for j in 3:
 		var b := UI.button(root, tabs[j], Rect2(20 + j * ((s.x - 40) / 3.0), 100, (s.x - 40) / 3.0 - 10, 70), Color(0.3, 0.5, 0.8) if j == page else Color(0.5, 0.52, 0.6), 28)
@@ -287,6 +296,7 @@ func bag_ids(pocket: String) -> Array:
 
 ## mode: field | battle → battle에서는 {id, target} 또는 {} 를 돌려준다
 func bag_screen(mode: String) -> Dictionary:
+	await Guides.show_once("bag")
 	var pocket := 0
 	while true:
 		var P: Array = Data.D.pockets
@@ -296,7 +306,7 @@ func bag_screen(mode: String) -> Dictionary:
 			var it: Dictionary = Data.D.items[k]
 			items.append({"text": it.n, "right": "" if it.p == "key" else "× %d" % int(Game.g.bag[k]), "disabled": mode == "battle" and it.p == "key"})
 		var btns := [["◀", -10], ["%s" % P[pocket][1], -12], ["▶", -11], ["닫기", -1]]
-		var r := await Msg.list(items, {"title": "가방 · %s · %s" % [P[pocket][1], Game.money(Game.g.money)], "buttons": btns,
+		var r := await Msg.list(items, {"title": "가방 · %s · %s" % [P[pocket][1], Game.money(Game.g.money)], "buttons": btns, "button_weights": [1.0, 3.0, 1.0, 1.4],
 			"on_move": func(i: int) -> void: _item_preview(ids[i]),
 			"keys": func(k: String, _i: int):
 				return -10 if k == "ui_left" else -11})
@@ -348,9 +358,7 @@ func _item_preview(id: String) -> void:
 	var pn := UI.panel(p, Rect2(12, 110, p.size.x - 24, p.size.y - 120), Color(1.0, 0.97, 0.9))
 	UI.label(pn, it.n, Vector2(30, 24), 38)
 	UI.label(pn, "중요한 물건" if it.p == "key" else "보유 %d개" % int(Game.g.bag.get(id, 0)), Vector2(30, 80), 26, Color(0.4, 0.42, 0.5))
-	var d := UI.label(pn, it.d, Vector2(30, 130), 28)
-	d.size.x = pn.size.x - 60
-	d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UI.scroll_text(pn, str(it.d), Rect2(30, 130, pn.size.x - 60, pn.size.y - 150))
 
 
 func can_use(id: String, m: Dictionary) -> bool:
@@ -486,6 +494,7 @@ func learn_move(m: Dictionary, id: String) -> void:
 
 ## 진화: 빛 속에서 두 모습이 점점 빠르게 번갈아 바뀌다가 새 모습으로 터져 나온다 (B로 멈춤)
 func evolve(m: Dictionary) -> void:
+	await Guides.show_once("evolve")
 	var from: int = int(m.sid)
 	var to: int = int(Game.sp(from).ev[1])
 	var old_name := Game.name_of(m)
@@ -595,6 +604,7 @@ func evolve(m: Dictionary) -> void:
 # 도감 · 트레이너 카드 · 지도
 # =====================================================================
 func dex_screen() -> void:
+	await Guides.show_once("dex")
 	var ids: Array = []
 	for k in Data.D.species:
 		if not Data.D.species[k].has("human"):
@@ -637,9 +647,7 @@ func _dex_preview(id: int) -> void:
 			types.append(Data.type_name(t))
 		UI.label(pn, "%s 몬스터 · %s" % [sp.cat, "/".join(types)], Vector2(300, 112), 26)
 	UI.label(pn, ("키 %.1f m · %.1f kg" % [float(sp.h), float(sp.w)]) if cg else "키 ??? · 몸무게 ???", Vector2(300, 152), 26, Color(0.35, 0.38, 0.46))
-	var d := UI.label(pn, sp.d if cg else "붙잡으면 자세한 데이터가 기록된다." if seen else "아직 만나지 못한 몬스터.", Vector2(300, 200), 24)
-	d.size.x = pn.size.x - 320
-	d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UI.scroll_text(pn, sp.d if cg else "붙잡으면 자세한 데이터가 기록된다." if seen else "아직 만나지 못한 몬스터.", Rect2(300,200,pn.size.x-320,maxf(40,pn.size.y-220)),24)
 
 
 func badge_node(i: int, size := 40.0) -> Node2D:
@@ -734,6 +742,7 @@ func trainer_card() -> void:
 
 
 func map_screen(w: World) -> void:
+	await Guides.show_once("pad")
 	var s := vs()
 	var layer := CanvasLayer.new()
 	layer.layer = 61
@@ -809,7 +818,7 @@ func save_menu(w: World) -> bool:
 
 func options_menu() -> void:
 	var rows := [["텍스트 속도", ["느림", "보통", "빠름"], "text"], ["전투 애니메이션", ["끄기", "켜기"], "anim"],
-		["배경음 볼륨", ["0", "1", "2", "3", "4", "5"], "bgm"], ["효과음", ["끄기", "켜기"], "sfx"], ["전투 방식", ["교체", "연속"], "style"]]
+		["배경음 볼륨", ["0", "1", "2", "3", "4", "5"], "bgm"], ["효과음", ["끄기", "켜기"], "sfx"], ["전투 방식", ["교체", "연속"], "style"], ["처음 사용 안내", ["끄기", "켜기"], "tips"], ["자동전투", ["끄기", "켜기"], "autoBattle"]]
 	var at := 0
 	while true:
 		var items: Array = []
@@ -817,6 +826,7 @@ func options_menu() -> void:
 			items.append({"text": r[0], "right": "◀ %s ▶" % r[1][int(Game.settings[r[2]])]})
 		items.append({"text": "개인정보처리방침", "right": "열기 ▶"})
 		items.append({"text": "오픈소스 라이선스", "right": "보기 ▶"})
+		items.append({"text": "처음 사용 안내 다시 보기", "right": "초기화 ▶"})
 		var i := await Msg.list(items, {"title": "설정 (◀ ▶ 또는 누르기로 바꾸기)", "start": at, "buttons": [["결정", -1, Color(0.3, 0.5, 0.75)]],
 			"keys": func(k: String, i2: int):
 				if i2 < 0 or i2 >= rows.size():
@@ -839,8 +849,12 @@ func options_menu() -> void:
 			Sound.sfx("cur")
 		elif i == rows.size():
 			OS.shell_open(PRIVACY_URL)
-		else:
+		elif i == rows.size() + 1:
 			await license_notice()
+		else:
+			Guides.reset_all()
+			Game.settings.tips = 1
+			await Msg.say("처음 사용 안내를 초기화했어요. 기능을 다시 열면 안내가 표시돼요.")
 	Game.save_settings()
 
 
@@ -891,6 +905,7 @@ func shop_stock() -> Array:
 
 
 func shop(_w: World) -> void:
+	await Guides.show_once("shop")
 	var o := "점원"
 	var first := true
 	while true:
@@ -1027,6 +1042,7 @@ func box_grow() -> Array:
 
 
 func pc_menu(_w: World) -> void:
+	await Guides.show_once("pc")
 	Sound.sfx("menu")
 	await Msg.say("%s PC의 전원을 켰다!" % Game.josa(Game.g.name, "은"))
 	var grown := box_grow()
@@ -1134,6 +1150,7 @@ func pick_fuse_mon(excl, title: String) -> Dictionary:
 
 
 func fusion_flow(_w, first = null) -> bool:
+	await Guides.show_once("fusion")
 	if first != null and Game.is_human(first.m):
 		await Msg.say("%s 사람이라서 합성할 수 없어요!" % Game.josa(Game.name_of(first.m), "은"))
 		return false
