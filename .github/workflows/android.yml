@@ -1,7 +1,8 @@
 # 몬스터 원정대 안드로이드 APK
 #  - build: index.html(웹 게임)을 담은 APK와 플레이 스토어 업로드용 AAB 빌드 → Actions 아티팩트로 올림
 #  - emulator-test: Android 12 · 13 · 14 · 15 · 16 에뮬레이터에 설치해 실행 확인 (android/ci/emulator_test.py)
-#  - release: main 브랜치면 GitHub Releases에 APK(휴대폰에서 바로 설치)와 AAB(Play Console 업로드) 게시
+#  - release: 자동 게시 끔(플레이 스토어는 Godot 판을 올림, 패키지가 같음). Actions 탭에서 이 워크플로를 main으로
+#             수동 실행(Run workflow)할 때만 GitHub Releases에 APK·AAB 게시
 name: Android APK
 
 on:
@@ -161,7 +162,7 @@ jobs:
 
   release:
     needs: [build, emulator-test]
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: write
