@@ -22,7 +22,7 @@ func _ready() -> void:
 	shade.color = Color(0.05, 0.07, 0.1, 0.25)
 	shade.size = vs
 	add_child(shade)
-	var logo := UI.label(self, "몬스터 원정대", Vector2(0, 130), 76, Color(1, 0.97, 0.88))
+	var logo := UI.label(self, "벨로리아 생태기록", Vector2(0, 130), 56, Color(1, 0.97, 0.88))
 	logo.size.x = vs.x
 	logo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	logo.add_theme_constant_override("outline_size", 18)
@@ -31,7 +31,7 @@ func _ready() -> void:
 	var lt := logo.create_tween().set_loops()
 	lt.tween_property(logo, "rotation", 0.02, 1.4).set_trans(Tween.TRANS_SINE)
 	lt.tween_property(logo, "rotation", -0.02, 1.4).set_trans(Tween.TRANS_SINE)
-	var sub := UI.label(self, "MONSTER EXPEDITION", Vector2(0, 230), 28, Color(1, 1, 1, 0.9))
+	var sub := UI.label(self, "VELORIA FIELDNOTES", Vector2(0, 230), 28, Color(1, 1, 1, 0.9))
 	sub.size.x = vs.x
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub.add_theme_constant_override("outline_size", 8)
@@ -69,7 +69,7 @@ func _menu() -> void:
 	var sv := Game.read_save()
 	while true:
 		var btns: Array = [
-			{"text": ("이어하기\n%s · 배지 %d · 도감 %d · %s" % [sv.name, _badges(sv), sv.caught.size(), Game.fmt_time(float(sv.get("play_ms", 0)))]) if not sv.is_empty() else "이어하기\n리포트 없음",
+			{"text": ("이어하기\n%s · 관측 인증 %d · 생태기록 %d · %s" % [sv.name, _badges(sv), sv.caught.size(), Game.fmt_time(float(sv.get("play_ms", 0)))]) if not sv.is_empty() else "이어하기\n리포트 없음",
 				"rect": Rect2(60, vs.y - 520, vs.x - 120, 130), "color": Color(0.3, 0.5, 0.8), "disabled": sv.is_empty(), "size": 30},
 			{"text": "처음부터 시작", "rect": Rect2(60, vs.y - 375, vs.x - 120, 100), "color": Color(0.86, 0.36, 0.42), "size": 34},
 			{"text": "설정", "rect": Rect2(60, vs.y - 260, vs.x - 120, 90), "color": Color(0.42, 0.45, 0.52), "size": 30},
@@ -160,7 +160,7 @@ func _import_code(sv: Dictionary) -> bool:
 	layer.queue_free()
 	if result.is_empty():
 		return false
-	var info := "%s · 배지 %d · 도감 %d · %s" % [result.name, _badges(result), result.caught.size(), Game.fmt_time(float(result.play_ms))]
+	var info := "%s · 관측 인증 %d · 생태기록 %d · %s" % [result.name, _badges(result), result.caught.size(), Game.fmt_time(float(result.play_ms))]
 	var q := "%s\n이 모험을 불러올까요?" % info
 	if not sv.is_empty():
 		q = "%s\n이 기기의 리포트(%s)는 코드의 내용으로 바뀌어요. 불러올까요?" % [info, sv.name]
@@ -180,78 +180,49 @@ func _badges(sv: Dictionary) -> int:
 	return n
 
 
-## 오프닝: 박사의 인사 → 몬스터 등장 → 이름 짓기 → 주인공이 작아지며 모험 시작
+## 현장통신 의뢰 접수: 폭풍 피해 기록 → 서명 → 통신소 브리핑
 func _intro() -> void:
 	var vs := get_viewport().get_visible_rect().size
-	await Game.fade_to(1.0, 0.5)
+	await Game.fade_to(1.0, 0.35)
 	for c in get_children():
 		c.queue_free()
 	var bg := ColorRect.new()
-	bg.color = Color(0.08, 0.1, 0.2)
+	bg.color = Color("#16383d")
 	bg.size = vs
 	add_child(bg)
-	var stars := Node2D.new()
-	stars.draw.connect(func() -> void:
-		for i in 40:
-			stars.draw_circle(Vector2(fmod(i * 173.0, vs.x), fmod(i * 97.0, vs.y * 0.6)), 2.0 if i % 5 else 3.0, Color(1, 1, 1, 0.5)))
-	add_child(stars)
-	var floor_ := Sprite2D.new()
-	floor_.texture = Puppet._shadow()
-	floor_.position = Vector2(vs.x / 2, vs.y * 0.6)
-	floor_.scale = Vector2(5.0, 1.0)
-	floor_.modulate = Color(1, 1, 1, 0.1)
-	add_child(floor_)
-	var prof := Puppet.new()
-	add_child(prof)
-	prof.setup_person("prof", false, 360.0)
-	prof.position = Vector2(vs.x / 2, vs.y * 0.6)
+	var card := UI.panel(self, Rect2(36, 110, vs.x - 72, vs.y * 0.46), Color("#f0ead6"), Color("#b69055"))
+	var heading := UI.label(card, "벨로리아 현장통신", Vector2(28, 24), 38)
+	heading.size.x = card.size.x - 56
+	heading.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var log := UI.label(card, "새벽 폭풍으로 관측망이 끊겼습니다.\n다섯 지역의 센서를 다시 연결하고\n야생 생물의 변화 기록을 회수해 주세요.", Vector2(28, 100), 28)
+	log.size = Vector2(card.size.x - 56, 170)
+	log.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	# Original incident map: five linked monitoring nodes, no professor demonstration.
+	var chart := Node2D.new()
+	chart.position = Vector2(card.size.x * 0.5, card.size.y - 100)
+	chart.draw.connect(func() -> void:
+		for i in range(5):
+			var at := Vector2((i - 2) * 80, sin(i * 1.1) * 28)
+			if i > 0:
+				chart.draw_line(Vector2((i - 3) * 80, sin((i - 1) * 1.1) * 28), at, Color("#a7b1a1"), 4, true)
+			chart.draw_circle(at, 12, Color("#b66b45")))
+	card.add_child(chart)
 	Sound.music("intro")
-	await Game.fade_to(0.0, 0.5)
-	var o := "한결 박사"
-	await Msg.say("안녕! 몬스터의 세계에 온 걸 환영한단다!", o)
-	await Msg.say("나는 한결. 사람들은 나를 몬스터 박사라고 부르지.", o)
-	create_tween().tween_property(prof, "position:x", vs.x * 0.3, 0.4).set_trans(Tween.TRANS_SINE)
-	var mon := Puppet.new()
-	add_child(mon)
-	mon.setup_mon(10, false, 200.0)
-	mon.position = Vector2(vs.x * 0.72, vs.y * 0.6)
-	mon.scale = Vector2(0.1, 0.1)
-	mon.p("flash", 1.0)
-	Sound.sfx("open")
-	Sound.cry(10)
-	FX.burst(self, mon.position + Vector2(0, -100), Color(1, 1, 1), Color(1, 0.85, 0.3), 24, 300.0, Vector2.ZERO, 0.6, 1.2, 180.0)
-	var tw := create_tween()
-	tw.tween_property(mon, "scale", Vector2.ONE, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.parallel()
-	mon.tp(tw, "flash", 0.0, 0.5)
-	await tw.finished
-	await Msg.say("이 세계에는 \"몬스터\"라고 불리는 신비한 생물들이 살고 있단다.", o)
-	await Msg.say("사람들은 몬스터와 함께 생활하고, 때로는 힘을 합쳐 승부를 겨루기도 하지.", o)
-	await Msg.say("나는 몬스터를 연구하면서 이 지방의 몬스터 도감을 만들고 있단다.", o)
-	var t2 := create_tween().set_parallel()
-	t2.tween_property(prof, "modulate:a", 0.0, 0.4)
-	t2.tween_property(mon, "modulate:a", 0.0, 0.4)
-	await t2.finished
-	var hero := Puppet.new()
-	add_child(hero)
-	hero.setup_person("player", false, 380.0)
-	hero.position = Vector2(vs.x / 2, vs.y * 0.6)
-	hero.modulate.a = 0
-	await create_tween().tween_property(hero, "modulate:a", 1.0, 0.4).finished
-	await Msg.say("그럼 이제 너에 대해 알려 주겠니? 이름이 무엇이니?", o)
-	var name := await Msg.name_input("당신의 이름을 알려 주세요", "", 6, ["하늘", "태양", "바다", "별이", "민준", "서연", "지호", "유나"])
+	await Game.fade_to(0.0, 0.35)
+	await Msg.say("원정 접수처에 새 의뢰가 도착했습니다. 폭풍 뒤의 숲은 이전 기록과 달라졌습니다.", "현장통신")
+	var name := await Msg.name_input("현장 기록에 서명할 이름", "", 6, ["하늘", "태양", "바다", "별이", "민준", "서연", "지호", "유나"])
 	Game.new_game(name)
-	await Msg.say("%s! 정말 좋은 이름이구나!" % name, o)
-	await Msg.say("%s, 너만의 몬스터 원정이 이제 막 시작되려 하고 있단다." % name, o)
-	await Msg.say("꿈과 모험, 그리고 몬스터가 가득한 세계로! 자, 출발하자!", o)
-	var shrink := create_tween()
-	shrink.tween_property(hero, "scale", Vector2(0.15, 0.15), 0.9).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	await shrink.finished
-	Game.dev = "intro_mom"
+	Game.g.map = "lab"
+	Game.g.x = 5
+	Game.g.y = 8
+	Game.g.dir = "up"
+	Game.g.heal = {"map": "lab", "x": 5, "y": 8}
+	await Msg.say("%s 원정가의 접수가 완료됐습니다. 현장통신소에서 조사 동료와 장비를 확인해 주세요." % name, "현장통신")
+	await Game.fade_to(1.0, 0.35)
+	Game.dev = "field_briefing"
 	Game.change_scene("res://scenes/world.tscn")
 
 
-## 개발용: w:지도:x:y[:명령]  (새 테스트 게임으로 바로 시작)
 func _dev(arg: String) -> void:
 	var p := arg.split(":")
 	if p[0] == "notips":     # 스토어 스크린샷용: 첫 사용 안내 끄기

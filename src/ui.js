@@ -13,7 +13,7 @@ function msg(text,o={}){clearTimeout(dlgTm);dlgShow();setTag(o.name,o.look);cons
 let TALK_ALIAS=null; // [원래 이름, 대신 보여 줄 이름, 외형]: 붙잡힌 NPC 대신 일하는 사람의 이름표
 function setTag(name,look){if(TALK_ALIAS&&name===TALK_ALIAS[0]){name=TALK_ALIAS[1];look=TALK_ALIAS[2];}if(dtag){dtag.remove();dtag=null;}if(name){dtag=el(dlg,'tag',esc(name));}setPortrait(name,look);}
 /* 말하는 사람 얼굴: 이름으로 외형을 찾아 대화창 왼쪽 위에 표시 */
-const NAME_LOOK={'한결 박사':'prof','엄마':'mom','간호사':'nurse','점원':'clerk','합성 연구원':'aide','연구원':'aide','경비원':'guide','관장 단단':'leaderRock','관장 하라':'leaderWater','누나':'sister'};
+const NAME_LOOK={'한결 조사관':'prof','엄마':'mom','간호사':'nurse','점원':'clerk','합성 연구원':'aide','연구원':'aide','경비원':'guide','현장 책임자 단단':'leaderRock','현장 책임자 하라':'leaderWater','누나':'sister'};
 let dpor=null,dporKey='';
 function lookFor(name){if(!name)return null;if(typeof RIVAL!=='undefined'&&name===RIVAL)return'rival';
   try{const n=npcsOf(curMap()).find(x=>x.name===name);if(n&&n.look)return n.look;}catch(e){}

@@ -1,6 +1,6 @@
 class_name World
 extends Node2D
-## 필드: 40개 지도(바깥·건물 안)를 같은 규칙으로 그리고, 이동·조사·문·연결·트레이너 시선·야생 몬스터를 처리한다.
+## 필드: 40개 지도(바깥·건물 안)를 같은 규칙으로 그리고, 이동·조사·문·연결·원정가 시선·야생 몬스터를 처리한다.
 ## 이야기 이벤트는 events.gd 가 이 파일의 도우미(say, battle, walk_npc …)를 불러 진행한다.
 
 const T := 64
@@ -8,7 +8,7 @@ const DV := {"up": Vector2i.UP, "down": Vector2i.DOWN, "left": Vector2i.LEFT, "r
 const OPP := {"up": "down", "down": "up", "left": "right", "right": "left"}
 const WATER_SHADER := preload("res://shaders/water.gdshader")
 const BLD := {"H": 6, "K": 7, "B": 8, "C": 9, "M": 10, "G": 11, "T": 12}
-const STARTERS := [[4, 4, 1], [5, 4, 4], [6, 4, 7]]
+const STARTERS := [[4, 4, 10], [5, 4, 19], [6, 4, 23]]
 const DEF_TEXT := {"S": ["책이 가득 꽂혀 있다."], "v": ["TV에서 재미있는 방송을 하고 있다."], "b": ["푹신해 보이는 침대다."],
 	"p": ["잘 가꿔진 화분이다."], "r": ["커다란 바위다. 꿈쩍도 하지 않는다."], "~": ["맑은 물이 반짝이고 있다."], "h": ["회복 장치다."]}
 
@@ -982,14 +982,14 @@ func _encounter_flash(o: Dictionary) -> void:
 	tw.parallel().tween_property(cam, "rotation", 0.25 if o.kind == "wild" else -0.15, 0.35)
 	await tw.finished
 	if big:
-		# 관장·라이벌: 이름 띠가 가로질러 지나간다
+		# 현장 책임자·원정 동료: 이름 띠가 가로질러 지나간다
 		var vs := get_viewport().get_visible_rect().size
 		var band := ColorRect.new()
 		band.color = Color(0.89, 0.34, 0.44)
 		band.size = Vector2(vs.x, 110)
 		band.position = Vector2(vs.x, vs.y * 0.45)
 		ui.add_child(band)
-		var title: String = {"leader": "관장 ", "rival": "라이벌 ", "boss": ""}.get(o.cls, "") + str(o.get("name", ""))
+		var title: String = {"leader": "현장 책임자 ", "rival": "원정 동료 ", "boss": ""}.get(o.cls, "") + str(o.get("name", ""))
 		var l := UI.label(band, title, Vector2(0, 26), 48, Color.WHITE)
 		l.size.x = vs.x
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

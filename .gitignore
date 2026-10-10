@@ -1,2 +1,5 @@
 node_modules/
 qa/
+/*.log
+/*.err
+/upload-manifest.json

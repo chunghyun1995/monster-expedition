@@ -1,11 +1,11 @@
 extends Node
 ## 게임 상태(리포트)와 몬스터 계산. 기존 웹 게임(mon.js·world.js·menus.js)과 같은 공식·같은 데이터 구조.
-## g: 저장되는 모든 것 (이름·돈·파티·보관함·가방·깃발·도감·배지·회복 지점·위치 …)
+## g: 저장되는 모든 것 (이름·돈·파티·보관함·가방·깃발·생태기록·관측 인증·회복 지점·위치 …)
 
 const SAVE_PATH := "user://report.save"
 const SETTINGS_PATH := "user://settings.cfg"
 const RIVAL := "도윤"
-const COUNTER := {1: 4, 4: 7, 7: 1, 17: 27}
+const COUNTER := {1: 15, 4: 15, 7: 15, 17: 15, 10: 15, 19: 15, 23: 15}
 const DIGK := "영일이삼사오육칠팔구"
 
 var g: Dictionary = {}
