@@ -100,7 +100,7 @@ jobs:
           cd godot
           # 버전 코드: 빌드 시각(분) — 매번 커진다
           CODE=$(( ($(date +%s) - 1700000000) / 60 ))
-          sed -i "s/^version\/code=.*/version\/code=$CODE/; s/^version\/name=.*/version\/name=\"0.1-godot ($(git rev-parse --short HEAD))\"/" export_presets.cfg
+          sed -i "s/^version\/code=.*/version\/code=$CODE/; s/^version\/name=.*/version\/name=\"4.0 ($(git rev-parse --short HEAD))\"/" export_presets.cfg
           mkdir -p build/web build/android
           "$GODOT" --headless --path . --import > /dev/null 2>&1 || true
           "$GODOT" --headless --path . res://tests/regression.tscn > regression.log 2>&1
@@ -174,9 +174,9 @@ jobs:
           emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back none
           script: |
             adb install -r dist/test-x86_64.apk
-            adb shell monkey -p io.github.chunghyun1995.monsterexpedition.godot -c android.intent.category.LAUNCHER 1
+            adb shell monkey -p io.github.chunghyun1995.monsterexpedition -c android.intent.category.LAUNCHER 1
             sleep 25
-            adb shell pidof io.github.chunghyun1995.monsterexpedition.godot
+            adb shell pidof io.github.chunghyun1995.monsterexpedition
             adb logcat -d | grep -iE "godot|FATAL" | grep -iE "error|fatal|crash" | head -20 || true
             adb logcat -d | grep -q "FATAL EXCEPTION" && exit 1 || true
             adb exec-out screencap -p > shot.png
@@ -222,7 +222,7 @@ jobs:
             dist/monster-expedition-godot.apk
             dist/monster-expedition-godot.aab
           body: |
-            Godot 4 엔진으로 새로 만든 **몬스터 원정대 전체 판**입니다. (기존 WebView 앱과 따로 설치되는 별도 앱)
+            Godot 4 엔진으로 새로 만든 **몬스터 원정대 전체 판**입니다. (패키지 io.github.chunghyun1995.monsterexpedition — 같은 키로 서명한 기존 WebView 앱을 덮어써 업데이트됩니다)
 
             **게임 내용**
             - 지도 40곳: 새싹마을부터 하늘봉마을까지 모든 마을·도로·동굴·건물 안

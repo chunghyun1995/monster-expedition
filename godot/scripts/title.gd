@@ -261,13 +261,16 @@ func _dev(arg: String) -> void:
 	if p[0] == "gallery":
 		Game.change_scene("res://scenes/gallery.tscn")
 		return
+	if p[0] == "notips":     # 스토어 스크린샷용: 첫 사용 안내 끄기
+		Game.settings.tips = 0
+		p = p.slice(1)
 	if p[0] == "auto":
 		Game.auto_text = true
 		p = p.slice(1)
 	if p.size() < 1 or p[0] != "w":
 		_menu()
 		return
-	Game.new_game("테스트")
+	Game.new_game("하늘" if Game.settings.tips == 0 else "테스트")
 	Game.g.party = [Game.make_mon(1, 14), Game.make_mon(4, 12), Game.make_mon(7, 12)]
 	for k in ["starter", "dex", "pad", "shoes", "labIntro", "rival1", "rivalLeft"]:
 		Game.set_flag(k)
