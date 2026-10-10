@@ -31,7 +31,12 @@ async function main(){const manifest={};
   const source=path.join(root,'assets','generated',file),meta=await sharp(source).metadata(),parts=[];
   for(let i=0;i<count;i++){
    const col=i%cols,row=Math.floor(i/cols),left=Math.round(col*meta.width/cols),bounds=key==='props'?[0,314,578,834,meta.height]:null,top=bounds?bounds[row]:Math.round(row*meta.height/rows);
-   let crop=sharp(source).extract({left,top,width:Math.round((col+1)*meta.width/cols)-left,height:(bounds?bounds[row+1]:Math.round((row+1)*meta.height/rows))-top});
+   const special=key==='props'&&i===17?{left:1170,top:660,width:meta.width-1170,height:158}:
+    (key==='monsters'||key==='backs')&&i===2?{left:378,top:0,width:265,height:220}:
+    key==='monsters'&&i===8?{left:362,top:215,width:278,height:224}:
+    key==='backs'&&i===8?{left:378,top:215,width:266,height:224}:null;
+   const box=special||{left,top,width:Math.round((col+1)*meta.width/cols)-left,height:(bounds?bounds[row+1]:Math.round((row+1)*meta.height/rows))-top};
+   let crop=sharp(source).extract(box);
    const extracted=await crop.png().toBuffer();crop=sharp(alpha?await cleanCell(extracted):extracted);
    if(alpha)crop=crop.trim({background:'#00000000',threshold:12});
    const buffer=await crop.resize(cw-8,ch-8,{fit:alpha?'contain':'cover',position:alpha?'bottom':'centre',background:'#00000000'}).extend({top:4,bottom:4,left:4,right:4,background:'#00000000'}).png().toBuffer();
