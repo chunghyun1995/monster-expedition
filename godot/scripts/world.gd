@@ -931,7 +931,8 @@ func battle(o: Dictionary) -> String:
 	var b := Battle.new()
 	add_child(b)
 	var r: String = await b.run(o, self)
-	if r == "lose": Auto.stop()
+	# Climbing must keep automatic dialogue until Events returns to the lobby.
+	if r == "lose" and Auto.mode == "hunt": Auto.stop()
 	var leveled: Array = b.leveled
 	b.queue_free()
 	Msg.place("field")

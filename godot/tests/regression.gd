@@ -224,6 +224,15 @@ func test_restored_features(world: World) -> void:
 	while not climb_state.done and Time.get_ticks_msec() < deadline:
 		await get_tree().process_frame
 	check(climb_state.done and int(world.ev.tower().cur) == 2 and int(world.ev.tower().best) >= 1, "Auto climb did not fight and advance or stop correctly")
+	Game.g.party = [Game.make_mon(1,1)]
+	await world.ev.tower_enter(100)
+	world.busy = true
+	climb_state = {"done":false}
+	start_climb_test(climb_state)
+	deadline = Time.get_ticks_msec() + 45000
+	while not climb_state.done and Time.get_ticks_msec() < deadline:
+		await get_tree().process_frame
+	check(climb_state.done and str(Game.g.map) == "towerLobby" and Auto.mode == "", "Defeated auto climber must return to lobby without waiting for input")
 	Game.settings.autoBattle = 0
 	Game.settings.anim = previous_anim
 	world.enter_map("home",Vector2i(7,3),"down",{"quiet":true})
