@@ -106,10 +106,10 @@ function drawWorld(g){const m=curMap(),{cx,cy,px,py}=camera();R('#000',0,0,W,H,g
   const x0=Math.floor(cx/T),y0=Math.floor(cy/T);
   for(let ty=y0;ty<=y0+Math.ceil(H/T);ty++)for(let tx=x0;tx<=x0+Math.ceil(W/T);tx++){const sx=tx*T-cx,sy=ty*T-cy;
     if(m.out)drawTileOut(m,tx,ty,sx,sy);else if(tileAt(m,tx,ty)==null)R('#000',sx,sy,16,16,g);else drawTileIn(m,tx,ty,sx,sy);}
-  for(const it of m.items)if(!G.flags[it.flag])capsule(g,it.x*T-cx+8,it.y*T-cy+10,0,{kind:it.item==='great'?'great':'ball'});
-  if(m.id==='lab')for(const[sx0,sy0,sid]of STARTERS)if(!G.flags.starter||(sid!==G.starter&&sid!==G.rivalStarter))capsule(g,sx0*T-cx+8,sy0*T-cy+7);
   if(m.healAnim){const hx=4*T-cx,hy=2*T-cy;for(let i=0;i<m.healAnim.n;i++){const bx=hx+3+(i%3)*5,by=hy+4+Math.floor(i/3)*4;R(m.healAnim.blink&&(frame>>3)&1?'#ffffff':'#ffd84a',bx,by,3,3,g);}}
   const ents=[];artMapObjects(m,cx,cy,ents);
+  for(const it of m.items)if(!G.flags[it.flag])ents.push({y:it.y*T+.1,f:()=>capsule(g,it.x*T-cx+8,it.y*T-cy+10,0,{kind:it.item==='great'?'great':'ball'})});
+  if(m.id==='lab')for(const[sx0,sy0,sid]of STARTERS)if(!G.flags.starter||(sid!==G.starter&&sid!==G.rivalStarter))ents.push({y:sy0*T+.1,f:()=>capsule(g,sx0*T-cx+8,sy0*T-cy+7)});
   for(const n of npcsOf(m)){const[dx,dy]=DV[n.dir],off=n.off||0;
     ents.push({y:n.y*T+dy*off,f:()=>{const sx=n.x*T+dx*off-cx,sy=n.y*T+dy*off-cy-6;
       if(n.mon){const b=Math.sin(frame/14+n.x)*1.5;g.fillStyle='rgba(0,0,0,.25)';g.beginPath();g.ellipse(sx+8,sy+19,10,3,0,0,7);g.fill();drawMon(g,n.mon,sx+8,sy+18+b,1.25);}
