@@ -55,7 +55,7 @@ const TOWER_LOOKS=['man','hiker','camper','lady','swim','fisher','girl','kid','b
 function towerState(){return G.tower||(G.tower={best:0,cur:0});}
 function towerTeam(f){const R=rng(f*9973+7),pick=a=>a[Math.floor(R()*a.length)];
   if(f===100)return[[31,100],[32,100],[33,100],[6,100],[3,100],[9,100]];
-  const n=f<10?1:f<25?2:f<50?3:f<80?4:5,all=Object.keys(SP).map(Number).filter(s=>!SP[s].legend&&s!==13);
+  const n=f<10?1:f<25?2:f<50?3:f<80?4:5,all=Object.keys(SP).map(Number).filter(s=>!SP[s].legend&&!SP[s].human&&s!==13);
   const st=()=>{const r=R();if(f<16)return 0;if(f<36)return r<.6?0:1;if(f<70)return r<.6?1:2;return r<.25?1:2;};
   const team=[];for(let i=0;i<n;i++){const want=st();const pool=all.filter(s=>SP[s].st===want);team.push([pick(pool),f]);}
   if(f%10===0&&f<100)team[team.length-1]=[pick(all.filter(s=>SP[s].st===2)),f];

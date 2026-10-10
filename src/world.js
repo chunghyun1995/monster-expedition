@@ -6,7 +6,7 @@ const P={x:0,y:0,tx:0,ty:0,dir:'down',moving:false,t:0,step:0,run:false,jump:fal
 const DV={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
 const OPP={up:'down',down:'up',left:'right',right:'left'};
 const curMap=()=>MAPS[G.map];
-const npcOn=n=>!n.hide&&(!n.cond||n.cond());
+const npcOn=n=>!n.hide&&(!n.cond||n.cond())&&!npcGone(n); // 캡슐로 붙잡힌 NPC는 사라진다(npcfight.js)
 const npcsOf=m=>m.npcs.filter(npcOn);
 const npcById=id=>curMap().npcs.find(n=>n.id===id);
 function npcAt(m,x,y){return npcsOf(m).find(n=>(n.x===x&&n.y===y)||(n.mv&&n.mx===x&&n.my===y));}
@@ -74,17 +74,19 @@ async function trainerSpot(n){Music.play(n.trainer?(n.trainer.cls==='lass'||n.tr
   if(n.sight&&!n.trainer){await n.sight(n);return;}await trainerTalk(n);}
 const tname=n=>`${TCLASS[n.trainer.cls].n} ${n.trainer.name}`;
 async function trainerTalk(n){const t=n.trainer;for(const l of t.intro)await say(l,{name:tname(n)});
-  const r=await battle({kind:'trainer',cls:t.cls,name:t.name,team:t.team,lose:t.lose,look:n.look,bg:curMap().bg});
+  const r=await battle({kind:'trainer',cls:t.cls,name:t.name,team:t.team,lose:t.lose,look:n.look,bg:curMap().bg,npc:n.id});
   if(r==='win')G.flags[n.id]=1;}
 async function wildEncounter(m){const tot=m.enc.reduce((s,e)=>s+e[3],0);let r=Math.random()*tot,pick=m.enc[0];
   for(const e of m.enc){if((r-=e[3])<0){pick=e;break;}}
   await battle({kind:'wild',team:[[pick[0],pick[1]+rnd(pick[2]-pick[1]+1)]],bg:m.bg});}
 async function interact(){const m=curMap(),[dx,dy]=DV[P.dir];let x=P.x+dx,y=P.y+dy;const c=tileAt(m,x,y);
   let n=npcAt(m,x,y);if(!n&&c==='K')n=npcAt(m,x+dx,y+dy);
-  if(n){if(n.mv)return;await runScript(async()=>{const d0=n.dir;n.dir=OPP[P.dir];
-      if(n.trainer&&!G.flags[n.id])await trainerTalk(n);
+  if(n){if(n.mv)return;await runScript(async()=>{const d0=n.dir;n.dir=OPP[P.dir];const b0=BATTLES,m0=G.map;TALKING=n;
+      try{if(substOf(n))await substTalk(n);
+      else if(n.trainer&&!G.flags[n.id])await trainerTalk(n);
       else if(n.trainer)await talk(n.trainer.after,{name:tname(n)});
       else if(n.talk)await n.talk(n);else await talk(n.text,{name:n.name,look:n.look});
+      if(BATTLES===b0&&G.map===m0&&npcOn(n))await npcFightChoice(n);}finally{TALKING=null;} // 이번 대화에서 배틀이 없었으면: 싸우자 / 대화를 그만한다
       if(n.wander)n.dir=d0;});return;}
   const it=itemAt(m,x,y);if(it){await runScript(async()=>{G.flags[it.flag]=1;await giveItem(it.item,it.n);});return;}
   const key=x+','+y,ob=m.obj[key];
@@ -111,7 +113,7 @@ function drawWorld(g){const m=curMap(),{cx,cy,px,py}=camera();R('#000',0,0,W,H,g
   for(const n of npcsOf(m)){const[dx,dy]=DV[n.dir],off=n.off||0;
     ents.push({y:n.y*T+dy*off,f:()=>{const sx=Math.round(n.x*T+dx*off-cx),sy=Math.round(n.y*T+dy*off-cy)-6;
       if(n.mon){const b=Math.sin(frame/14+n.x)*1.5;g.fillStyle='rgba(0,0,0,.25)';g.beginPath();g.ellipse(sx+8,sy+19,10,3,0,0,7);g.fill();drawMon(g,n.mon,sx+8,sy+18+b,1.25);}
-      else person(g,sx,sy+(n.bow?1:0),n.dir,n.walk?((frame>>3)&1)+1:0,LOOK[n.look]||LOOK.man);grassOver(g,m,n.x,n.y,sx,sy);if(n.emote)emote(g,sx,sy,n.emote);}});}
+      else person(g,sx,sy+(n.bow?1:0),n.dir,n.walk?((frame>>3)&1)+1:0,LOOK[npcLook(n)]||LOOK.man);grassOver(g,m,n.x,n.y,sx,sy);if(n.emote)emote(g,sx,sy,n.emote);}});}
   if(!P.hidden)ents.push({y:py+.5,f:()=>{const k=P.moving?P.t:0,jy=P.jump?-Math.sin(Math.PI*k)*10:0,sx=Math.round(px-cx),sy=Math.round(py-cy)-6+Math.round(jy);
     if(P.jump){g.fillStyle='rgba(0,0,0,.3)';g.fillRect(sx+3,Math.round(py-cy)+12,10,3);}
     const fr=P.moving?(P.t<.5?(P.step?2:1):0):0;person(g,sx,sy,P.dir,fr,LOOK.player);
