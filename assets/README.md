@@ -12,7 +12,7 @@
 
 다른 작품과 닮아 보일 수 있는 3종은 `tools/redesign-art.py`로 생성 원본을 다시 칠했습니다(한 번만 실행).
 - 17번 전기 고양이: 노란 털 → 하늘색, 귀 끝의 검은색 제거
-- 24번 산거북: 등의 초록 숲·회색 봉우리 → 단풍 숲·붉은 봉우리 (윤곽은 그대로라 새로 그리면 더 안전)
+- 24번 바위거북: 다시 그림 (`tools/redraw-tortoise.py`) — 등의 숲·산봉우리를 걷어내고 바위 띠에 박힌 자수정빛 수정 결정 무리로. 머리가 옆 칸까지 나와 있어 `prepare-art.cjs`가 넓은 상자로 자름
 - 검은안개단원: 검은 제복·빨간 문양 → 짙은 회청색 제복·청록 문양
 
 이 기록은 법률 검토나 권리 침해가 없다는 보증이 아닙니다. Google Play 등록 시 이미지뿐 아니라 앱 이름, 아이콘, 설명에도 타 작품과의 공식 관계를 암시하지 않아야 합니다. [Google Play 지식재산권 정책](https://support.google.com/googleplay/android-developer/answer/9888072?hl=ko), [명의 도용 정책](https://support.google.com/googleplay/android-developer/answer/9888374?hl=ko)을 확인했습니다.

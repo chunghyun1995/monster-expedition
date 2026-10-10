@@ -34,7 +34,8 @@ async function main(){const manifest={};
    const special=key==='props'&&i===17?{left:1170,top:660,width:meta.width-1170,height:158}:
     (key==='monsters'||key==='backs')&&i===2?{left:378,top:0,width:265,height:220}:
     key==='monsters'&&i===8?{left:362,top:215,width:278,height:224}:
-    key==='backs'&&i===8?{left:378,top:215,width:266,height:224}:null;
+    key==='backs'&&i===8?{left:378,top:215,width:266,height:224}:
+    (key==='monsters'||key==='backs')&&i===23?{left:975,top:640,width:279,height:208}:null; // 바위거북: 머리가 옆 칸까지 나와 있어 넓게
    const box=special||{left,top,width:Math.round((col+1)*meta.width/cols)-left,height:(bounds?bounds[row+1]:Math.round((row+1)*meta.height/rows))-top};
    let crop=sharp(source).extract(box);
    const extracted=await crop.png().toBuffer();crop=sharp(alpha?await cleanCell(extracted):extracted);
