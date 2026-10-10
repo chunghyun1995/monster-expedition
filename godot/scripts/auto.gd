@@ -22,17 +22,50 @@ func bind_world(value: World) -> void:
 	controls = CanvasLayer.new()
 	controls.layer = 85
 	add_child(controls)
-	for key in ["battle","tower","hunt","climb","stop"]:
-		var b := UI.button(controls, "", Rect2(0,0,176,72), Color(0.28,0.46,0.53), 24)
-		buttons[key] = b
+	for key in ORDER:
+		buttons[key] = _round_button(key)
 	buttons.battle.pressed.connect(func() -> void:
 		await Guides.show_once("battle")
 		Game.settings.autoBattle = 0 if int(Game.settings.get("autoBattle",0)) else 1
 		Game.save_settings())
 	buttons.tower.pressed.connect(func() -> void: world.run_script(go_tower))
-	buttons.hunt.pressed.connect(start_hunt)
+	buttons.hunt.pressed.connect(func() -> void:
+		if mode == "hunt":
+			stop()
+		else:
+			start_hunt())
 	buttons.climb.pressed.connect(func() -> void: world.run_script(climb))
 	buttons.stop.pressed.connect(stop)
+
+## 웹 버전처럼 화면 오른쪽 위에 동그란 버튼을 세로 한 줄로 (메뉴 버튼 아래)
+const ORDER := ["tower", "hunt", "battle", "climb", "stop"]
+const ROUND := 84.0
+const COLORS := {"tower": Color(0.62, 0.5, 0.9), "hunt": Color(0.36, 0.66, 0.36), "battle": Color(0.93, 0.62, 0.22),
+	"climb": Color(0.45, 0.42, 0.78), "stop": Color(0.82, 0.32, 0.36)}
+const ON_COLOR := Color(1.0, 0.8, 0.22)
+
+func _round_button(key: String) -> Button:
+	var b := Button.new()
+	b.focus_mode = Control.FOCUS_NONE
+	b.size = Vector2(ROUND, ROUND)
+	b.add_theme_font_size_override("font_size", 19)
+	b.add_theme_constant_override("outline_size", 5)
+	b.add_theme_constant_override("line_spacing", -4)
+	for k in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		b.add_theme_color_override(k, Color.WHITE)
+	controls.add_child(b)
+	_paint(b, COLORS[key])
+	return b
+
+func _paint(b: Button, col: Color) -> void:
+	if b.get_meta("col", Color.BLACK) == col:
+		return
+	b.set_meta("col", col)
+	b.add_theme_color_override("font_outline_color", col.darkened(0.6))
+	for st in ["normal", "hover", "pressed", "focus"]:
+		var box := UI.box(col.lightened(0.12) if st == "hover" else col.darkened(0.12) if st == "pressed" else col, Color(0.17, 0.18, 0.27), int(ROUND / 2), 4)
+		box.set_content_margin_all(4)
+		b.add_theme_stylebox_override(st, box)
 
 func stop() -> void:
 	mode = ""
@@ -46,27 +79,33 @@ func _process(_delta: float) -> void:
 		return
 	var screen := get_viewport().get_visible_rect().size
 	var battling := is_instance_valid(active_battle)
-	var free := not world.busy and not world.moving and not Msg.is_open()
+	# 걷는 중에도 버튼은 그대로 둔다. 대화·메뉴·이벤트 중에만 가린다
+	var shown := not world.busy and not Msg.is_open()
+	var free := shown and not world.moving
 	var unlocked := Game.flag("pad")
 	controls.visible = Guides.overlay == null
-	buttons.battle.visible = battling or (free and unlocked)
-	buttons.battle.position = Vector2(screen.x-192,164) if battling else Vector2(16,20)
-	buttons.battle.text = "자동전투\n" + ("켜짐" if fight_enabled() else "꺼짐")
 	var in_tower := str(Game.g.map) in ["towerLobby","towerFloor"]
-	buttons.tower.visible = free and unlocked and not in_tower and mode == ""
-	buttons.hunt.visible = free and unlocked and not in_tower and mode == ""
-	buttons.climb.visible = free and in_tower and mode == ""
-	var width := (screen.x - 64) / 3.0
-	for i in 3:
-		var key: String = ["tower","hunt","climb"][i]
-		buttons[key].position = Vector2(16+i*(width+16),120)
-		buttons[key].size = Vector2(width,72)
-	buttons.tower.text = "무한의 탑"
-	buttons.hunt.text = "자동 사냥"
-	buttons.climb.text = "자동 등반"
-	buttons.stop.visible = mode != ""
-	buttons.stop.text = "자동 중지"
-	buttons.stop.position = Vector2(screen.x-192,248 if battling else 120)
+	var vis := {
+		"tower": shown and unlocked and not in_tower and mode == "",
+		"hunt": shown and unlocked and not in_tower and (mode == "hunt" or not world.m.enc.is_empty()),
+		"battle": battling or (shown and unlocked),
+		"climb": shown and str(Game.g.map) == "towerFloor" and mode == "",
+		"stop": mode != "" and (shown or battling),
+	}
+	var texts := {"tower": "탑", "hunt": "자동\n사냥", "climb": "자동\n등반", "stop": "자동\n중지",
+		"battle": "자동\n진행중" if mode != "" else ("자동전투\nON" if fight_enabled() else "자동\n전투")}
+	var y := 20.0 if battling else 108.0
+	for key in ORDER:
+		var b: Button = buttons[key]
+		b.visible = vis[key]
+		if not b.visible:
+			continue
+		b.text = texts[key]
+		var on: bool = (key == "battle" and fight_enabled()) or (key == "hunt" and mode == "hunt")
+		_paint(b, ON_COLOR if on else COLORS[key])
+		b.size = Vector2(ROUND, ROUND)
+		b.position = Vector2(screen.x - ROUND - 16, y)
+		y += ROUND + 12
 	if free and mode == "hunt":
 		if party_ratio() < 0.35 or Game.alive().is_empty() or world.m.enc.is_empty():
 			stop()

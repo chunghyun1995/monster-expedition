@@ -3,6 +3,8 @@ extends Control
 ## 화면 십자 패드와 A/B 버튼. 여러 손가락을 따로 추적해 입력 동작(go_*, a_btn, b_btn)을 눌러 준다.
 
 const DIRS := ["go_right", "go_down", "go_left", "go_up"]
+## 메뉴·선택지 커서용: 패드 방향과 A를 GUI 이동/결정 동작으로도 보낸다 (키보드 방향키·Z와 같게)
+const UI_ACT := {"go_right": "ui_right", "go_down": "ui_down", "go_left": "ui_left", "go_up": "ui_up", "a_btn": "ui_accept"}
 
 ## Includes the enlarged touch targets, not only the painted circles.
 static func reserved_top(screen: Vector2) -> float:
@@ -70,6 +72,12 @@ func _input(e: InputEvent) -> void:
 		idx = -1
 		pos = e.position
 		moved = true
+	elif e is InputEventMouse and e.device == InputEvent.DEVICE_ID_EMULATION:
+		# 터치로 흉내 낸 마우스 이벤트가 패드 자리에서 GUI로 넘어가면 메뉴 커서(포커스)가 풀려 버린다
+		var at: Vector2 = get_global_transform_with_canvas().affine_inverse() * e.position
+		if _hit_zone(at) or (e is InputEventMouseMotion and not _touch.is_empty()):
+			get_viewport().set_input_as_handled()
+		return
 	else:
 		return
 	pos = get_global_transform_with_canvas().affine_inverse() * pos
@@ -86,6 +94,15 @@ func _input(e: InputEvent) -> void:
 	elif _touch.has(idx):
 		_assign(idx, "")
 		get_viewport().set_input_as_handled()
+
+
+func _hit_zone(pos: Vector2) -> bool:
+	if pos.distance_to(_pad_center) < _pad_r * 1.25:
+		return true
+	for k in _btns:
+		if pos.distance_to(_btns[k][0]) < _btns[k][1] * 1.3:
+			return true
+	return false
 
 
 func _hit(pos: Vector2) -> String:
@@ -112,6 +129,8 @@ func _assign(idx: int, act: String) -> void:
 		return
 	if old != "" and old != "go_none":
 		Input.action_release(old)
+		if UI_ACT.has(old):
+			_send(UI_ACT[old], false)
 	if act == "":
 		_touch.erase(idx)
 		if not _touch.values().any(func(x: String) -> bool: return x.begins_with("go_")):
@@ -124,6 +143,15 @@ func _assign(idx: int, act: String) -> void:
 		ev.action = act
 		ev.pressed = true
 		Input.parse_input_event(ev)
+		if UI_ACT.has(act):
+			_send(UI_ACT[act], true)
+
+
+func _send(action: String, pressed: bool) -> void:
+	var ev := InputEventAction.new()
+	ev.action = action
+	ev.pressed = pressed
+	Input.parse_input_event(ev)
 
 
 func release_all() -> void:
