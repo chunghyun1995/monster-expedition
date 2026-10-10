@@ -53,6 +53,28 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(func() -> void: place(_mode))
 
 
+## 선택지가 떠 있는데 커서(포커스)가 없으면 방향키·A를 처음 누를 때 첫 버튼에 커서를 둔다 (화면 패드 조작용)
+func _process(_d: float) -> void:
+	if _picker == null or not is_instance_valid(_picker) or get_viewport().gui_get_focus_owner() != null:
+		return
+	for k in ["ui_up", "ui_down", "ui_left", "ui_right", "a_btn"]:
+		if Input.is_action_just_pressed(k):
+			var b := _first_button(_picker)
+			if b:
+				b.grab_focus()
+			return
+
+
+func _first_button(n: Node) -> Button:
+	for c in n.get_children():
+		if c is Button and c.visible and not c.disabled and c.focus_mode != Control.FOCUS_NONE:
+			return c
+		var r := _first_button(c)
+		if r:
+			return r
+	return null
+
+
 func vs() -> Vector2:
 	return get_viewport().get_visible_rect().size
 
@@ -379,7 +401,12 @@ func buttons(list_: Array, cancel := -1, start := 0) -> int:
 		b.disabled = e.get("disabled", false)
 		b.pressed.connect(func() -> void: _pick = i)
 		btns.append(b)
-	_link_focus(btns, true)
+	# 한 줄로 늘어선 버튼은 위아래로 순환, 격자(메인 메뉴 등)는 화면 위치대로 움직인다(Godot 기본 이동)
+	var xs := {}
+	for b in btns:
+		xs[int(b.position.x)] = true
+	if xs.size() <= 1:
+		_link_focus(btns, true)
 	if btns.size():
 		var f: Button = btns[clampi(start, 0, btns.size() - 1)]
 		if f.disabled:
