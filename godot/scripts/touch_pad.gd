@@ -3,6 +3,11 @@ extends Control
 ## 화면 십자 패드와 A/B 버튼. 여러 손가락을 따로 추적해 입력 동작(go_*, a_btn, b_btn)을 눌러 준다.
 
 const DIRS := ["go_right", "go_down", "go_left", "go_up"]
+
+## Includes the enlarged touch targets, not only the painted circles.
+static func reserved_top(screen: Vector2) -> float:
+	return screen.y - maxf(170.0 + 110.0 * 1.25, 210.0 + 64.0 * 1.3)
+
 var _pad_center := Vector2.ZERO
 var _pad_r := 110.0
 var _btns := {}           # action → [center, radius]

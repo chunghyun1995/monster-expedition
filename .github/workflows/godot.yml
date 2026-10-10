@@ -103,6 +103,10 @@ jobs:
           sed -i "s/^version\/code=.*/version\/code=$CODE/; s/^version\/name=.*/version\/name=\"0.1-godot ($(git rev-parse --short HEAD))\"/" export_presets.cfg
           mkdir -p build/web build/android
           "$GODOT" --headless --path . --import > /dev/null 2>&1 || true
+          "$GODOT" --headless --path . res://tests/regression.tscn > regression.log 2>&1
+          cat regression.log
+          grep -q GODOT_REGRESSION_PASS regression.log
+          ! grep -E 'SCRIPT ERROR:|Shader compilation failed' regression.log
           "$GODOT" --headless --path . --export-release "Web" build/web/index.html
           "$GODOT" --headless --path . --install-android-build-template --export-release "Android APK" build/android/monster-expedition-godot.apk
           "$GODOT" --headless --path . --export-release "Android AAB" build/android/monster-expedition-godot.aab

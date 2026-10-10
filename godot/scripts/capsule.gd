@@ -1,13 +1,11 @@
 class_name Capsule
 extends Node2D
-## 포획캡슐 그림 (종류마다 윗면 색이 다름). 반지름 r 기준으로 그린다.
-
-const TOP := {"ball": Color(0.9, 0.27, 0.32), "great": Color(0.6, 0.66, 0.78), "hyper": Color(0.95, 0.75, 0.2)}
+## Original faceted resonance lantern. No spherical red/white halves or button seam.
+const COLORS := {"ball": Color("#40c7bb"), "great": Color("#9d88e5"), "hyper": Color("#edc25c")}
 var kind := "ball"
 var r := 23.0
 var open := false
 var dim := false
-
 
 static func make(kind_ := "ball", radius := 23.0) -> Capsule:
 	var c := Capsule.new()
@@ -15,28 +13,36 @@ static func make(kind_ := "ball", radius := 23.0) -> Capsule:
 	c.r = radius
 	return c
 
-
 func _draw() -> void:
-	var k := r / 23.0
-	draw_circle(Vector2(0, r * 0.95), r * 0.8, Color(0, 0, 0, 0.18))
+	var color: Color = COLORS.get(kind, COLORS.ball)
+	var edge := Color("#243c49")
+	var brass := Color("#bd9354")
+	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE * r / 23.0)
+	draw_circle(Vector2(0, 23), 16, Color(0, 0, 0, 0.18))
+	var hull := PackedVector2Array([Vector2(0,-27), Vector2(17,-15), Vector2(19,13), Vector2(0,26), Vector2(-19,13), Vector2(-17,-15)])
+	draw_colored_polygon(hull, edge)
 	if open:
-		draw_circle(Vector2(0, 4 * k), 23 * k, Color(0.15, 0.15, 0.2))
-		draw_circle(Vector2(0, 4 * k), 20 * k, Color(0.97, 0.97, 0.95))
-		_half(Vector2(0, -10 * k), k)
-		return
-	draw_circle(Vector2.ZERO, 26 * k, Color(0.15, 0.15, 0.2))
-	draw_circle(Vector2.ZERO, 23 * k, Color(0.97, 0.97, 0.95))
-	_half(Vector2.ZERO, k)
-	draw_rect(Rect2(-24 * k, -3 * k, 48 * k, 6 * k), Color(0.15, 0.15, 0.2))
-	draw_circle(Vector2.ZERO, 9 * k, Color(0.15, 0.15, 0.2))
-	draw_circle(Vector2.ZERO, 6 * k, Color.WHITE)
-	draw_circle(Vector2(-9, -12) * k, 5 * k, Color(1, 1, 1, 0.6))
+		draw_circle(Vector2(0,-5), 20, Color(color, 0.25))
+		draw_colored_polygon(PackedVector2Array([Vector2(0,-23),Vector2(8,-7),Vector2(0,14),Vector2(-8,-7)]), color.lightened(0.65))
+		_panel(-1, color, brass, true)
+		_panel(1, color, brass, true)
+	else:
+		_panel(-1, color, brass, false)
+		_panel(1, color, brass, false)
+		# Vertical luminous vein and leaf emblem, rather than an equatorial band.
+		draw_line(Vector2(0,-20), Vector2(0,18), brass, 3, true)
+		draw_colored_polygon(PackedVector2Array([Vector2(0,-10),Vector2(7,-3),Vector2(0,8),Vector2(-5,1)]), Color("#e6ffd9"))
+		draw_line(Vector2(-9,-11), Vector2(-10,8), Color(1,1,1,0.5), 2, true)
+	draw_colored_polygon(PackedVector2Array([Vector2(0,-27),Vector2(6,-23),Vector2(0,-19),Vector2(-6,-23)]), brass)
 	if dim:
-		draw_circle(Vector2.ZERO, 26 * k, Color(0, 0, 0, 0.25))
+		draw_colored_polygon(hull, Color(0,0,0,0.3))
+	draw_set_transform(Vector2.ZERO)
 
-
-func _half(at: Vector2, k: float) -> void:
-	var top := PackedVector2Array()
-	for i in 25:
-		top.append(at + Vector2.from_angle(PI + PI * i / 24.0) * 23 * k)
-	draw_colored_polygon(top, TOP.get(kind, TOP.ball))
+func _panel(side: float, color: Color, brass: Color, unfolded: bool) -> void:
+	var shift := Vector2(side * 12, -5) if unfolded else Vector2.ZERO
+	var panel := PackedVector2Array([Vector2(0,-23),Vector2(side*14,-13),Vector2(side*16,11),Vector2(0,22)])
+	for i in panel.size():
+		panel[i] += shift
+	draw_colored_polygon(panel, color.lightened(0.13) if side < 0 else color.darkened(0.25))
+	panel.append(panel[0])
+	draw_polyline(panel, brass, 2.0, true)

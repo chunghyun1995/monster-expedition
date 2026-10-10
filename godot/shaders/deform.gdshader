@@ -13,6 +13,7 @@ uniform float sway = 0.0;        // 잎·몸이 천천히 흔들림
 uniform float wobble = 0.0;      // 맞았을 때 젤리처럼 출렁임
 uniform float walk = 0.0;        // 걷기 세기
 uniform float walk_phase = 0.0;  // 걷기 위상
+uniform float arm_throw = 0.0;   // original chibi protagonist's throwing arm
 uniform float flap = 0.0;        // 날개짓
 uniform float flutter = 0.0;     // 위쪽 일렁임 (불꽃·머리카락)
 uniform float flutter_low = 0.0; // 아래쪽 일렁임 (해파리 촉수)
@@ -54,6 +55,9 @@ void vertex() {
 	v.y -= walk * leg * max(0.0, s * side) * size.y * 0.07;
 	v.x += walk * leg * s * side * size.x * 0.035;
 	v.y += walk * arm * s * side * size.y * 0.035;
+	float throwing_arm = arm * smoothstep(0.5, 0.75, lp.x);
+	v.y -= arm_throw * throwing_arm * size.y * 0.16;
+	v.x += arm_throw * throwing_arm * size.x * 0.10;
 	v.y -= walk * abs(cos(walk_phase)) * size.y * 0.03 * (1.0 - leg);
 	// 날개짓: 양옆 윗부분이 위아래로
 	float wing = edge * (1.0 - smoothstep(0.2, 0.75, lp.y));

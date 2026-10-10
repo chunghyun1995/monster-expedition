@@ -115,13 +115,6 @@ func enter_map(id: String, at: Vector2i, d: String, opts := {}) -> void:
 			c.position = Vector2(int(it.x) * T + T / 2.0, int(it.y) * T + T / 2.0 + 4)
 			ents.add_child(c)
 			item_nodes[Vector2i(int(it.x), int(it.y))] = c
-	if id == "lab":
-		for s in STARTERS:
-			if not Game.flag("starter") or (s[2] != int(Game.g.starter) and s[2] != int(Game.g.rival_starter)):
-				var c := Capsule.make("ball", 13.0)
-				c.position = Vector2(s[0] * T + T / 2.0, s[1] * T + T * 0.35)
-				c.z_index = 2
-				ground.add_child(c)
 	for n in m.npcs:
 		var npc := NPC.new()
 		ents.add_child(npc)
@@ -361,6 +354,19 @@ func _make_tables() -> void:
 		s.position = Vector2(0, -h - 6)
 		root.add_child(s)
 		ents.add_child(root)
+		# Capsules belong to their table: draw above its surface, but retain
+		# the table's Y-sort order so someone standing in front occludes both.
+		if str(Game.g.map) == "lab":
+			for starter in STARTERS:
+				var cell := Vector2i(starter[0], starter[1])
+				if not Rect2i(b.pos, b.size).has_point(cell):
+					continue
+				if Game.flag("starter") and (starter[2] == int(Game.g.starter) or starter[2] == int(Game.g.rival_starter)):
+					continue
+				var capsule := Capsule.make("ball", 13.0)
+				capsule.name = "StarterCapsule%d" % starter[2]
+				capsule.position = Vector2(cell.x * T + T / 2.0, cell.y * T + T * 0.13) - root.position
+				root.add_child(capsule)
 
 
 func _make_heal_balls(n: int) -> void:
