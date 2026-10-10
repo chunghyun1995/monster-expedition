@@ -1,21 +1,14 @@
 class_name Player
 extends Node2D
-## 주인공: 걷기 아틀라스(방향 4 × 정지/왼발/오른발/던지기)를 프레임 사이 크로스페이드로 이어 붙이고,
+## 주인공: NPC와 같은 앞/뒤 chibi 아틀라스에 관절 메시 변형을 적용하고,
 ## 몸 통통 튀기·착지 눌림·달리기 기울기·먼지를 더한다.
 
-const ROWS := {"down": 0, "up": 1, "left": 2, "right": 3}
-const COLS := {"idle": 0, "a": 1, "b": 2, "throw": 3}
-
 var dir := "down"
-var height := 92.0
+var height := 90.0
 var body: Node2D
 var shadow: Sprite2D
-var _cur: Sprite2D
-var _old: Sprite2D
-var _scale := 1.0
-var _foot := 0.0
-var _frame := Vector2i(-1, -1)
-var _fade_tw: Tween
+var front: Puppet
+var back: Puppet
 var _sb := Vector2.ONE
 
 
@@ -26,45 +19,32 @@ func _init() -> void:
 	add_child(shadow)
 	body = Node2D.new()
 	add_child(body)
-	_old = Sprite2D.new()
-	_cur = Sprite2D.new()
-	for s in [_old, _cur]:
-		s.texture = Data.tex.walk
-		s.region_enabled = true
-		s.centered = false
-		body.add_child(s)
-	var idle: Rect2 = Data.tight("walk", 0)
-	_scale = height / idle.size.y
-	_foot = Data.cell("walk", 0).end.y - idle.end.y
-	_sb = Vector2(idle.size.x * _scale / 128.0 * 1.15, idle.size.x * _scale / 128.0 * 0.34)
+	# Reuse the original chibi character used by NPCs and the battle intro.
+	# The old walk atlas had a different head/body ratio, even at equal height.
+	front = Puppet.new()
+	back = Puppet.new()
+	for p in [front, back]:
+		body.add_child(p)
+		p.setup_person("player", p == back, height)
+		p.shadow.visible = false
+	_sb = Vector2(front.size.x / 128.0 * 1.15, front.size.x / 128.0 * 0.34)
 	shadow.scale = _sb
 	show_frame("down", "idle", true)
 
 
-func show_frame(d: String, col: String, instant := false) -> void:
+func cur() -> Puppet:
+	return back if dir == "up" else front
+
+
+func show_frame(d: String, col: String, _instant := false) -> void:
 	dir = d
-	var f := Vector2i(COLS[col], ROWS[d])
-	if f == _frame:
-		return
-	_frame = f
-	var r: Rect2 = Data.cell("walk", f.y * 4 + f.x)
-	_old.region_rect = _cur.region_rect
-	_old.position = _cur.position
-	_old.scale = _cur.scale
-	_old.modulate.a = 0.0 if instant else 1.0
-	_cur.region_rect = r
-	_cur.scale = Vector2(_scale, _scale)
-	_cur.position = Vector2(-r.size.x * _scale / 2.0, -(r.size.y - _foot) * _scale)
-	if _fade_tw:
-		_fade_tw.kill()
-	if instant:
-		_cur.modulate.a = 1.0
-		return
-	# 프레임을 툭 바꾸지 않고 70ms 동안 겹쳐서 넘긴다
-	_cur.modulate.a = 0.35
-	_fade_tw = create_tween().set_parallel()
-	_fade_tw.tween_property(_cur, "modulate:a", 1.0, 0.07)
-	_fade_tw.tween_property(_old, "modulate:a", 0.0, 0.09)
+	front.visible = d != "up"
+	back.visible = d == "up"
+	front.body.scale.x = -1.0 if d == "left" else 1.0
+	for p in [front, back]:
+		p.p("walk", 0.0 if col == "idle" or col == "throw" else 1.0)
+		p.p("walk_phase", PI * 0.5 if col == "a" else PI * 1.5)
+		p.p("arm_throw", 1.0 if col == "throw" else 0.0)
 
 
 ## 한 칸 이동. 이동 중 몸이 통통 튀고, 발이 닿을 때 살짝 눌린다.
@@ -77,6 +57,8 @@ func step(to: Vector2, d: String, dur: float, foot: bool, running: bool) -> void
 		lean = {"left": -0.07, "right": 0.07}.get(d, 0.0)
 	tw.tween_method(func(k: float) -> void:
 		position = from.lerp(to, k)
+		cur().p("walk_phase", k * PI + (0.0 if foot else PI))
+		cur().p("walk", sin(k * PI))
 		body.position.y = -absf(sin(k * PI)) * (7.0 if running else 4.5)
 		body.rotation = lean * sin(k * PI)
 		body.scale = Vector2(1.0 + 0.03 * sin(k * PI), 1.0 - 0.03 * sin(k * PI)), 0.0, 1.0, dur)

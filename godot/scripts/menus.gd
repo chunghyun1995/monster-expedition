@@ -816,6 +816,7 @@ func options_menu() -> void:
 		for r in rows:
 			items.append({"text": r[0], "right": "◀ %s ▶" % r[1][int(Game.settings[r[2]])]})
 		items.append({"text": "개인정보처리방침", "right": "열기 ▶"})
+		items.append({"text": "오픈소스 라이선스", "right": "보기 ▶"})
 		var i := await Msg.list(items, {"title": "설정 (◀ ▶ 또는 누르기로 바꾸기)", "start": at, "buttons": [["결정", -1, Color(0.3, 0.5, 0.75)]],
 			"keys": func(k: String, i2: int):
 				if i2 < 0 or i2 >= rows.size():
@@ -836,9 +837,35 @@ func options_menu() -> void:
 			Game.settings[r[2]] = (int(Game.settings[r[2]]) + 1) % r[1].size()
 			Sound.apply_volume()
 			Sound.sfx("cur")
-		else:
+		elif i == rows.size():
 			OS.shell_open(PRIVACY_URL)
+		else:
+			await license_notice()
 	Game.save_settings()
+
+
+func license_notice() -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 70
+	add_child(layer)
+	var screen := vs()
+	var panel := UI.panel(layer, Rect2(16, 24, screen.x - 32, screen.y - 48))
+	UI.label(panel, "오픈소스 라이선스", Vector2(24, 20), 30)
+	var scroll := ScrollContainer.new()
+	scroll.position = Vector2(24, 76)
+	scroll.size = Vector2(panel.size.x - 48, panel.size.y - 190)
+	panel.add_child(scroll)
+	var notice := RichTextLabel.new()
+	notice.fit_content = true
+	notice.scroll_active = false
+	notice.custom_minimum_size.x = scroll.size.x - 24
+	notice.add_theme_font_size_override("normal_font_size", 20)
+	notice.add_theme_color_override("default_color", Color(0.15, 0.19, 0.25))
+	notice.text = "Godot Engine\n" + Engine.get_license_text() + "\n\nThird-party components\n" + JSON.stringify(Engine.get_copyright_info(), "  ") + "\n" + JSON.stringify(Engine.get_license_info(), "  ") + "\n\nGalmuri\n" + FileAccess.get_file_as_string("res://fonts/OFL-Galmuri.txt")
+	scroll.add_child(notice)
+	var close := UI.button(panel, "닫기", Rect2(24, panel.size.y - 90, panel.size.x - 48, 64), Color(0.3, 0.5, 0.75))
+	await close.pressed
+	layer.queue_free()
 
 
 # =====================================================================

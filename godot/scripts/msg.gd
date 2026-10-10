@@ -67,7 +67,7 @@ func place(mode: String) -> void:
 		"center":
 			_rect = Rect2(16, s.y * 0.5 - 100, s.x - 32, 200)
 		_:
-			_rect = Rect2(16, s.y - 250, s.x - 32, 220)
+			_rect = Rect2(16, TouchPad.reserved_top(s) - 16 - 220, s.x - 32, 220)
 	box.position = _rect.position
 	box.size = _rect.size
 	text.size = Vector2(_rect.size.x - 56, _rect.size.y - 40)
