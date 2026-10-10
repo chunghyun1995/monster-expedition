@@ -141,6 +141,7 @@ func _advance() -> void:
 		return
 	if _waiting:
 		_waiting = false
+		Sound.sfx("cur")
 		_advanced.emit()
 
 
@@ -173,10 +174,13 @@ func ask(t: String, options: Array, who := "", start := 0, cancel_idx := -2) -> 
 		btns.append(b)
 	_link_focus(btns, true)
 	btns[start].grab_focus()
+	for b in btns:
+		b.focus_entered.connect(func() -> void: Sound.sfx("cur"))
 	while _pick == null:
 		if cancel >= 0 and Input.is_action_just_pressed("b_btn"):
 			_pick = cancel
 		await get_tree().process_frame
+	Sound.sfx("back" if int(_pick) == cancel and cancel >= 0 else "sel")
 	layer.queue_free()
 	_picker = null
 	hide_box()
@@ -271,6 +275,8 @@ func list(items: Array, opts := {}) -> int:
 			r.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		b.pressed.connect(func() -> void: _pick = i)
 		b.focus_entered.connect(func() -> void:
+			if layer.has_meta("ready"):
+				Sound.sfx("cur")
 			if opts.has("on_move"):
 				opts.on_move.call(i)
 			sc.ensure_control_visible(b))
@@ -296,6 +302,7 @@ func list(items: Array, opts := {}) -> int:
 		first.grab_focus()
 		if opts.has("on_move"):
 			opts.on_move.call(btns.find(first))
+	layer.set_meta("ready", true)
 	while _pick == null:
 		if opts.get("cancel", true) and Input.is_action_just_pressed("b_btn"):
 			_pick = -1
@@ -307,6 +314,8 @@ func list(items: Array, opts := {}) -> int:
 					if r != null:
 						_pick = r
 		await get_tree().process_frame
+	if int(_pick) < 1000:
+		Sound.sfx("back" if int(_pick) == -1 else "sel")
 	layer.queue_free()
 	_picker = null
 	return int(_pick)
@@ -364,6 +373,7 @@ func buttons(list_: Array, cancel := -1, start := 0) -> int:
 		if cancel != -2 and Input.is_action_just_pressed("b_btn"):
 			_pick = cancel
 		await get_tree().process_frame
+	Sound.sfx("back" if int(_pick) == cancel else "sel")
 	layer.queue_free()
 	_picker = null
 	return int(_pick)
@@ -393,6 +403,7 @@ func number(max_n: int, price: int, title: String) -> int:
 		var b := UI.button(layer, t, r, Color(0.35, 0.5, 0.75), 36)
 		b.pressed.connect(func() -> void:
 			n[0] = clampi(n[0] + d, 1, max_n)
+			Sound.sfx("cur")
 			upd.call())
 	mk.call("▲", Rect2(s.x - 280, s.y * 0.5 - 170, 90, 80), 1)
 	mk.call("▼", Rect2(s.x - 280, s.y * 0.5 - 70, 90, 80), -1)
@@ -406,13 +417,16 @@ func number(max_n: int, price: int, title: String) -> int:
 	while _pick == null:
 		if Input.is_action_just_pressed("ui_up"):
 			n[0] = mini(max_n, n[0] + 1)
+			Sound.sfx("cur")
 			upd.call()
 		elif Input.is_action_just_pressed("ui_down"):
 			n[0] = maxi(1, n[0] - 1)
+			Sound.sfx("cur")
 			upd.call()
 		elif Input.is_action_just_pressed("b_btn"):
 			_pick = 0
 		await get_tree().process_frame
+	Sound.sfx("back" if int(_pick) == 0 else "sel")
 	layer.queue_free()
 	_picker = null
 	return int(_pick)
@@ -455,6 +469,7 @@ func name_input(title: String, def := "", max_len := 6, sug := [], allow_empty :
 		if Input.is_action_just_pressed("ui_text_submit") and (le.text.strip_edges() != "" or allow_empty):
 			_pick = le.text.strip_edges()
 		await get_tree().process_frame
+	Sound.sfx("sel")
 	layer.queue_free()
 	_picker = null
 	return str(_pick)

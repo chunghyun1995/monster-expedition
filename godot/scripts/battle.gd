@@ -119,6 +119,7 @@ func run(opts: Dictionary, world: World) -> String:
 	ME_POS = Vector2(VS.x * 0.3, SH * 0.97)
 	layer = 10
 	_build()
+	Sound.music(str(o.get("music", "wild" if wild else "rival" if o.kind == "npc" else {"leader": "leader", "rival": "rival"}.get(str(o.get("cls", "")), "trainer"))))
 	Msg.place("battle")
 	await Game.fade_to(0.0, 0.25)
 	if wild:
@@ -139,6 +140,19 @@ func run(opts: Dictionary, world: World) -> String:
 		else:
 			res = await do_turn(await choose_action())
 	return await end_battle(str(res))
+
+
+var _lowhp_t := 0.0
+
+
+## 내 몬스터 체력이 20% 이하면 삐삐 경고음 (웹 게임과 같은 1.1초 간격)
+func _process(delta: float) -> void:
+	_lowhp_t += delta
+	if _lowhp_t < 1.1:
+		return
+	_lowhp_t = 0.0
+	if hero == null and pp != null and pp.visible and not pm().is_empty() and pm().hp > 0 and pm().hp <= Game.max_hp(pm()) * 0.2:
+		Sound.sfx("lowhp")
 
 
 func _build() -> void:
@@ -276,7 +290,11 @@ func set_exp(instant := false) -> void:
 	if instant:
 		huds.p.exp.size.x = target
 	else:
-		await create_tween().tween_property(huds.p.exp, "size:x", target, 0.6).finished
+		var tw := create_tween()
+		tw.tween_property(huds.p.exp, "size:x", target, 0.6)
+		while tw.is_running():
+			Sound.sfx("exp")
+			await get_tree().create_timer(0.05).timeout
 
 
 func anim_hp(side: String, m: Dictionary, to: float) -> void:
@@ -354,6 +372,7 @@ func send_foe() -> void:
 	tr.position = FOE_POS + Vector2(VS.x * 0.4, 0)
 	await _walk_in(tr, FOE_POS + Vector2(110, 0), 0.35)
 	bsay("%s %s 내보냈다!" % [J(tn(), "은"), J(N(f), "을")])
+	Sound.sfx("throw")
 	await _throw_pose(tr, -1)
 	if fp:
 		fp.queue_free()
@@ -378,6 +397,7 @@ func send_player() -> void:
 	me.visible = true
 	me.position = ME_POS + Vector2(-VS.x * 0.6, 40)
 	await _walk_in(me, ME_POS + Vector2(-20, 40), 0.45)
+	Sound.sfx("throw")
 	await _throw_pose(me, 1)
 	if pp:
 		pp.queue_free()
@@ -395,6 +415,7 @@ func recall(side: String) -> void:
 	var p := pup(side)
 	if p == null:
 		return
+	Sound.sfx("absorb")
 	p.p("glow_color", Color(1, 0.4, 0.4))
 	var tw := create_tween()
 	p.tp(tw, "flash", 0.9, 0.15)
@@ -427,6 +448,8 @@ func _foe_hero_start() -> void:
 	for m in foe:
 		top = maxi(top, int(m.lv))
 	_foe_hero_setup(top + 2)
+	Sound.music("rival")
+	Sound.sfx("run")
 	if tr == null:
 		tr = _person(look_of(), false, 300.0, FOE_POS)
 	tr.visible = true
@@ -461,6 +484,7 @@ func hero_start() -> bool:
 		me = _person("player", true, 330.0, ME_POS)
 	me.visible = true
 	me.position = ME_POS + Vector2(-VS.x * 0.6, 0)
+	Sound.sfx("run")
 	await _walk_in(me, ME_POS, 0.4)
 	make_hud("p")
 	await bsay("%s 쓰러진 몬스터들 앞을 막아섰다!" % J(Game.g.name, "은"), true)
@@ -822,6 +846,7 @@ func use_move(side: String, id: String, mi) -> void:
 	elif r.e < 1:
 		await bsay("효과가 별로인 듯하다...")
 	if fx.has("drain") and u.hp > 0 and dealt > 0:
+		Sound.sfx("absorb")
 		await FX.projectile(stage, pup(ts).center(), pup(side).center(), "grass", 0.4, 40)
 		await anim_hp(side, u, u.hp + maxi(1, dealt * int(fx.drain) / 100))
 		await bsay("%s에게서 체력을 흡수했다!" % bname(ts))
@@ -900,6 +925,7 @@ func stat_change(side: String, s: int, v: int) -> void:
 	S[s] = clampi(S[s] + v, -6, 6)
 	var p := pup(side)
 	var up := v > 0
+	Sound.sfx("statup" if up else "statdn")
 	if anim() and p:
 		p.p("glow_color", Color(1, 0.45, 0.3) if up else Color(0.3, 0.5, 1))
 		var tw := create_tween()
@@ -933,6 +959,7 @@ func heal_self(side: String, u: Dictionary, pct: int) -> void:
 	if u.hp >= Game.max_hp(u):
 		await bsay("그러나 체력이 이미 가득하다!")
 		return
+	Sound.sfx("heal")
 	await anim_hp(side, u, u.hp + maxi(1, Game.max_hp(u) * pct / 100))
 	await bsay("%s 체력을 회복했다!" % J(bname(side), "은"))
 
@@ -941,6 +968,11 @@ func faint(side: String) -> void:
 	var p := pup(side)
 	if p == null or not p.visible:
 		return
+	var fm_ := side_mon(side)
+	if not fm_.is_empty():
+		Sound.cry(fm_.sid, true)
+		await get_tree().create_timer(0.3).timeout
+	Sound.sfx("faint")
 	await _faint_anim(p)
 	hide_hud(side)
 	await bsay("%s 쓰러졌다!" % J(bname(side), "은"))
@@ -989,6 +1021,8 @@ func throw_ball(id: String) -> bool:
 	var n := _capture_chance(float(e.hp), float(Game.max_hp(e)), float(Game.sp(e.sid).c), float(it.ball), bonus)
 	var cap := await _capsule_throw(fp, id, n)
 	if n >= 4:
+		Sound.stop_music(true)
+		await Sound.jingle("caught")
 		await bsay("좋았어! %s 붙잡았다!" % J(N(e), "을"), true)
 		var is_new = not Game.g.caught.has(int(e.sid))
 		Game.g.caught[int(e.sid)] = 1
@@ -1025,6 +1059,8 @@ func throw_ball_human(id: String) -> bool:
 	var cap := await _capsule_throw(tr, id, n)
 	if n >= 4:
 		hide_hud("e")
+		Sound.stop_music(true)
+		await Sound.jingle("caught")
 		await bsay("좋았어! %s 붙잡았다!" % J(name, "을"), true)
 		var lv := mini(100, int(t.lv))
 		var m := Game.make_mon(sid, lv, {"shiny": false, "ot": Game.g.name, "met": {"map": w.m.name, "lv": lv}})
@@ -1113,6 +1149,7 @@ func hero_turn():
 	else:
 		if wild:
 			if randf() < 0.6:
+				Sound.sfx("run")
 				await bsay("몬스터들을 안고 무사히 도망쳤다!", true)
 				return "run"
 			await bsay("도망칠 수 없었다!")
@@ -1149,6 +1186,7 @@ func hero_turn():
 			await _dodge(me)
 			await bsay("%s 몸을 날려 피했다!" % J(Game.g.name, "은"))
 	if h.hp <= 0:
+		Sound.sfx("faint")
 		await _faint_anim(me)
 		hide_hud("p")
 		await bsay("%s 힘이 다해 쓰러졌다..." % J(Game.g.name, "은"), true)
@@ -1260,6 +1298,7 @@ func mon_vs_trainer(mi) -> void:
 	if crit:
 		await bsay("급소에 맞았다!")
 	if mv.fx.has("drain") and u.hp > 0:
+		Sound.sfx("absorb")
 		await anim_hp("p", u, u.hp + maxi(1, d * int(mv.fx.drain) / 100))
 		await bsay("%s에게서 체력을 흡수했다!" % tn())
 	if mv.fx.has("recoil"):
@@ -1318,6 +1357,7 @@ func _player_down():
 
 
 func _foe_hero_down() -> String:
+	Sound.sfx("faint")
 	await _sit_down(tr)
 	hide_hud("e")
 	await bsay("%s 털썩 주저앉았다!" % J(tn(), "은"), true)
@@ -1372,6 +1412,8 @@ func add_exp(m: Dictionary, g2: int, active: bool) -> void:
 # 끝
 # =====================================================================
 func end_battle(res: String) -> String:
+	if res == "win" and captured == null:
+		Sound.music("victory")
 	if res == "win":
 		if wild and gold > 0:
 			await bsay("%s %s 주웠다!" % [J(Game.g.name, "은"), J(Game.money(gold), "을")], true)
@@ -1440,6 +1482,9 @@ func _throw_pose(p: Puppet, d: float) -> void:
 
 
 func _cry(p: Puppet) -> void:
+	var cm := fm() if p == fp else pm() if p == pp else {}
+	if not cm.is_empty():
+		Sound.cry(cm.sid)
 	var tw := create_tween()
 	p.tp(tw, "squash", 0.12, 0.12)
 	tw.parallel()
@@ -1466,6 +1511,7 @@ func _cry(p: Puppet) -> void:
 
 
 func _shiny_fx(p: Puppet) -> void:
+	Sound.sfx("shiny")
 	for i in 3:
 		FX.burst(stage, p.center() + Vector2(0, -20), Color(1, 0.97, 0.7), Color(1, 1, 1), 8, 160.0, Vector2.ZERO, 0.5, 1.2, 180.0)
 		await get_tree().create_timer(0.16).timeout
@@ -1491,6 +1537,7 @@ func _capsule_open(from: Vector2, at: Vector2, p: Puppet) -> void:
 		c.position = from.lerp(to, k) + Vector2(0, -sin(k * PI) * 90)
 		c.rotation = k * TAU * 1.5, 0.0, 1.0, 0.42)
 	await tw.finished
+	Sound.sfx("open")
 	FX.burst(stage, to, Color(1, 1, 1), Color(0.8, 0.95, 1.0), 24, 380.0, Vector2.ZERO, 0.45, 1.3, 180.0)
 	c.queue_free()
 	p.visible = true
@@ -1514,6 +1561,7 @@ func _capsule_throw(target: Puppet, kind: String, n: int) -> Capsule:
 	var from := Vector2(-40, SH * 0.9)
 	var to := target.center()
 	var home := target.position
+	Sound.sfx("throw")
 	var tw := create_tween()
 	tw.tween_method(func(k: float) -> void:
 		c.position = from.lerp(to, k) + Vector2(0, -sin(k * PI) * 260)
@@ -1524,6 +1572,8 @@ func _capsule_throw(target: Puppet, kind: String, n: int) -> Capsule:
 	bounce.parallel().tween_property(c, "rotation", -0.4, 0.2)
 	c.open = true
 	c.queue_redraw()
+	Sound.sfx("open")
+	get_tree().create_timer(0.15).timeout.connect(Sound.sfx.bind("absorb"))
 	target.p("glow_color", Color.WHITE)
 	var suck := create_tween()
 	target.tp(suck, "flash", 1.0, 0.2)
@@ -1539,8 +1589,10 @@ func _capsule_throw(target: Puppet, kind: String, n: int) -> Capsule:
 	fall.tween_property(c, "position", ground, 0.32).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 	fall.parallel().tween_property(c, "rotation", 0.0, 0.32)
 	await fall.finished
+	Sound.sfx("land")
 	for i in mini(n, 3):
 		await get_tree().create_timer(0.38).timeout
+		Sound.sfx("wobble")
 		var wt := create_tween()
 		var side := -1.0 if i % 2 == 0 else 1.0
 		wt.tween_property(c, "rotation", 0.45 * side, 0.12).set_trans(Tween.TRANS_SINE)
@@ -1552,6 +1604,7 @@ func _capsule_throw(target: Puppet, kind: String, n: int) -> Capsule:
 		await wt.finished
 	await get_tree().create_timer(0.38).timeout
 	if n >= 4:
+		Sound.sfx("click")
 		FX.burst(stage, c.position + Vector2(0, -20), Color(1, 0.95, 0.5), Color(1, 0.8, 0.2), 14, 260.0, Vector2(0, 500), 0.7, 0.9, 50.0)
 		var dim := create_tween()
 		dim.tween_property(c, "scale", Vector2(1.15, 0.85), 0.06)
@@ -1560,6 +1613,7 @@ func _capsule_throw(target: Puppet, kind: String, n: int) -> Capsule:
 		c.dim = true
 		c.queue_redraw()
 		return c
+	Sound.sfx("breakout")
 	FX.burst(stage, c.position, Color(1, 1, 1), Color(1, 0.5, 0.5), 26, 420.0, Vector2(0, 300), 0.5, 1.2, 180.0)
 	c.queue_free()
 	target.visible = true
@@ -1589,6 +1643,7 @@ func _hop(p: Puppet, n: int, h: float) -> void:
 
 
 func _run_away() -> void:
+	Sound.sfx("run")
 	if pp and pp.visible:
 		var tw := create_tween()
 		pp.tp(tw, "squash", 0.1, 0.08)
@@ -1617,11 +1672,24 @@ func move_anim(side: String, mv: Dictionary, r: Dictionary) -> void:
 		return
 	var dir := (t.position - a.position).normalized()
 	var big: bool = r.get("crit", false) or float(r.get("e", 1)) > 1
-	await _impact(t, dir, mv.t, big)
+	await _impact(t, dir, mv.t, big, "weak" if float(r.get("e", 1)) < 1 else "")
 	FX.number(stage, t.center() + Vector2(0, -t.size.y * 0.35), str(r.d), Color(1, 0.85, 0.3) if big else Color.WHITE, 58 if big else 46)
 
 
+## 기술 고유의 효과음 (맞는 소리는 _impact에서). 두 번째 소리는 조금 뒤에
+func _move_sounds(mv: Dictionary, attack: bool) -> void:
+	var l: Array = Sound.move_sfx(str(mv.id), str(mv.t))
+	if attack:
+		l = l.filter(func(x: String) -> bool: return not x in ["hit", "super"])
+	for i in l.size():
+		if i == 0:
+			Sound.sfx(l[i])
+		else:
+			get_tree().create_timer(0.3 * i).timeout.connect(Sound.sfx.bind(l[i]))
+
+
 func _attack_motion(a: Puppet, t: Puppet, mv: Dictionary) -> void:
+	_move_sounds(mv, true)
 	match str(mv.id):
 		"kick", "headbutt":
 			await _lunge(a, t, mv, true)
@@ -1715,6 +1783,7 @@ func _special(a: Puppet, t: Puppet, mv: Dictionary) -> void:
 
 
 func _status_motion(a: Puppet, t: Puppet, mv: Dictionary) -> void:
+	_move_sounds(mv, false)
 	var fx: Dictionary = mv.fx
 	if fx.has("heal"):
 		await _heal_fx(a)
@@ -1888,7 +1957,8 @@ func _rock_throw(a: Puppet, t: Puppet) -> void:
 	r.queue_free()
 
 
-func _impact(t: Puppet, dir: Vector2, type: String, big: bool) -> void:
+func _impact(t: Puppet, dir: Vector2, type: String, big: bool, snd := "") -> void:
+	Sound.sfx(snd if snd != "" else "super" if big else "hit")
 	FX.hit(stage, t.center(), type, 1.4 if big else 1.0)
 	FX.shake(stage, 18.0 if big else 10.0, 0.3)
 	await _hurt(t, dir, 1.3 if big else 1.0)
@@ -1921,6 +1991,7 @@ func _hurt(t: Puppet, dir: Vector2, k: float) -> void:
 
 
 func _dodge(t: Puppet) -> void:
+	Sound.sfx("miss")
 	if t == null:
 		return
 	var x0 := t.position.x
@@ -1942,6 +2013,7 @@ func _miss_anim(side: String) -> void:
 
 
 func _heal_fx(p: Puppet) -> void:
+	Sound.sfx("heal")
 	if p == null:
 		return
 	p.p("glow_color", Color(0.5, 1, 0.6))
@@ -1974,6 +2046,7 @@ func status_fx(side: String, s: String) -> void:
 		await get_tree().create_timer(0.1).timeout
 		return
 	var c := p.center()
+	Sound.sfx({"psn": "poison", "brn": "burn", "par": "para", "slp": "sleep"}.get(s, ""))
 	match s:
 		"psn":
 			p.p("glow_color", Color(0.7, 0.3, 0.9))

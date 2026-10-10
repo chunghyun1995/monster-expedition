@@ -86,6 +86,8 @@ func enter_map(id: String, at: Vector2i, d: String, opts := {}) -> void:
 	W = rows[0].length()
 	out = bool(m.get("out", 0))
 	Game.g.map = id
+	if str(m.get("music", "")) != "":
+		Sound.music(str(m.music))
 	ground = Node2D.new()
 	ground.z_index = -10
 	ground.draw.connect(_draw_ground.bind(ground, false))
@@ -522,7 +524,9 @@ func _try_move(d: String) -> void:
 		var ly := to + v
 		if passable(ly, "down") and npc_at(ly) == null and item_at(ly).is_empty():
 			P = ly
+			Sound.sfx("jump")
 			await player.hop(_pos(P), d)
+			Sound.sfx("land")
 			moving = false
 			await _on_step()
 		else:
@@ -530,6 +534,7 @@ func _try_move(d: String) -> void:
 		return
 	if not free_cell(to, d):
 		_chain = false
+		Sound.sfx("bump")
 		var tw := create_tween()
 		tw.tween_property(player.body, "position", Vector2(v) * 5.0, 0.06)
 		tw.tween_property(player.body, "position", Vector2.ZERO, 0.12).set_trans(Tween.TRANS_BACK)
@@ -582,6 +587,7 @@ func _on_step() -> void:
 func do_warp(w: Array, door: bool) -> void:
 	busy = true
 	pad.release_all()
+	Sound.sfx("door" if door else "exit")
 	if door:
 		# 문 앞에서 한 걸음 들어가며 어두워짐
 		create_tween().tween_property(player, "modulate:a", 0.4, 0.3)
@@ -646,6 +652,8 @@ func _sight_check() -> NPC:
 
 
 func _trainer_spot(n: NPC) -> void:
+	var tr = n.info.get("trainer")
+	Sound.music(("rival" if tr.cls in ["lass", "girl"] else "trainer") if tr != null else "rival")
 	await n.emote("!", 0.6)
 	while absi(P.x - n.cell.x) + absi(P.y - n.cell.y) > 1:
 		await n.walk_to(n.cell + DV[n.dir], n.dir, 0.24)
@@ -819,6 +827,7 @@ func emote(who, kind := "!") -> void:
 	if who is NPC:
 		await who.emote(kind)
 	else:
+		Sound.sfx("sel")
 		await Emote.pop(player, kind, -player.height - 70, 0.5, player.body)
 
 
@@ -826,6 +835,7 @@ func give_item(id: String, n := 1) -> void:
 	var it: Dictionary = Data.D.items[id]
 	Game.g.bag[id] = int(Game.g.bag.get(id, 0)) + n
 	sparkle_player()
+	await Sound.jingle("key" if it.p == "key" else "item")
 	var nm: String = Game.g.name
 	await say("%s %s 손에 넣었다!" % [Game.josa(nm, "은"), ("%s %d개를" % [it.n, n]) if n > 1 else Game.josa(it.n, "을")])
 	if it.p != "key":
@@ -875,6 +885,7 @@ func heal_anim() -> void:
 	for i in Game.g.party.size():
 		_make_heal_balls(i + 1)
 		var b: Node2D = heal_balls[i]
+		Sound.sfx("click")
 		b.scale = Vector2(0.2, 0.2)
 		b.create_tween().tween_property(b, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK)
 		await sleep(0.26)
@@ -923,6 +934,7 @@ func battle(o: Dictionary) -> String:
 		return r
 	if r == "lose":
 		Game.heal_party()
+	Sound.music(str(m.get("music", "")))
 	refresh_npcs()
 	await Game.fade_to(0.0, 0.3)
 	pad.visible = true

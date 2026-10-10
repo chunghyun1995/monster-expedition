@@ -8,6 +8,7 @@ var _busy := false
 func _ready() -> void:
 	var vs := get_viewport().get_visible_rect().size
 	Msg.place("field")
+	Sound.music("title")
 	var bg := TextureRect.new()
 	var at := AtlasTexture.new()
 	at.atlas = Data.tex.scenes
@@ -124,6 +125,7 @@ func _intro() -> void:
 	add_child(prof)
 	prof.setup_person("prof", false, 360.0)
 	prof.position = Vector2(vs.x / 2, vs.y * 0.6)
+	Sound.music("intro")
 	await Game.fade_to(0.0, 0.5)
 	var o := "한결 박사"
 	await Msg.say("안녕! 몬스터의 세계에 온 걸 환영한단다!", o)
@@ -135,6 +137,8 @@ func _intro() -> void:
 	mon.position = Vector2(vs.x * 0.72, vs.y * 0.6)
 	mon.scale = Vector2(0.1, 0.1)
 	mon.p("flash", 1.0)
+	Sound.sfx("open")
+	Sound.cry(10)
 	FX.burst(self, mon.position + Vector2(0, -100), Color(1, 1, 1), Color(1, 0.85, 0.3), 24, 300.0, Vector2.ZERO, 0.6, 1.2, 180.0)
 	var tw := create_tween()
 	tw.tween_property(mon, "scale", Vector2.ONE, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)

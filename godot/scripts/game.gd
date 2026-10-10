@@ -9,7 +9,7 @@ const COUNTER := {1: 4, 4: 7, 7: 1, 17: 27}
 const DIGK := "영일이삼사오육칠팔구"
 
 var g: Dictionary = {}
-var settings := {"text": 1, "anim": 1, "style": 0, "tips": 1}
+var settings := {"text": 1, "anim": 1, "bgm": 3, "sfx": 1, "style": 0, "tips": 1}
 var dev := ""
 var auto_text := false      # 개발용: 대화를 자동으로 넘김
 

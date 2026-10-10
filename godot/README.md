@@ -17,6 +17,7 @@
 - `scripts/world.gd` 필드(지도 40곳 공통) · `events.gd` 이야기 이벤트 · `battle.gd` 전투 · `menus.gd` 메뉴·시설 · `msg.gd` 대화창·선택지·목록
 - `scripts/game.gd` 리포트(저장: user://report.save)·몬스터 계산 · `player.gd`, `npc.gd`, `fx.gd`(파티클), `touch_pad.gd`(화면 패드)
 - `data/game.json`: `node tools/godot-data.cjs`로 기존 게임 데이터에서 생성 · `data/bounds.json`: `python3 tools/godot-bounds.py`
+- `scripts/sound.gd`(autoload Sound) 소리: 웹 게임 `src/audio.js`의 칩튠 BGM 13곡·팡파르 8개·효과음 41개·울음소리 59종을 `node tools/render-audio.cjs`로 Chromium에서 그대로 녹음한 OGG(`assets/audio/`, 약 1.9MB) 재생. 설정에서 배경음 0~5·효과음 켜기/끄기
 - 글꼴: Galmuri11 (SIL OFL, `fonts/OFL-Galmuri.txt`)
 
 ## 빌드

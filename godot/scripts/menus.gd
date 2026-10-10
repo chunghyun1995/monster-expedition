@@ -73,6 +73,7 @@ func mon_preview(m: Dictionary, title := "") -> void:
 # 시작 메뉴
 # =====================================================================
 func main_menu(w: World) -> void:
+	Sound.sfx("menu")
 	var at := 0
 	while true:
 		var s := vs()
@@ -213,6 +214,11 @@ func _sum_render(ctx: Dictionary) -> void:
 	var s := vs()
 	var root: Control = ctx.root
 	var lst: Array = ctx.lst
+	if ctx.get("cried", -1) != ctx.cur:
+		ctx.cried = ctx.cur
+		Sound.cry(lst[int(ctx.cur)].sid)
+	else:
+		Sound.sfx("cur")
 	var page: int = int(ctx.page)
 	for c in root.get_children():
 		c.queue_free()
@@ -377,16 +383,19 @@ func apply_item(id: String, m: Dictionary) -> void:
 	if it.has("revive"):
 		m.hp = maxi(1, int(Game.max_hp(m) * float(it.revive)))
 		m.st = ""
+		Sound.sfx("heal")
 		await Msg.say("%s 기운을 되찾았다!" % Game.josa(Game.name_of(m), "은"))
 		return
 	if it.has("heal"):
 		var b0: int = int(m.hp)
 		m.hp = mini(Game.max_hp(m), int(m.hp) + int(it.heal))
+		Sound.sfx("heal")
 		await Msg.say("%s의 HP가 %d 회복되었다!" % [Game.name_of(m), int(m.hp) - b0])
 		return
 	if it.has("cure"):
 		m.st = ""
 		m.slp = 0
+		Sound.sfx("heal")
 		await Msg.say("%s의 상태 이상이 나았다!" % Game.name_of(m))
 
 
@@ -398,6 +407,7 @@ func level_up(m: Dictionary, show_box := true) -> void:
 	m.lv = int(m.lv) + 1
 	var n := Game.calc(m)
 	m.hp = mini(n[0], int(m.hp) + n[0] - o[0])
+	Sound.jingle("level")
 	await Msg.say("%s 레벨 %s 올랐다!" % [Game.josa(Game.name_of(m), "은"), Game.josa(int(m.lv), "로")], "", {"keep": true})
 	if show_box:
 		var s := vs()
@@ -447,6 +457,7 @@ func learn_move(m: Dictionary, id: String) -> void:
 	var n := Game.name_of(m)
 	if m.moves.size() < 4:
 		m.moves.append({"id": id, "pp": int(d.pp)})
+		Sound.jingle("level")
 		await Msg.say("%s 새로 %s 배웠다!" % [Game.josa(n, "은"), Game.josa(nmv, "을")])
 		return
 	await Msg.say("%s 새로 %s 배우고 싶다..." % [Game.josa(n, "은"), Game.josa(nmv, "을")])
@@ -464,6 +475,7 @@ func learn_move(m: Dictionary, id: String) -> void:
 				m.moves[i] = {"id": id, "pp": int(d.pp)}
 				await Msg.say("하나, 둘... 뿅!")
 				await Msg.say("%s %s 깨끗이 잊었다!" % [Game.josa(n, "은"), Game.josa(old, "을")])
+				Sound.jingle("level")
 				await Msg.say("그리고... %s 새로 %s 배웠다!" % [Game.josa(n, "은"), Game.josa(nmv, "을")])
 				return
 		var q := await Msg.ask("그럼... %s 배우는 것을 포기하겠습니까?" % Game.josa(nmv, "을"), ["예", "아니오"])
@@ -477,6 +489,7 @@ func evolve(m: Dictionary) -> void:
 	var from: int = int(m.sid)
 	var to: int = int(Game.sp(from).ev[1])
 	var old_name := Game.name_of(m)
+	var prev_music := Sound.cur if Sound.cur != "" else Sound.want
 	var s := vs()
 	var layer := CanvasLayer.new()
 	layer.layer = 40
@@ -507,8 +520,10 @@ func evolve(m: Dictionary) -> void:
 	b.setup_mon(to, false, 300.0)
 	b.visible = false
 	Msg.place("field")
+	Sound.music("evolve")
 	await Game.fade_to(0.0, 0.3)
 	await Msg.say("어...? %s의 모습이...!" % old_name, "", {"keep": true})
+	await Sound.cry(from)
 	a.p("glow_color", Color.WHITE)
 	b.p("glow_color", Color.WHITE)
 	var tw := create_tween()
@@ -526,6 +541,7 @@ func evolve(m: Dictionary) -> void:
 		a.visible = not show_b
 		b.visible = show_b
 		var cur := b if show_b else a
+		Sound.sfx("cur")
 		cur.scale = Vector2(0.92, 0.92)
 		var t2 := create_tween()
 		t2.tween_property(cur, "scale", Vector2(1.08, 1.08), d * 0.5)
@@ -539,6 +555,7 @@ func evolve(m: Dictionary) -> void:
 		var t3 := create_tween()
 		a.tp(t3, "glow", 0.0, 0.4)
 		await t3.finished
+		await Sound.cry(from)
 		await Msg.say("어라...? %s의 변화가 멈췄다!" % old_name)
 	else:
 		a.visible = false
@@ -564,10 +581,13 @@ func evolve(m: Dictionary) -> void:
 		var t6 := create_tween()
 		b.tp(t6, "squash", -0.15, 0.15)
 		b.tp(t6, "squash", 0.0, 0.5).set_trans(Tween.TRANS_ELASTIC)
+		Sound.cry(to)
+		await Sound.jingle("evolved")
 		await Msg.say("축하합니다! %s %s 진화했다!" % [Game.josa(old_name, "은"), Game.josa(Game.sp(to).n, "로")])
 		await learn_moves(m)
 	await Game.fade_to(1.0, 0.3)
 	layer.queue_free()
+	Sound.music(prev_music)
 	await Game.fade_to(0.0, 0.3)
 
 
@@ -663,6 +683,7 @@ func badge_fx(w: World, i: int) -> void:
 
 
 func trainer_card() -> void:
+	Sound.sfx("sparkle")
 	var s := vs()
 	var layer := CanvasLayer.new()
 	layer.layer = 61
@@ -779,6 +800,7 @@ func save_menu(w: World) -> bool:
 	Game.g.dir = w.player.dir
 	await Msg.say("리포트를 기록하고 있습니다...\n전원을 끄지 마세요.", "", {"auto": 0.8})
 	if Game.save_game():
+		Sound.jingle("save")
 		await Msg.say("%s 리포트에 제대로 기록했다!" % Game.josa(Game.g.name, "은"))
 		return true
 	await Msg.say("리포트를 기록하지 못했습니다...")
@@ -786,7 +808,8 @@ func save_menu(w: World) -> bool:
 
 
 func options_menu() -> void:
-	var rows := [["텍스트 속도", ["느림", "보통", "빠름"], "text"], ["전투 애니메이션", ["끄기", "켜기"], "anim"], ["전투 방식", ["교체", "연속"], "style"]]
+	var rows := [["텍스트 속도", ["느림", "보통", "빠름"], "text"], ["전투 애니메이션", ["끄기", "켜기"], "anim"],
+		["배경음 볼륨", ["0", "1", "2", "3", "4", "5"], "bgm"], ["효과음", ["끄기", "켜기"], "sfx"], ["전투 방식", ["교체", "연속"], "style"]]
 	var at := 0
 	while true:
 		var items: Array = []
@@ -799,6 +822,8 @@ func options_menu() -> void:
 					return null
 				var r: Array = rows[i2]
 				Game.settings[r[2]] = (int(Game.settings[r[2]]) + (-1 if k == "ui_left" else 1) + r[1].size()) % r[1].size()
+				Sound.apply_volume()
+				Sound.sfx("cur")
 				return 1000 + i2})
 		if i < 0:
 			break
@@ -809,6 +834,8 @@ func options_menu() -> void:
 		if i < rows.size():
 			var r: Array = rows[i]
 			Game.settings[r[2]] = (int(Game.settings[r[2]]) + 1) % r[1].size()
+			Sound.apply_volume()
+			Sound.sfx("cur")
 		else:
 			OS.shell_open(PRIVACY_URL)
 	Game.save_settings()
@@ -922,6 +949,7 @@ func nurse(w: World, n: NPC) -> void:
 	await n.face("left")
 	await w.heal_anim()
 	Game.heal_party()
+	await Sound.jingle("heal")
 	await n.face("down")
 	var wp: Array = w.m.warps.get("6,9", [])
 	if wp.size():
@@ -972,9 +1000,11 @@ func box_grow() -> Array:
 
 
 func pc_menu(_w: World) -> void:
+	Sound.sfx("menu")
 	await Msg.say("%s PC의 전원을 켰다!" % Game.josa(Game.g.name, "은"))
 	var grown := box_grow()
 	if grown.size():
+		Sound.jingle("level")
 		await Msg.say("보관함에 맡겨 둔 몬스터들이 그동안 훈련을 했다!")
 		for r in grown:
 			var t := "%s Lv%d → %s 자랐다!" % [Game.josa(Game.name_of(r.m), "은"), int(r.from), Game.josa("Lv%d" % int(r.to), "로")]
@@ -999,6 +1029,7 @@ func pc_menu(_w: World) -> void:
 			Game.heal_mon(m)
 			m.box_at = Time.get_unix_time_from_system()
 			Game.g.box.append(m)
+			Sound.sfx("save")
 			await Msg.say("%s 보관함에 맡겼다." % Game.josa(Game.name_of(m), "을"))
 			if int(m.lv) < box_cap():
 				await Msg.say("보관함에서 %d분마다 레벨이 1씩 오른다. (지금은 Lv%d까지)" % [BOX_MIN, box_cap()])
@@ -1021,6 +1052,7 @@ func pc_menu(_w: World) -> void:
 			Game.g.box.remove_at(r)
 			m2.erase("box_at")
 			Game.g.party.append(m2)
+			Sound.sfx("save")
 			await Msg.say("%s 데려왔다!" % Game.josa(Game.name_of(m2), "을"))
 			var e = Game.sp(m2.sid).get("ev")
 			if e and int(m2.lv) >= int(e[0]) and not pending_evo.has(m2):
@@ -1152,6 +1184,7 @@ func _fusion_fx(sa: int, sb: int, to: int) -> void:
 	pb.setup_mon(sb, false, 200.0)
 	pb.position = Vector2(200, 0)
 	await get_tree().create_timer(0.4).timeout
+	Sound.sfx("absorb")
 	pa.p("glow_color", Color(0.9, 0.85, 1.0))
 	pb.p("glow_color", Color(0.9, 0.85, 1.0))
 	var tw := create_tween().set_parallel()
@@ -1163,6 +1196,7 @@ func _fusion_fx(sa: int, sb: int, to: int) -> void:
 	await tw.finished
 	pa.queue_free()
 	pb.queue_free()
+	Sound.sfx("open")
 	FX.burst(stage, Vector2(0, -60), Color(1, 1, 1), Color(0.8, 0.7, 1.0), 40, 520.0, Vector2.ZERO, 0.7, 1.5, 180.0)
 	var pr := Puppet.new()
 	stage.add_child(pr)
@@ -1175,6 +1209,8 @@ func _fusion_fx(sa: int, sb: int, to: int) -> void:
 	pr.tp(t2, "flash", 0.0, 0.5)
 	t2.tween_property(pr, "scale", Vector2.ONE, 0.15)
 	await t2.finished
+	await Sound.cry(to)
+	await Sound.jingle("evolved")
 
 
 func fusion_lab(_w: World) -> void:
@@ -1203,6 +1239,7 @@ func fusion_lab(_w: World) -> void:
 func credits(w: World, final: bool) -> void:
 	var s := vs()
 	await Game.fade_to(1.0, 0.6)
+	Sound.music("title")
 	var layer := CanvasLayer.new()
 	layer.layer = 40
 	add_child(layer)

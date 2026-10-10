@@ -109,6 +109,7 @@ func walk_to(c: Vector2i, d: String, dur := 0.32) -> void:
 
 ## 머리 위 말풍선: "!", "?", "…", "♪"
 func emote(kind := "!", hold := 0.5) -> void:
+	Sound.sfx("sel")
 	await Emote.pop(self, kind, -cur().size.y - 70, hold, cur())
 
 

@@ -114,7 +114,7 @@ func talk_mom(_n: NPC) -> void:
 	await say("%s, 피곤하지 않니? 잠깐 쉬었다 가렴." % nm(), o)
 	await w.fade(1.0)
 	w.heal_party()
-	await w.sleep(0.5)
+	await Sound.jingle("heal")
 	await w.fade(0.0)
 	Game.g.heal = {"map": "home", "x": 4, "y": 6}
 	await say("몬스터들이 기운을 되찾았다!")
@@ -191,6 +191,7 @@ func mon_card(sid: int) -> Control:
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	w.ui.add_child(root)
+	Sound.cry(sid)
 	var bg := ColorRect.new()
 	bg.color = Color(0.06, 0.08, 0.14, 0.5)
 	bg.size = vs
@@ -239,6 +240,7 @@ func secret_starter() -> void:
 	var o := "한결 박사"
 	var sid := 17
 	var s: Dictionary = Game.sp(sid)
+	Sound.sfx("para")
 	await say("허허, 고집 센 녀석이로구나. 사실 오늘 아침 연구소 뒷마당에서 이 녀석이 전선 줄을 갉아 먹고 있었단다.", o)
 	await say("캡슐에 들어가는 걸 질색해서 아직 아무에게도 맡기지 못했는데… 어쩐지 너랑은 잘 맞을 것 같구나.", o)
 	var card := mon_card(sid)
@@ -266,10 +268,12 @@ func give_starter(sid: int, secret: bool) -> void:
 	Game.g.caught[sid] = 1
 	w.enter_map("lab", w.P, w.player.dir, {"quiet": true})   # 테이블 위 캡슐 갱신
 	w.sparkle_player()
+	await Sound.jingle("key")
 	await say("%s 한결 박사에게서 %s 받았다!" % [Game.josa(nm(), "은"), Game.josa(s.n, "을")])
 	await w.nickname_prompt(mon)
 	var rv := w.npc_by_id("rival_lab")
 	var rs: Dictionary = Game.sp(Game.g.rival_starter)
+	Sound.music("rival")
 	if secret:
 		await w.emote(rv, "!")
 		await say("뭐야, 숨겨 둔 몬스터가 있었어?! 치사해요, 박사님! 저도 특별한 걸로 주세요!", R)
@@ -288,6 +292,7 @@ func give_starter(sid: int, secret: bool) -> void:
 	var res := await w.battle({"kind": "trainer", "cls": "rival", "name": R, "team": Game.rival_team(1), "no_lose": true, "look": "rival", "bg": "lab",
 		"lose": "뭐야! 처음인데 너무 잘하잖아!", "win_msg": "헤헷, 역시 내가 고른 몬스터가 최고야!"})
 	Game.set_flag("rival1")
+	Sound.music("town")
 	await say("쳇, 다음엔 안 질 거야! 내 몬스터를 더 강하게 키워 오겠어!" if res == "win" else "좋아, 이 기세로 체육관도 정복하고 오겠어!", R)
 	var o := "한결 박사"
 	await say("훌륭한 승부였단다! 몬스터들도 즐거워 보이는구나.", o)
@@ -305,6 +310,7 @@ func give_starter(sid: int, secret: bool) -> void:
 	await say("북쪽 1번 도로를 지나면 바위시티가 있다. 그곳의 체육관 관장에게 도전해 보렴!", o)
 	await say("그럼 먼저 간다! 바위시티에서 보자, %s!" % nm(), R)
 	await w.walk_npc(rv, ["down", "down", "down", "down", "down", "down"], 0.2)
+	Sound.sfx("exit")
 	Game.set_flag("rivalLeft")
 	rv.gone = true
 	Game.g.heal = {"map": "home", "x": 4, "y": 6}
@@ -350,6 +356,7 @@ func badge(i: int, leader: String, badge_name: String) -> void:
 	Game.g.badges[i] = 1
 	Game.set_flag("badge%d" % i)
 	w.sparkle_player()
+	Sound.jingle("badge")
 	await Menus.badge_fx(w, i)
 	await say("%s 관장 %s에게서 %s 받았다!" % [Game.josa(nm(), "은"), leader, Game.josa(badge_name, "을")])
 
@@ -383,6 +390,7 @@ func trig_route2_0() -> void:
 	Game.set_flag("rival2")
 	if w.P.y != 10:
 		await w.walk_player(["up"])
+	Sound.music("rival")
 	var rv := w.add_npc({"id": "rv2", "x": 9, "y": 10, "dir": "left", "look": "rival", "name": R})
 	await w.emote(rv, "!")
 	while absi(rv.cell.x - w.P.x) > 1:
@@ -396,6 +404,7 @@ func trig_route2_0() -> void:
 	await say("좋아, 물결마을 체육관에서는 내가 먼저 배지를 따 주겠어! 그럼 간다!", R)
 	await w.walk_npc(rv, ["right", "right", "right", "right", "right", "right", "right", "right"], 0.2)
 	w.remove_npc(rv)
+	Sound.music(str(w.m.music))
 
 
 func cond_rival3() -> bool:
@@ -407,6 +416,7 @@ func talk_rival3(_n: NPC) -> void:
 		return
 	Game.set_flag("rival3")
 	var rv := w.npc_by_id("rival3")
+	Sound.music("rival")
 	await say("%s! 체육관에 도전하러 왔구나. 하지만 그 전에 나랑 마지막으로 한 판 하자!" % nm(), R)
 	await say("이번엔 진심으로 간다! 내 파트너도 진화했다고!", R)
 	await w.battle({"kind": "trainer", "cls": "rival", "name": R, "team": Game.rival_team(3), "look": "rival", "bg": "water", "lose": "...인정할게. 넌 정말 강해."})
@@ -415,6 +425,7 @@ func talk_rival3(_n: NPC) -> void:
 	await say("하라 씨는 강하지만 너라면 이길 수 있을 거야. 나는 좀 더 수행하고 올게!", R)
 	if rv:
 		rv.gone = true
+	Sound.sfx("exit")
 
 
 func cond_t2_gate() -> bool:
@@ -466,6 +477,7 @@ func talk_rival4(_n: NPC) -> void:
 		return
 	Game.set_flag("rival4")
 	var r := w.npc_by_id("rival4")
+	Sound.music("rival")
 	await say("%s! 불꽃 배지도 땄다며? 나도 방금 땄다고!" % nm(), R)
 	await say("근데 들었어? 검은안개단이라는 녀석들이 번개도시 발전소를 점령했대. 그 전에 몸 좀 풀고 가자!", R)
 	await w.battle({"kind": "trainer", "cls": "rival", "name": R, "team": Game.rival_team(4), "look": "rival", "bg": "rock", "lose": "쳇... 역시 넌 강하구나."})
@@ -474,6 +486,7 @@ func talk_rival4(_n: NPC) -> void:
 	await say("좋아, 같이 가자고 하고 싶지만... 나는 나만의 방식으로 검은안개단을 막아 보겠어. 번개도시에서 보자!", R)
 	if r:
 		r.gone = true
+	Sound.sfx("exit")
 
 
 func talk_leader3(_n: NPC) -> void:
@@ -534,11 +547,13 @@ func talk_boss(_n: NPC) -> void:
 		return
 	await say("크윽... 조종 장치는 포기하지. 하지만 검은안개단은 사라지지 않는다!", o)
 	var b := w.npc_by_id("boss")
+	Sound.sfx("exit")
 	if b:
 		b.gone = true
 	Game.set_flag("plantClear")
 	w.refresh_npcs()
 	await w.sleep(0.4)
+	Sound.sfx("save")
 	await say("발전기가 다시 정상적으로 돌아가기 시작했다! 번개도시에 전기가 들어왔다!")
 	await w.give_item("lvup", 3)
 	await say("발전소 직원이 감사의 표시로 레벨업 물약을 주었다!")
@@ -602,6 +617,7 @@ func talk_t5_summit(_n: NPC) -> void:
 	if F("clear2"):
 		return
 	var r := w.npc_by_id("t5_summit")
+	Sound.music("rival")
 	await say("왔구나, %s. 나도 다섯 번째 배지를 따고 여기서 기다리고 있었어." % nm(), R)
 	await say("새싹마을에서 처음 몬스터를 받은 날부터 지금까지... 넌 늘 나보다 한 발 앞서 있었지.", R)
 	await say("하지만 오늘은 다를 거야. 이 정상에서, 누가 진짜 최고의 원정대원인지 가리자!", R)
@@ -630,6 +646,7 @@ func talk_t5_elder(_n: NPC) -> void:
 		await say("동굴 입구는 이제 자네에게 열릴 걸세. 수호신들은 아주 강하니, 황금캡슐을 넉넉히 챙겨 가게.", o)
 		Game.set_flag("legendQuest")
 		await w.give_item("hyper", 3)
+		Sound.sfx("sparkle")
 		return
 	var left := LEGENDS.filter(func(L: Dictionary) -> bool: return not F("awake%d" % L.sid))
 	if left.size():
@@ -651,7 +668,8 @@ func talk_t5_sky(_n: NPC) -> void:
 func legend_battle(sid: int, lv: int, bg: String) -> void:
 	var s: Dictionary = Game.sp(sid)
 	await say("구름이 갈라지며 거대한 그림자가 내려왔다...!" if sid == 34 else "%s 깊은 잠에서 깨어나 이쪽을 노려본다...!" % Game.josa(s.n, "이"))
-	await w.sleep(0.4)
+	await Sound.cry(sid)
+	await w.sleep(0.2)
 	var r := await w.battle({"kind": "wild", "team": [[sid, lv]], "bg": bg, "legend": true})
 	if r == "lose":
 		return
@@ -665,6 +683,7 @@ func legend_battle(sid: int, lv: int, bg: String) -> void:
 	else:
 		await say("%s 아직 이곳에서 기다리고 있다." % Game.josa(s.n, "은"))
 	if first and sid != 34 and LEGENDS.all(func(L: Dictionary) -> bool: return F("awake%d" % L.sid)):
+		Sound.sfx("shake")
 		FX.shake(w, 16.0, 0.6)
 		await say("...!")
 		await say("멀리 하늘봉 쪽에서 천둥 같은 울림이 들려왔다! 세 수호신이 모두 깨어났다!")
@@ -743,6 +762,7 @@ func talk_tw_rec(_n: NPC) -> void:
 		return
 	await say("도전 전에 몬스터들을 회복시켜 드릴게요.", o)
 	w.heal_party()
+	Sound.sfx("heal")
 	await say("그럼 %d층으로 안내할게요. 행운을 빌어요!" % cps[r], o)
 	await tower_enter(cps[r])
 
@@ -775,10 +795,12 @@ func talk_tw_guard(n: NPC) -> void:
 		await say("최고 기록: %d층. 다음엔 %d층부터 다시 도전할 수 있어요!" % [int(t.best), mini(91, int(t.best) / 10 * 10 + 1)], "탑 안내원")
 		return
 	t.best = maxi(int(t.best), f)
+	Sound.sfx("open")
 	n.gone = true
 	w.refresh_npcs()
 	if f % 10 == 0:
 		w.heal_party()
+		Sound.sfx("heal")
 		await say("%d층 돌파! 몬스터들이 회복되었다." % f)
 		var prize := f * 40
 		Game.g.money = int(Game.g.money) + prize
@@ -788,6 +810,7 @@ func talk_tw_guard(n: NPC) -> void:
 			await w.give_item("revive", 2)
 	if f == 100:
 		Game.set_flag("towerClear")
+		await Sound.jingle("badge")
 		await say("무한의 탑 100층을 정복했다!!")
 		await w.give_item("hyper", 5)
 		await w.give_item("lvup", 10)
@@ -804,6 +827,7 @@ func trig_towerFloor_0() -> void:
 	if int(t.cur) >= 100:
 		await say("더 이상 올라갈 곳이 없다. 하늘이 손에 닿을 것 같다.")
 		return
+	Sound.sfx("exit")
 	await tower_enter(int(t.cur) + 1)
 
 
@@ -856,6 +880,7 @@ func subst_talk(n: NPC) -> void:
 		await say("피곤해 보이는구나. 잠깐 쉬었다 가렴.", s.name)
 		await w.fade(1.0)
 		w.heal_party()
+		await Sound.jingle("heal")
 		await w.fade(0.0)
 		Game.g.heal = {"map": "home", "x": 4, "y": 6}
 		await say("몬스터들이 기운을 되찾았다!")

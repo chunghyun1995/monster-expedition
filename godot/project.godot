@@ -21,6 +21,7 @@ Data="*res://scripts/data.gd"
 Game="*res://scripts/game.gd"
 Msg="*res://scripts/msg.gd"
 Menus="*res://scripts/menus.gd"
+Sound="*res://scripts/sound.gd"
 
 [display]
 
