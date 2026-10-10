@@ -437,27 +437,33 @@ func number(max_n: int, price: int, title: String) -> int:
 	_picker = layer
 	_pick = null
 	var n := [1]
-	var p := UI.panel(layer, Rect2(60, s.y * 0.5 - 200, s.x - 120, 320))
-	UI.label(p, title, Vector2(30, 20), 32)
-	var lbl := UI.label(p, "", Vector2(30, 90), 56)
-	var sub := UI.label(p, "", Vector2(30, 170), 28, Color(0.3, 0.35, 0.45))
+	# 제목은 위쪽 한 줄 전체, 그 아래 왼쪽에 개수·합계, 오른쪽에 ▲▼ ±10 (서로 겹치지 않게)
+	var top := s.y * 0.5 - 230
+	var p := UI.panel(layer, Rect2(40, top, s.x - 80, 330))
+	var tl := UI.label(p, title, Vector2(28, 22), 30)
+	tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tl.custom_minimum_size = Vector2(p.size.x - 56, 0)
+	tl.size = Vector2(p.size.x - 56, 76)
+	var lbl := UI.label(p, "", Vector2(28, 120), 56)
+	var sub := UI.label(p, "", Vector2(28, 205), 28, Color(0.3, 0.35, 0.45))
 	var upd := func() -> void:
 		lbl.text = "× %d" % n[0]
 		sub.text = "합계 %s" % Game.money(n[0] * price) if price > 0 else ""
 	upd.call()
 	var mk := func(t: String, r: Rect2, d: int) -> void:
-		var b := UI.button(layer, t, r, Color(0.35, 0.5, 0.75), 36)
+		var b := UI.button(layer, t, r, Color(0.35, 0.5, 0.75), 34)
 		b.pressed.connect(func() -> void:
 			n[0] = clampi(n[0] + d, 1, max_n)
 			Sound.sfx("cur")
 			upd.call())
-	mk.call("▲", Rect2(s.x - 280, s.y * 0.5 - 170, 90, 80), 1)
-	mk.call("▼", Rect2(s.x - 280, s.y * 0.5 - 70, 90, 80), -1)
-	mk.call("+10", Rect2(s.x - 180, s.y * 0.5 - 170, 90, 80), 10)
-	mk.call("-10", Rect2(s.x - 180, s.y * 0.5 - 70, 90, 80), -10)
-	var ok := UI.button(layer, "결정", Rect2(60, s.y * 0.5 + 140, (s.x - 140) / 2, 90), Color(0.3, 0.6, 0.4), 34)
+	var bx := 40 + p.size.x - 28 - 200
+	mk.call("▲", Rect2(bx, top + 110, 95, 84), 1)
+	mk.call("▼", Rect2(bx, top + 206, 95, 84), -1)
+	mk.call("+10", Rect2(bx + 105, top + 110, 95, 84), 10)
+	mk.call("-10", Rect2(bx + 105, top + 206, 95, 84), -10)
+	var ok := UI.button(layer, "결정", Rect2(40, top + 350, (s.x - 100) / 2, 90), Color(0.3, 0.6, 0.4), 34)
 	ok.pressed.connect(func() -> void: _pick = n[0])
-	var cc := UI.button(layer, "취소", Rect2(80 + (s.x - 140) / 2, s.y * 0.5 + 140, (s.x - 140) / 2, 90), Color(0.4, 0.42, 0.5), 34)
+	var cc := UI.button(layer, "취소", Rect2(60 + (s.x - 100) / 2, top + 350, (s.x - 100) / 2, 90), Color(0.4, 0.42, 0.5), 34)
 	cc.pressed.connect(func() -> void: _pick = 0)
 	ok.grab_focus()
 	while _pick == null:
