@@ -194,6 +194,10 @@ func test_restored_features(world: World) -> void:
 	await get_tree().create_timer(0.9).timeout
 	check(str(Game.g.map) == "towerLobby", "Tower quick entry failed")
 	check(Game.g.towerRet.map == "home", "Tower return position not recorded")
+	var banner: Panel = world.ui.get_node_or_null("LocationBanner")
+	check(banner != null, "Tower location banner missing")
+	if banner != null:
+		check(not banner.get_rect().intersects(Auto.buttons.climb.get_rect()), "Location banner overlaps auto-climb control")
 	await capture("tower-lobby")
 	world.busy = true
 	world.set_process(false)

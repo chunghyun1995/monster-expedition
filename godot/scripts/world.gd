@@ -887,14 +887,16 @@ func nickname_prompt(mon: Dictionary) -> void:
 
 func banner(t: String) -> void:
 	var vs := get_viewport().get_visible_rect().size
-	var p := UI.panel(ui, Rect2(vs.x / 2 - 210, -90, 420, 80), Color(0.98, 0.96, 0.88))
+	var p := UI.panel(ui, Rect2(vs.x / 2 - 210, 216 if Game.flag("pad") else 110, 420, 80), Color(0.98, 0.96, 0.88))
+	p.name = "LocationBanner"
+	p.modulate.a = 0.0
 	var l := UI.label(p, t, Vector2(0, 14), 32)
 	l.size = Vector2(420, 50)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var tw := p.create_tween()
-	tw.tween_property(p, "position:y", 110.0, 0.4).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(p, "modulate:a", 1.0, 0.25)
 	tw.tween_interval(1.4)
-	tw.tween_property(p, "position:y", -100.0, 0.3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tw.tween_property(p, "modulate:a", 0.0, 0.3)
 	tw.tween_callback(p.queue_free)
 
 

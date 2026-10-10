@@ -59,14 +59,14 @@ func _process(_delta: float) -> void:
 	var width := (screen.x - 64) / 3.0
 	for i in 3:
 		var key: String = ["tower","hunt","climb"][i]
-		buttons[key].position = Vector2(16+i*(width+16),104)
+		buttons[key].position = Vector2(16+i*(width+16),120)
 		buttons[key].size = Vector2(width,72)
 	buttons.tower.text = "무한의 탑"
 	buttons.hunt.text = "자동 사냥"
 	buttons.climb.text = "자동 등반"
 	buttons.stop.visible = mode != ""
 	buttons.stop.text = "자동 중지"
-	buttons.stop.position = Vector2(screen.x-192,248 if battling else 104)
+	buttons.stop.position = Vector2(screen.x-192,248 if battling else 120)
 	if free and mode == "hunt":
 		if party_ratio() < 0.35 or Game.alive().is_empty() or world.m.enc.is_empty():
 			stop()
