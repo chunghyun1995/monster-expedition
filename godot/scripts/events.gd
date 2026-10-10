@@ -954,6 +954,8 @@ func dev(cmd: String) -> void:
 			await w.run_script(func() -> void: await w.battle({"kind": "trainer", "cls": "kid", "name": "민수", "team": [[15, 4], [10, 3]], "look": "kid", "lose": "으앙!"}))
 		"menu":
 			await w.open_menu()
+		"shop":
+			await w.run_script(func() -> void: await Menus.shop_buy())
 		"evolve":
 			await w.run_script(func() -> void: await Menus.evolve(Game.g.party[0]))
 		"credits":

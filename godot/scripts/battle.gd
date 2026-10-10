@@ -460,7 +460,7 @@ func _foe_hero_start() -> void:
 	tr.position = FOE_POS + Vector2(VS.x * 0.5, 0)
 	await _walk_in(tr, FOE_POS, 0.4)
 	await _angry(tr)
-	await Msg.say("이런 미친놈! 뭐하는 짓이야!", tn(), {"keep": true})
+	await Msg.say("이게 무슨 짓이야! 내 몬스터를 돌려줘!", tn(), {"keep": true})
 	make_hud("e")
 	await bsay("화가 난 %s 직접 덤벼들었다!" % J(tn(), "이"), true)
 
@@ -1066,37 +1066,29 @@ func throw_ball(id: String) -> bool:
 	return false
 
 
-func throw_ball_human(id: String) -> bool:
+## 사람과의 직접 대결에서 이기면 상대가 스스로 동료로 합류한다 (사람에게는 캡슐을 쓰지 않는다)
+func _recruit() -> void:
 	var t: Dictionary = foe_hero
-	var it: Dictionary = Data.D.items[id]
 	var sid := Game.human_sid(look_of())
 	var name: String = str(o.name)
-	Game.g.bag[id] = int(Game.g.bag[id]) - 1
-	await bsay("%s %s 던졌다!" % [J(Game.g.name, "은"), J(it.n, "을")])
-	var n := _capture_chance(float(t.hp), float(t.max), float(Game.sp(sid).c), float(it.ball), 1.0)
-	var cap := await _capsule_throw(tr, id, n)
-	if n >= 4:
-		hide_hud("e")
-		Sound.stop_music(true)
-		await Sound.jingle("caught")
-		await bsay("좋았어! %s 붙잡았다!" % J(name, "을"), true)
-		var lv := mini(100, int(t.lv))
-		var m := Game.make_mon(sid, lv, {"shiny": false, "ot": Game.g.name, "met": {"map": w.m.name, "lv": lv}})
-		m.nick = name
-		m.hp = maxi(1, int(round(Game.max_hp(m) * float(t.hp) / float(t.max))))
-		captured = m
-		o.captured = true
-		if str(o.get("npc", "")) != "":
-			Game.set_flag("cap_" + str(o.npc))
-		await bsay("%s 동료가 되었다!" % J(name, "이"), true)
-		if Game.add_mon(m) == "box":
-			await bsay("%s 보관함으로 전송되었다!" % J(name, "은"), true)
-		if cap:
-			cap.queue_free()
-		return true
-	await bsay(["앗! %s 캡슐을 박차고 나왔다!" % J(name, "이"), "아앗! 붙잡았다고 생각했는데!", "아깝다! 조금만 더 하면 붙잡을 수 있었는데!", "으앗! 거의 다 붙잡았는데!"][mini(n, 3)])
-	await Msg.say(["이게 무슨 짓이야?!", "어딜 감히 나를 캡슐에!", "휴, 큰일 날 뻔했네...", "깜짝이야! 두 번 다시 안 들어가!"].pick_random(), tn(), {"keep": true})
-	return false
+	var lv := mini(100, int(t.lv))
+	var m := Game.make_mon(sid, lv, {"shiny": false, "ot": Game.g.name, "met": {"map": w.m.name, "lv": lv}})
+	m.nick = name
+	m.hp = maxi(1, int(Game.max_hp(m) / 2))
+	await Msg.say(["...졌다. 정말 강하구나. 네 원정에 나도 함께하게 해 줘!", "후우, 내가 졌어. 너와 함께라면 더 강해질 수 있을 것 같아!",
+		"대단한 실력이야! 나도 데려가 줄래?"].pick_random(), tn(), {"keep": true})
+	if await Msg.ask("%s 동료로 맞이할까?" % J(name, "을"), ["함께 가자!", "괜찮아"]) != 0:
+		await Msg.say("그래... 다음에 또 겨루자!", tn(), {"keep": true})
+		return
+	Sound.stop_music(true)
+	await Sound.jingle("caught")
+	captured = m
+	o.captured = true
+	if str(o.get("npc", "")) != "":
+		Game.set_flag("cap_" + str(o.npc))
+	await bsay("%s 동료가 되었다!" % J(name, "이"), true)
+	if Game.add_mon(m) == "box":
+		await bsay("%s 보관함으로 갔다!" % J(name, "은"), true)
 
 
 func give_back() -> void:
@@ -1248,8 +1240,8 @@ func foe_hero_turn():
 		await send_player()
 	elif act.type == "item":
 		if Data.D.items[act.id].has("ball"):
-			if await throw_ball_human(act.id):
-				return "win"
+			await bsay("사람에게는 캡슐을 던질 수 없다! 대결에서 실력으로 이기자.", true)
+			return null
 		else:
 			await use_item_battle(act)
 	else:
@@ -1382,6 +1374,7 @@ func _foe_hero_down() -> String:
 	await bsay("%s 털썩 주저앉았다!" % J(tn(), "은"), true)
 	if stolen.size():
 		await Msg.say("크윽... 졌다. 그 몬스터는 이제 네 거야. 잘 돌봐 줘...", tn(), {"keep": true})
+	await _recruit()
 	return "win"
 
 
