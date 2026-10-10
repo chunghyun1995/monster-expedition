@@ -7,6 +7,9 @@ func check(ok: bool, message: String) -> void:
 		push_error(message)
 
 func _ready() -> void:
+	get_tree().create_timer(120).timeout.connect(func() -> void:
+		push_error("Regression timed out")
+		get_tree().quit(1))
 	await get_tree().process_frame
 	Game.new_game("별")
 	var world := World.new()
@@ -65,6 +68,7 @@ func _ready() -> void:
 	if not close.is_empty():
 		close[0].pressed.emit()
 	await get_tree().process_frame
+	await test_restored_features(world)
 	print("GODOT_REGRESSION_", "FAIL" if failed else "PASS")
 	for node in Sound.get_children():
 		if node is AudioStreamPlayer:
@@ -81,3 +85,155 @@ func capture(label: String) -> void:
 	await RenderingServer.frame_post_draw
 	var err := get_viewport().get_texture().get_image().save_png("res://.godot/regression-%s.png" % label)
 	check(err == OK, "Could not save screenshot")
+
+func test_restored_features(world: World) -> void:
+	var previous_seen := Guides.seen.duplicate(true)
+	var previous_tips: int = Game.settings.tips
+	Game.settings.tips = 1
+	Guides.seen.clear()
+	Guides.show_once("bag")
+	await get_tree().process_frame
+	await get_tree().process_frame
+	check(Guides.overlay != null, "First-use tooltip missing")
+	await capture("tooltip")
+	var event := InputEventAction.new()
+	event.action = "a_btn"
+	event.pressed = true
+	Guides._input(event)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	check(Guides.seen.has("bag") and not Guides.should_show("bag"), "Tooltip must be shown once")
+	var config := ConfigFile.new()
+	config.load(Guides.PATH)
+	check(config.get_value("guides","seen",{}).has("bag"), "Tooltip history not persisted")
+	Guides.reset_all()
+	check(Guides.should_show("bag"), "Tooltip reset failed")
+	Game.settings.tips = 0
+	check(not Guides.should_show("bag"), "Tooltip disable failed")
+	Game.settings.tips = 1
+	for id in Guides.TEXT: Guides.seen[id] = true
+
+	var mom := 0
+	for key in Data.D.species:
+		if str(Data.D.species[key].get("human","")) == "mom": mom = int(key)
+	check(mom > 0, "Mother species missing")
+	var mon := Game.make_mon(mom,10)
+	var old_party: Array = Game.g.party
+	Game.g.party = [mon]
+	var canvas := CanvasLayer.new()
+	canvas.layer = 61
+	add_child(canvas)
+	var root := Control.new()
+	canvas.add_child(root)
+	var ctx := {"root":root,"lst":[mon],"cur":0,"page":0,"done":false}
+	for screen in [Vector2i(540,1170),Vector2i(720,1280),Vector2i(720,1560)]:
+		get_window().size = screen
+		get_window().content_scale_size = screen
+		await get_tree().process_frame
+		Menus._sum_render(ctx)
+		await get_tree().process_frame
+		await get_tree().process_frame
+		var labels := root.find_children("WrappedDescription","Label",true,false)
+		check(labels.size() == 1, "Summary bounded description missing")
+		if not labels.is_empty():
+			check(labels[0].size.x <= labels[0].get_parent().size.x, "Summary text overflows horizontally")
+		for button in root.find_children("*","Button",true,false):
+			check(button.position.x >= 0 and button.get_rect().end.x <= screen.x, "Summary button outside viewport")
+		await capture("summary-%d" % screen.x)
+	canvas.queue_free()
+	await get_tree().process_frame
+	for item in ["ball","dex"]:
+		var rows := [{"text":Data.D.items[item].n}]
+		Msg.list(rows,{"title":"가방 · 중요한 물건 · 3,186원","buttons":[["◀",-10],["중요한 물건",-12],["▶",-11],["닫기",-1]],"button_weights":[1.0,3.0,1.0,1.4],"on_move":func(_i: int) -> void: Menus._item_preview(item)})
+		await get_tree().process_frame
+		await get_tree().process_frame
+		var labels: Array = Msg._picker.get_meta("preview").find_children("WrappedDescription","Label",true,false)
+		check(not labels.is_empty(), "Item description missing")
+		if not labels.is_empty():
+			check(labels[0].size.x <= labels[0].get_parent().size.x, "Item text overflows horizontally")
+		for button in Msg._picker.get_children():
+			if button is Button:
+				check(button.get_rect().end.x <= Msg.vs().x, "Bag footer button outside viewport")
+		await capture("bag-"+item)
+		Msg._pick = -1
+		await get_tree().process_frame
+		await get_tree().process_frame
+
+	# Production auto chooses usable effective moves and falls back when PP is exhausted.
+	var fighter := Game.make_mon(1,10)
+	var foe := Game.make_mon(7,10)
+	fighter.moves = [{"id":"tackle","pp":10},{"id":"ember","pp":10}]
+	check(Auto.move_index(fighter,foe) == 1, "Auto battle should prefer effective fire attack")
+	fighter.moves[1].pp = 0
+	check(Auto.move_index(fighter,foe) == 0, "Auto battle used exhausted PP")
+	fighter.moves[0].pp = 0
+	check(Auto.move_index(fighter,foe) == "struggle", "Auto battle exhaustion fallback missing")
+	Auto.mode = "climb"
+	check(Auto.answer("교체하겠습니까?",["예","아니오"]) == 1, "Auto must preserve existing party")
+	check(Auto.answer("몬스터를 합성할까요?",["예","아니오"]) == null, "Auto must not approve destructive unknown choices")
+	Auto.stop()
+	check(not Auto.talk_enabled(), "Stopping auto must restore manual dialogue")
+	check(not Game.auto_text, "Production automation must not enable development bypass")
+	Game.g.party = [Game.make_mon(1,20)]
+	Game.set_flag("pad")
+	world.enter_map("route1",Vector2i(5,5),"down",{"quiet":true})
+	world.busy = true
+	var direction := Auto.grass_step()
+	check(direction != "", "Auto hunt could not find reachable grass")
+	if direction != "":
+		check(world.passable(world.P+World.DV[direction],direction), "Auto hunt path blocked")
+	Game.g.party[0].hp = 0
+	check(Auto.party_ratio() < 0.35, "Auto hunt low-health threshold missing")
+	world.enter_map("home",Vector2i(7,3),"down",{"quiet":true})
+	# Exercise the real tower entry and return warp rather than a developer shortcut.
+	Auto.go_tower()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	while Msg._picker == null: await get_tree().process_frame
+	Msg._pick = 0
+	await get_tree().create_timer(0.9).timeout
+	check(str(Game.g.map) == "towerLobby", "Tower quick entry failed")
+	check(Game.g.towerRet.map == "home", "Tower return position not recorded")
+	await capture("tower-lobby")
+	world.busy = true
+	world.set_process(false)
+	world.P = Vector2i(5,9)
+	await world._on_step()
+	check(str(Game.g.map) == "home" and world.P == Vector2i(7,3), "Tower exit did not restore entry position")
+	world.busy = true
+	Game.g.party = [Game.make_mon(1,20)]
+	Game.settings.autoBattle = 1
+	var previous_anim: int = Game.settings.anim
+	Game.settings.anim = 0
+	var result := await world.battle({"kind":"wild","team":[[7,1]],"bg":"meadow"})
+	check(result == "win" and not Game.auto_text, "Production auto battle failed")
+	Game.g.party = [Game.make_mon(1,40)]
+	await world.ev.tower_enter(1)
+	world.busy = true
+	var climb_state := {"done":false}
+	start_climb_test(climb_state)
+	var deadline := Time.get_ticks_msec() + 45000
+	while int(world.ev.tower().cur) < 2 and Time.get_ticks_msec() < deadline:
+		await get_tree().process_frame
+	Auto.stop()
+	deadline = Time.get_ticks_msec() + 5000
+	while not climb_state.done and Time.get_ticks_msec() < deadline:
+		await get_tree().process_frame
+	check(climb_state.done and int(world.ev.tower().cur) == 2 and int(world.ev.tower().best) >= 1, "Auto climb did not fight and advance or stop correctly")
+	Game.settings.autoBattle = 0
+	Game.settings.anim = previous_anim
+	world.enter_map("home",Vector2i(7,3),"down",{"quiet":true})
+	world.busy = false
+	await get_tree().process_frame
+	await capture("automation-controls")
+	world.busy = true
+	var team := world.ev.tower_team(100)
+	check(team.size() == 6 and int(team[0][1]) == 100, "Tower top-floor roster missing")
+	Game.g.party = old_party
+	Guides.seen = previous_seen
+	Guides._store()
+	Game.settings.tips = previous_tips
+
+func start_climb_test(state: Dictionary) -> void:
+	await Auto.climb()
+	state.done = true

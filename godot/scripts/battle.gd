@@ -107,6 +107,8 @@ func anim() -> bool:
 func run(opts: Dictionary, world: World) -> String:
 	o = opts
 	w = world
+	Auto.active_battle = self
+	tree_exiting.connect(func() -> void: Auto.active_battle = null)
 	wild = o.kind == "wild"
 	for e in o.get("team", []):
 		foe.append(Game.make_mon(int(e[0]), int(e[1]), {} if wild else {"shiny": false}))
@@ -510,7 +512,7 @@ func _btn_rect(i: int, cols := 2) -> Rect2:
 	return Rect2(16 + (i % cols) * (bw + gap), SH + 214 + (i / cols) * (bh + gap), bw, bh)
 
 
-func _buttons(list: Array, with_back: bool) -> int:
+func _buttons(list: Array, with_back: bool, auto_pick := -2) -> int:
 	_clear_menu()
 	var n := list.size() + (1 if with_back else 0)
 	var cols := 2 if n <= 4 else 3
@@ -541,6 +543,9 @@ func _buttons(list: Array, with_back: bool) -> int:
 		await get_tree().create_timer(0.05).timeout
 		picked[0] = btns.find(first)
 	while picked[0] == null:
+		if auto_pick != -2 and Auto.fight_enabled():
+			await get_tree().create_timer(0.35).timeout
+			if Auto.fight_enabled(): picked[0] = auto_pick
 		if with_back and Input.is_action_just_pressed("b_btn"):
 			picked[0] = -1
 		await get_tree().process_frame
@@ -549,14 +554,23 @@ func _buttons(list: Array, with_back: bool) -> int:
 
 
 func choose_action() -> Dictionary:
+	if not Auto.fight_enabled():
+		await Guides.show_once("battle")
+		await Guides.show_once("catchHuman" if foe_hero != null else ("capture" if wild else "steal"))
+	if Auto.fight_enabled():
+		await get_tree().create_timer(0.35).timeout
+		return {"type":"move", "mi":Auto.move_index(pm(),fm())}
 	if Game.auto_text:
 		print("[battle]  choose")
 	while true:
 		Msg.say("%s 무엇을 할까?" % J(N(pm()), "은"), "", {"keep": true, "nowait": true})
 		var c := await _buttons([["싸운다", Color(0.86, 0.36, 0.36)], ["가방", Color(0.86, 0.62, 0.25)],
-			["몬스터", Color(0.33, 0.62, 0.42)], ["도망친다", Color(0.36, 0.48, 0.72)]], false)
+			["몬스터", Color(0.33, 0.62, 0.42)], ["도망친다", Color(0.36, 0.48, 0.72)]], false, -3)
+		if c == -3:
+			return {"type":"move", "mi":Auto.move_index(pm(),fm())}
 		match c:
 			0:
+				await Guides.show_once("moves")
 				var p := pm()
 				if p.moves.all(func(x: Dictionary) -> bool: return int(x.pp) <= 0):
 					await bsay("%s 쓸 수 있는 기술이 없다!" % J(N(p), "은"), true)
@@ -571,7 +585,9 @@ func choose_action() -> Dictionary:
 						hint = "\n효과 없음" if e == 0 else "\n효과 굉장" if e > 1 else "\n효과 별로" if e < 1 else ""
 					opts.append(["%s\n%s %d/%d%s" % [d.n, Data.type_name(d.t), int(x.pp), int(d.pp), hint], Data.type_color(d.t).darkened(0.1), int(x.pp) <= 0])
 				Msg.say("어떤 기술을 쓸까?", "", {"keep": true, "nowait": true})
-				var k := await _buttons(opts, true)
+				var k := await _buttons(opts, true, -3)
+				if k == -3:
+					return {"type":"move", "mi":Auto.move_index(pm(),fm())}
 				if k >= 0:
 					return {"type": "move", "mi": k}
 			1:
@@ -1103,6 +1119,7 @@ func give_back() -> void:
 # 사람과의 턴
 # =====================================================================
 func hero_turn():
+	if not Auto.fight_enabled(): await Guides.show_once("hero")
 	var f := fm()
 	var h: Dictionary = hero
 	var vs_t := foe_hero != null
@@ -1117,7 +1134,7 @@ func hero_turn():
 		opts.append(["%s\n%s · 명중 %d" % [a.n, a.d, a.acc], Color(0.85, 0.45, 0.3)])
 	opts.append(["%s 마시기\n남은 %d개" % [Data.D.items[heal].n, int(Game.g.bag[heal])] if heal != "" else "회복약 없음", Color(0.86, 0.62, 0.25), heal == ""])
 	opts.append(["도망치다" if wild else "버티기\n방어 자세", Color(0.36, 0.48, 0.72)])
-	var i := await _buttons(opts, false)
+	var i := await _buttons(opts, false, 0)
 	Msg.hide_box()
 	var guard := false
 	var target: Puppet = tr if vs_t else fp
