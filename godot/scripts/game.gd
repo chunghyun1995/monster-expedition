@@ -42,6 +42,19 @@ func _ready() -> void:
 	new_game("하늘")
 
 
+## 안드로이드 뒤로 가기 = B 버튼
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		var ev := InputEventAction.new()
+		ev.action = "b_btn"
+		ev.pressed = true
+		Input.parse_input_event(ev)
+		var up := InputEventAction.new()
+		up.action = "b_btn"
+		up.pressed = false
+		Input.call_deferred("parse_input_event", up)
+
+
 func _keys(action: String, keys: Array) -> void:
 	if not InputMap.has_action(action):
 		InputMap.add_action(action)

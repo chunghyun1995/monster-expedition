@@ -377,7 +377,7 @@ func _make_heal_balls(n: int) -> void:
 # 사람들
 # =====================================================================
 func npc_on(n: NPC) -> bool:
-	return not n.hidden and ev.cond(n) and not ev.npc_gone(n)
+	return not n.gone and ev.cond(n) and not ev.npc_gone(n)
 
 
 func refresh_npcs() -> void:
@@ -487,7 +487,7 @@ func _update_cam(instant: bool) -> void:
 
 
 func _day_tint() -> void:
-	var h := Time.get_datetime_dict_from_system().hour
+	var h: int = Time.get_datetime_dict_from_system().hour
 	var c := Color.WHITE
 	if out:
 		if h >= 20 or h < 4:
@@ -956,7 +956,7 @@ func _encounter_flash(o: Dictionary) -> void:
 		band.size = Vector2(vs.x, 110)
 		band.position = Vector2(vs.x, vs.y * 0.45)
 		ui.add_child(band)
-		var title := {"leader": "관장 ", "rival": "라이벌 ", "boss": ""}.get(o.cls, "") + str(o.get("name", ""))
+		var title: String = {"leader": "관장 ", "rival": "라이벌 ", "boss": ""}.get(o.cls, "") + str(o.get("name", ""))
 		var l := UI.label(band, title, Vector2(0, 26), 48, Color.WHITE)
 		l.size.x = vs.x
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

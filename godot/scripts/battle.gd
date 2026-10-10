@@ -130,6 +130,8 @@ func run(opts: Dictionary, world: World) -> String:
 	await send_player()
 	var res = null
 	while res == null:
+		if Game.auto_text:
+			print("[battle] turn fi=", fi, " pi=", pi, " fhp=", fm().get("hp", -1), " php=", pm().hp, " hero=", hero != null, " foe_hero=", foe_hero != null)
 		if hero != null:
 			res = await hero_turn()
 		elif foe_hero != null:
@@ -521,6 +523,8 @@ func _buttons(list: Array, with_back: bool) -> int:
 
 
 func choose_action() -> Dictionary:
+	if Game.auto_text:
+		print("[battle]  choose")
 	while true:
 		Msg.say("%s 무엇을 할까?" % J(N(pm()), "은"), "", {"keep": true, "nowait": true})
 		var c := await _buttons([["싸운다", Color(0.86, 0.36, 0.36)], ["가방", Color(0.86, 0.62, 0.25)],
@@ -577,7 +581,7 @@ func speed_of(s: String) -> float:
 
 
 func ai_move(e: Dictionary, p: Dictionary) -> String:
-	var av := e.moves.filter(func(x: Dictionary) -> bool: return int(x.pp) > 0)
+	var av = e.moves.filter(func(x: Dictionary) -> bool: return int(x.pp) > 0)
 	if av.is_empty():
 		return "struggle"
 	var best: String = av[0].id
@@ -607,6 +611,8 @@ func ai_move(e: Dictionary, p: Dictionary) -> String:
 
 
 func do_turn(act: Dictionary):
+	if Game.auto_text:
+		print("[battle]  act ", act)
 	flinch = {}
 	moved = {}
 	var f := fm()
@@ -659,7 +665,11 @@ func do_turn(act: Dictionary):
 	elif e_act.type == "move":
 		seq = [["e", e_act.id, null]]
 	for s in seq:
+		if Game.auto_text:
+			print("[battle]  use ", s)
 		await use_move(s[0], s[1], s[2])
+		if Game.auto_text:
+			print("[battle]  used")
 		var c = await check_faints()
 		if c == "done":
 			return result
@@ -692,7 +702,7 @@ func check_faints():
 			result = "win"
 			return "done"
 	if hero != null:
-		return "cut" if cut else false
+		return "cut" if cut else ""
 	if pm().hp <= 0:
 		cut = true
 		if Game.alive().is_empty():
@@ -712,7 +722,7 @@ func check_faints():
 		pi = await Menus.party_screen("forced", {"start": pi, "current": pi})
 		Msg.place("battle")
 		await send_player()
-	return "cut" if cut else false
+	return "cut" if cut else ""
 
 
 func next_foe() -> void:
@@ -980,7 +990,7 @@ func throw_ball(id: String) -> bool:
 	var cap := await _capsule_throw(fp, id, n)
 	if n >= 4:
 		await bsay("좋았어! %s 붙잡았다!" % J(N(e), "을"), true)
-		var is_new := not Game.g.caught.has(int(e.sid))
+		var is_new = not Game.g.caught.has(int(e.sid))
 		Game.g.caught[int(e.sid)] = 1
 		Game.g.seen[int(e.sid)] = 1
 		e.ot = Game.g.name
@@ -1124,7 +1134,7 @@ func hero_turn():
 	if vs_t:
 		await trainer_act(true, guard)
 	else:
-		var av := f.moves.filter(func(x: Dictionary) -> bool: return int(x.pp) > 0 and int(Data.move(x.id).p) > 0)
+		var av = f.moves.filter(func(x: Dictionary) -> bool: return int(x.pp) > 0 and int(Data.move(x.id).p) > 0)
 		var id: String = av.pick_random().id if av.size() else f.moves[0].id
 		var mv := Data.move(id)
 		await bsay("%s의 %s!" % [foe_n, mv.n])
@@ -1240,7 +1250,7 @@ func mon_vs_trainer(mi) -> void:
 	await _attack_motion(pp, tr, mv)
 	var su := Game.calc(u)
 	var ph: bool = mv.c == "p"
-	var A := (su[1] * mult(st.p[1]) if ph else su[3] * mult(st.p[3])) * (0.5 if ph and u.st == "brn" else 1.0)
+	var A = (su[1] * mult(st.p[1]) if ph else su[3] * mult(st.p[3])) * (0.5 if ph and u.st == "brn" else 1.0)
 	var crit := randf() < 1.0 / 16.0
 	var stab := 1.2 if Game.sp(u.sid).t.has(mv.t) else 1.0
 	var d := maxi(1, int(round(float(t.max) * (0.1 + float(mv.p) / 500.0) * sqrt(A / (10.0 + float(t.lv) * 1.6)) * (0.85 + randf() * 0.3) * stab * (1.5 if crit else 1.0))))
@@ -1276,7 +1286,7 @@ func trainer_act(on_hero: bool, guard: bool) -> void:
 	if on_hero:
 		var h: Dictionary = hero
 		if randi() % 100 < int(a.acc):
-			var raw := float(h.max) * (a.lo + randf() * (a.hi - a.lo)) * pow(float(t.lv) / maxf(1, h.lv), 0.3) * (0.4 if guard else 1.0)
+			var raw = float(h.max) * (a.lo + randf() * (a.hi - a.lo)) * pow(float(t.lv) / maxf(1, h.lv), 0.3) * (0.4 if guard else 1.0)
 			await _impact(me, Vector2(-1, 0.4).normalized(), "human", false)
 			await _hero_hp(h.hp - maxi(1, int(round(raw))))
 		else:

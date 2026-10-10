@@ -18,6 +18,14 @@ var _rect := Rect2()
 var _mode := "field"
 var _picker: Control      # 선택지·목록이 떠 있을 때
 var _pick = null
+var _auto_seen := {}
+
+
+## 자동 점검용: 같은 질문(숫자 무시)이 3번 넘게 나오면 true
+func _auto_seen_too_much(t: String) -> bool:
+	var k := RegEx.create_from_string("[0-9,]+").sub(t, "#", true)
+	_auto_seen[k] = int(_auto_seen.get(k, 0)) + 1
+	return _auto_seen[k] > 3
 
 
 func _ready() -> void:
@@ -143,7 +151,8 @@ func ask(t: String, options: Array, who := "", start := 0, cancel_idx := -2) -> 
 	if Game.auto_text:
 		await get_tree().create_timer(0.05).timeout
 		hide_box()
-		return start
+		# 자동 점검: 같은 질문이 되풀이되면 마지막(그만두기)을 골라 무한 반복을 막는다
+		return options.size() - 1 if _auto_seen_too_much(t) else start
 	var cancel := options.size() - 1 if cancel_idx == -2 else cancel_idx
 	var layer := Control.new()
 	layer.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -191,6 +200,14 @@ func _link_focus(btns: Array, vertical: bool) -> void:
 ## 항목: {text, right, icon(Texture2D 또는 [atlas, index]), disabled, color}
 ## opts: title, start, cancel(true), on_move(Callable(i)), top(높이 비율 0~1: 위쪽 미리보기 칸), buttons([[글자, 값]]), keys(Callable(key,i) -> 값 또는 null)
 func list(items: Array, opts := {}) -> int:
+	if Game.auto_text:
+		await get_tree().process_frame
+		if _auto_seen_too_much("list:" + str(opts.get("title", ""))):
+			return -1
+		for i in items.size():
+			if not items[i].get("disabled", false) and i >= int(opts.get("start", 0)):
+				return i
+		return -1
 	var s := vs()
 	var layer := Control.new()
 	layer.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -319,6 +336,9 @@ func icon_tex(icon) -> Texture2D:
 # ---------------- 버튼 판 ----------------
 ## buttons: [{text, rect, color, disabled}] → 고른 번호 (B = cancel)
 func buttons(list_: Array, cancel := -1, start := 0) -> int:
+	if Game.auto_text:
+		await get_tree().process_frame
+		return cancel if cancel >= 0 else start
 	var layer := Control.new()
 	layer.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(layer)
@@ -351,6 +371,9 @@ func buttons(list_: Array, cancel := -1, start := 0) -> int:
 
 # ---------------- 수량 ----------------
 func number(max_n: int, price: int, title: String) -> int:
+	if Game.auto_text:
+		await get_tree().process_frame
+		return 1
 	var s := vs()
 	var layer := Control.new()
 	layer.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -429,6 +452,8 @@ func name_input(title: String, def := "", max_len := 6, sug := [], allow_empty :
 	le.text_submitted.connect(func(_t: String) -> void: ok.pressed.emit())
 	le.grab_focus()
 	while _pick == null:
+		if Input.is_action_just_pressed("ui_text_submit") and (le.text.strip_edges() != "" or allow_empty):
+			_pick = le.text.strip_edges()
 		await get_tree().process_frame
 	layer.queue_free()
 	_picker = null

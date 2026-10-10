@@ -13,6 +13,11 @@
   - `battle.gd` 전투 전체(빼앗기·화난 트레이너·맨손 승부·최후의 수단·상금·경험치 분배)
   - `npc.gd`, `emote.gd`, `capsule.gd`
 
+## 확인 완료 (2단계)
+- autoload(Msg·Menus) 등록, world.tscn, 새 타이틀(이어하기·처음부터·모션 보기·설정)·오프닝(이름 입력 → 집 → 엄마)
+- 지도 40곳 화면 확인, 자동 점검 `selftest`로 40곳 모든 사람과 대화·전투(108회)·조사·트리거 실행 → 오류 0
+- 사람과 맨손 승부 + 캡슐 던지기(탈출·화남) 화면 확인, 안드로이드 뒤로 가기 = B
+
 ## 다음에 할 것 (순서대로)
 1. project.godot autoload에 `Msg="*res://scripts/msg.gd"`, `Menus="*res://scripts/menus.gd"` 추가
 2. `scenes/world.tscn` 만들기(스크립트 world.gd), 옛 `field.gd`·`field.tscn`·`message_box.gd` 삭제

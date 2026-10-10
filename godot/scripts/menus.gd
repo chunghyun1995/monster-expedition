@@ -122,6 +122,14 @@ func run_pending_evo() -> void:
 # =====================================================================
 ## mode: field | battle | forced | item | deposit → 고른 번호 (-1 = 취소)
 func party_screen(mode: String, opts := {}) -> int:
+	if Game.auto_text:
+		await get_tree().process_frame
+		if mode == "field":
+			return -1
+		for i in Game.g.party.size():
+			if i != int(opts.get("current", -1)) and (Game.g.party[i].hp > 0 or mode == "item"):
+				return i
+		return -1
 	var at: int = int(opts.get("start", 0))
 	while true:
 		var items: Array = []
@@ -175,86 +183,89 @@ func party_screen(mode: String, opts := {}) -> int:
 
 ## 요약: 몬스터 정보 · 능력치 · 기술
 func summary(lst: Array, idx: int) -> void:
-	var s := vs()
 	var layer := CanvasLayer.new()
 	layer.layer = 61
 	add_child(layer)
-	var page := [0]
-	var cur := [idx]
 	var root := Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	layer.add_child(root)
-	var done := [false]
-	var render := func() -> void:
-		for c in root.get_children():
-			c.queue_free()
-		var m: Dictionary = lst[cur[0]]
-		var sp: Dictionary = Game.sp(m.sid)
-		var st := Game.calc(m)
-		var bg := ColorRect.new()
-		bg.color = [Color(1.0, 0.95, 0.85), Color(0.9, 0.97, 0.87), Color(0.88, 0.92, 1.0)][page[0]]
-		bg.size = s
-		root.add_child(bg)
-		var stage := Node2D.new()
-		stage.position = Vector2(s.x / 2, 470)
-		root.add_child(stage)
-		var pup := Puppet.new()
-		stage.add_child(pup)
-		pup.setup_mon(int(m.sid), false, 300.0)
-		UI.label(root, "%s%s  Lv%d" % [Game.name_of(m), " ★" if m.get("shiny", false) else "", int(m.lv)], Vector2(30, 30), 40)
-		var info := UI.panel(root, Rect2(20, 520, s.x - 40, s.y - 700))
-		var lines: Array = []
-		if page[0] == 0:
-			var types: Array = []
-			for t in sp.t:
-				types.append(Data.type_name(t))
-			lines = ["도감 No. %s" % ("—" if sp.has("human") else "%03d" % int(m.sid)), "종류: %s (%s 몬스터)" % [sp.n, sp.cat], "타입: %s" % "/".join(types),
-				"어버이: %s" % str(m.ot if m.get("ot") != null else Game.g.name), "성격: %s" % Data.D.natures[int(m.nat)][0],
-				("%s에서 Lv%d일 때 만났다." % [m.met.map, int(m.met.lv)]) if m.get("met") != null else "운명적으로 만났다.", "", str(sp.d)]
-		elif page[0] == 1:
-			var nat: Array = Data.D.natures[int(m.nat)]
-			lines = ["HP  %d / %d" % [int(m.hp), st[0]]]
-			for i in range(1, 6):
-				var mark := " ▲" if int(nat[1]) == i and int(nat[2]) != i else " ▼" if int(nat[2]) == i and int(nat[1]) != i else ""
-				lines.append("%s  %d%s" % [Data.D.stn[i], st[i], mark])
-			lines.append("경험치 %d · 다음 레벨까지 %d" % [int(m.exp), 0 if int(m.lv) >= 100 else Game.exp_for(int(m.lv) + 1) - int(m.exp)])
-		else:
-			for x in m.moves:
-				var d: Dictionary = Data.move(x.id)
-				lines.append("%s [%s·%s] PP %d/%d  위력 %s 명중 %s" % [d.n, Data.type_name(d.t), Data.D.catn[d.c], int(x.pp), int(d.pp), str(d.p) if int(d.p) else "-", str(d.a) if int(d.a) else "-"])
-				lines.append("   " + str(d.d))
-		var l := UI.label(info, "\n".join(lines), Vector2(26, 20), 28)
-		l.size.x = info.size.x - 52
-		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		var tabs := ["정보", "능력치", "기술"]
-		for j in 3:
-			var b := UI.button(root, tabs[j], Rect2(20 + j * ((s.x - 40) / 3.0), 100, (s.x - 40) / 3.0 - 10, 70), Color(0.3, 0.5, 0.8) if j == page[0] else Color(0.5, 0.52, 0.6), 28)
-			b.pressed.connect(func() -> void:
-				page[0] = j
-				render.call())
-		var prev := UI.button(root, "▲ 이전", Rect2(20, s.y - 150, (s.x - 60) / 3.0, 100), Color(0.4, 0.5, 0.65), 28)
-		prev.pressed.connect(func() -> void:
-			cur[0] = (cur[0] - 1 + lst.size()) % lst.size()
-			render.call())
-		var nxt := UI.button(root, "▼ 다음", Rect2(30 + (s.x - 60) / 3.0, s.y - 150, (s.x - 60) / 3.0, 100), Color(0.4, 0.5, 0.65), 28)
-		nxt.pressed.connect(func() -> void:
-			cur[0] = (cur[0] + 1) % lst.size()
-			render.call())
-		var back := UI.button(root, "돌아가기", Rect2(40 + 2 * (s.x - 60) / 3.0, s.y - 150, (s.x - 60) / 3.0, 100), Color(0.3, 0.32, 0.38), 28)
-		back.pressed.connect(func() -> void: done[0] = true)
-		back.grab_focus()
-	render.call()
-	while not done[0]:
+	var ctx := {"root": root, "lst": lst, "cur": idx, "page": 0, "done": false}
+	_sum_render(ctx)
+	while not ctx.done:
 		if Input.is_action_just_pressed("b_btn"):
-			done[0] = true
+			ctx.done = true
 		elif Input.is_action_just_pressed("ui_left"):
-			page[0] = (page[0] + 2) % 3
-			render.call()
+			ctx.page = (int(ctx.page) + 2) % 3
+			_sum_render(ctx)
 		elif Input.is_action_just_pressed("ui_right"):
-			page[0] = (page[0] + 1) % 3
-			render.call()
+			ctx.page = (int(ctx.page) + 1) % 3
+			_sum_render(ctx)
 		await get_tree().process_frame
 	layer.queue_free()
+
+
+func _sum_set(ctx: Dictionary, k: String, v) -> void:
+	ctx[k] = v
+	_sum_render(ctx)
+
+
+func _sum_render(ctx: Dictionary) -> void:
+	var s := vs()
+	var root: Control = ctx.root
+	var lst: Array = ctx.lst
+	var page: int = int(ctx.page)
+	for c in root.get_children():
+		c.queue_free()
+	var m: Dictionary = lst[int(ctx.cur)]
+	var sp: Dictionary = Game.sp(m.sid)
+	var st := Game.calc(m)
+	var bg := ColorRect.new()
+	bg.color = [Color(1.0, 0.95, 0.85), Color(0.9, 0.97, 0.87), Color(0.88, 0.92, 1.0)][page]
+	bg.size = s
+	root.add_child(bg)
+	var stage := Node2D.new()
+	stage.position = Vector2(s.x / 2, 470)
+	root.add_child(stage)
+	var pup := Puppet.new()
+	stage.add_child(pup)
+	pup.setup_mon(int(m.sid), false, 300.0)
+	UI.label(root, "%s%s  Lv%d" % [Game.name_of(m), " ★" if m.get("shiny", false) else "", int(m.lv)], Vector2(30, 30), 40)
+	var info := UI.panel(root, Rect2(20, 520, s.x - 40, s.y - 700))
+	var lines: Array = []
+	if page == 0:
+		var types: Array = []
+		for t in sp.t:
+			types.append(Data.type_name(t))
+		lines = ["도감 No. %s" % ("—" if sp.has("human") else "%03d" % int(m.sid)), "종류: %s (%s 몬스터)" % [sp.n, sp.cat], "타입: %s" % "/".join(types),
+			"어버이: %s" % str(m.ot if m.get("ot") != null else Game.g.name), "성격: %s" % Data.D.natures[int(m.nat)][0],
+			("%s에서 Lv%d일 때 만났다." % [m.met.map, int(m.met.lv)]) if m.get("met") != null else "운명적으로 만났다.", "", str(sp.d)]
+	elif page == 1:
+		var nat: Array = Data.D.natures[int(m.nat)]
+		lines = ["HP  %d / %d" % [int(m.hp), st[0]]]
+		for i in range(1, 6):
+			var mark := " ▲" if int(nat[1]) == i and int(nat[2]) != i else " ▼" if int(nat[2]) == i and int(nat[1]) != i else ""
+			lines.append("%s  %d%s" % [Data.D.stn[i], st[i], mark])
+		lines.append("경험치 %d · 다음 레벨까지 %d" % [int(m.exp), 0 if int(m.lv) >= 100 else Game.exp_for(int(m.lv) + 1) - int(m.exp)])
+	else:
+		for x in m.moves:
+			var d: Dictionary = Data.move(x.id)
+			lines.append("%s [%s·%s] PP %d/%d  위력 %s 명중 %s" % [d.n, Data.type_name(d.t), Data.D.catn[d.c], int(x.pp), int(d.pp), str(d.p) if int(d.p) else "-", str(d.a) if int(d.a) else "-"])
+			lines.append("   " + str(d.d))
+	var l := UI.label(info, "\n".join(lines), Vector2(26, 20), 28)
+	l.size.x = info.size.x - 52
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var tabs := ["정보", "능력치", "기술"]
+	for j in 3:
+		var b := UI.button(root, tabs[j], Rect2(20 + j * ((s.x - 40) / 3.0), 100, (s.x - 40) / 3.0 - 10, 70), Color(0.3, 0.5, 0.8) if j == page else Color(0.5, 0.52, 0.6), 28)
+		b.pressed.connect(_sum_set.bind(ctx, "page", j))
+	var w3 := (s.x - 60) / 3.0
+	var prev := UI.button(root, "▲ 이전", Rect2(20, s.y - 150, w3, 100), Color(0.4, 0.5, 0.65), 28)
+	prev.pressed.connect(_sum_set.bind(ctx, "cur", (int(ctx.cur) - 1 + lst.size()) % lst.size()))
+	var nxt := UI.button(root, "▼ 다음", Rect2(30 + w3, s.y - 150, w3, 100), Color(0.4, 0.5, 0.65), 28)
+	nxt.pressed.connect(_sum_set.bind(ctx, "cur", (int(ctx.cur) + 1) % lst.size()))
+	var back := UI.button(root, "돌아가기", Rect2(40 + 2 * w3, s.y - 150, w3, 100), Color(0.3, 0.32, 0.38), 28)
+	back.pressed.connect(func() -> void: ctx.done = true)
+	back.grab_focus()
 
 
 # =====================================================================

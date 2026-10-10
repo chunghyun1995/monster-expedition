@@ -5,6 +5,8 @@ config_version=5
 
 [application]
 
+config/quit_on_go_back=false
+
 config/name="몬스터 원정대"
 config/description="2.5D 몬스터 RPG — Godot 모션 미리보기"
 run/main_scene="res://scenes/main.tscn"
@@ -17,6 +19,8 @@ boot_splash/show_image=false
 
 Data="*res://scripts/data.gd"
 Game="*res://scripts/game.gd"
+Msg="*res://scripts/msg.gd"
+Menus="*res://scripts/menus.gd"
 
 [display]
 

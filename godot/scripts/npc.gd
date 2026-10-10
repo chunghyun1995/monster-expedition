@@ -12,7 +12,7 @@ var look := ""
 var front: Puppet
 var back: Puppet
 var busy := false
-var hidden := false      # 이벤트로 사라짐(이 맵에 있는 동안)
+var gone := false      # 이벤트로 사라짐(이 맵에 있는 동안)
 var tmp := false         # 이벤트로 잠깐 나타난 사람
 var wait_t := 1.0
 var height := 90.0

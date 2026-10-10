@@ -306,7 +306,7 @@ func give_starter(sid: int, secret: bool) -> void:
 	await say("그럼 먼저 간다! 바위시티에서 보자, %s!" % nm(), R)
 	await w.walk_npc(rv, ["down", "down", "down", "down", "down", "down"], 0.2)
 	Game.set_flag("rivalLeft")
-	rv.hidden = true
+	rv.gone = true
 	Game.g.heal = {"map": "home", "x": 4, "y": 6}
 
 
@@ -414,7 +414,7 @@ func talk_rival3(_n: NPC) -> void:
 		return
 	await say("하라 씨는 강하지만 너라면 이길 수 있을 거야. 나는 좀 더 수행하고 올게!", R)
 	if rv:
-		rv.hidden = true
+		rv.gone = true
 
 
 func cond_t2_gate() -> bool:
@@ -473,7 +473,7 @@ func talk_rival4(_n: NPC) -> void:
 		return
 	await say("좋아, 같이 가자고 하고 싶지만... 나는 나만의 방식으로 검은안개단을 막아 보겠어. 번개도시에서 보자!", R)
 	if r:
-		r.hidden = true
+		r.gone = true
 
 
 func talk_leader3(_n: NPC) -> void:
@@ -535,7 +535,7 @@ func talk_boss(_n: NPC) -> void:
 	await say("크윽... 조종 장치는 포기하지. 하지만 검은안개단은 사라지지 않는다!", o)
 	var b := w.npc_by_id("boss")
 	if b:
-		b.hidden = true
+		b.gone = true
 	Game.set_flag("plantClear")
 	w.refresh_npcs()
 	await w.sleep(0.4)
@@ -611,7 +611,7 @@ func talk_t5_summit(_n: NPC) -> void:
 	await say("봐, 해가 뜬다. 우리 원정은 여기서 끝이 아니야. 언젠가 또 승부하자!", R)
 	Game.set_flag("clear2")
 	if r:
-		r.hidden = true
+		r.gone = true
 	await w.credits(true)
 
 
@@ -775,7 +775,7 @@ func talk_tw_guard(n: NPC) -> void:
 		await say("최고 기록: %d층. 다음엔 %d층부터 다시 도전할 수 있어요!" % [int(t.best), mini(91, int(t.best) / 10 * 10 + 1)], "탑 안내원")
 		return
 	t.best = maxi(int(t.best), f)
-	n.hidden = true
+	n.gone = true
 	w.refresh_npcs()
 	if f % 10 == 0:
 		w.heal_party()
@@ -908,6 +908,18 @@ func fight_choice(n: NPC) -> void:
 func dev(cmd: String) -> void:
 	var parts := cmd.split(":")
 	match parts[0]:
+		"intro_mom":
+			await w.run_script(func() -> void:
+				w.banner("우리 집")
+				var mom := w.npc_by_id("mom")
+				await mom.face("right")
+				await w.emote(mom, "!")
+				await say("일어났구나, %s! 한결 박사님이 연구소로 와 달라고 하셨단다." % nm(), "엄마")
+				await say("연구소는 마을 위쪽에 있는 큰 건물이야. 메뉴는 오른쪽 위 메뉴 버튼(또는 C 키)으로 열 수 있단다.", "엄마")
+				await say("조심해서 다녀오렴!", "엄마")
+				await mom.face("left"))
+		"selftest":
+			await selftest(parts.slice(1))
 		"battle":
 			await w.run_script(func() -> void: await w.battle({"kind": "wild", "team": [[17, 5]]}))
 		"person":
@@ -920,3 +932,52 @@ func dev(cmd: String) -> void:
 			await w.run_script(func() -> void: await Menus.evolve(Game.g.party[0]))
 		"credits":
 			await w.run_script(func() -> void: await w.credits(true))
+
+
+## 자동 점검: 모든 지도를 돌며 사람마다 말을 걸고(전투 포함), 트리거·조사 이벤트를 실행한다
+func selftest(only := []) -> void:
+	Game.auto_text = true
+	Engine.time_scale = 8.0
+	for i in Game.g.party.size():
+		Game.g.party[i] = Game.make_mon([1, 4, 7, 17, 24, 11][i % 6], 100)
+	var ids: Array = Data.D.maps.keys() if only.is_empty() else only
+	var n_talk := 0
+	for id in ids:
+		print("[selftest] map ", id)
+		var mp: Dictionary = Data.map(id)
+		var start := _safe_cell(mp)
+		w.enter_map(id, start, "down", {"quiet": true})
+		await w.sleep(0.05)
+		for npc in w.npcs.duplicate():
+			if not is_instance_valid(npc) or not npc.visible:
+				continue
+			if Game.g.map != id:
+				w.enter_map(id, start, "down", {"quiet": true})
+			w.P = npc.cell + Vector2i.DOWN
+			print("[selftest]   talk ", npc.id)
+			await w.run_script(func() -> void: await w._talk_npc(npc))
+			n_talk += 1
+			Game.heal_party()
+		for k in mp.obj:
+			if Game.g.map != id:
+				w.enter_map(id, start, "down", {"quiet": true})
+			if mp.obj[k] is String and mp.obj[k] == "@fn":
+				await w.run_script(func() -> void: await obj(id, k))
+		for t in mp.get("trig", []).size():
+			if Game.g.map != id:
+				w.enter_map(id, start, "down", {"quiet": true})
+			w.P = Vector2i(int(mp.trig[t].x), int(mp.trig[t].y))
+			if not mp.trig[t].cond or trig_cond(id, t):
+				await w.run_script(func() -> void: await trig_run(id, t))
+	print("[selftest] done talks=", n_talk, " money=", Game.g.money, " party=", Game.g.party.size(), " box=", Game.g.box.size())
+	Engine.time_scale = 1.0
+	w.get_tree().quit()
+
+
+func _safe_cell(mp: Dictionary) -> Vector2i:
+	for y in mp.rows.size():
+		for x in str(mp.rows[y]).length():
+			var c: String = mp.rows[y][x]
+			if c == "." or c == "=":
+				return Vector2i(x, y)
+	return Vector2i(1, 1)
