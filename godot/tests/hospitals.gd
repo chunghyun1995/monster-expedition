@@ -21,6 +21,7 @@ func _ready() -> void:
 	add_child(world)
 	world.set_process(false)
 	world.busy = true
+	check(not JSON.stringify(Data.D).contains("관측 캠프") and not JSON.stringify(Data.D).contains("캠프 의무원"), "Old hospital names remain in character records or dialogue")
 	Game.g.heal = {"map":"lab", "x":5, "y":8}
 	check(Game.recovery_point().map == "lab", "Before the first city, laboratory recovery must remain available")
 	Game.g.towerRet = {"map":"lab", "x":5, "y":8, "dir":"up"}

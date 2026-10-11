@@ -42,8 +42,11 @@ function reviseMaps(maps) {
     }
   }
   // 조사관·주민의 대사와 표지판까지 치료 장소 이름을 통일한다.
-  const clean = JSON.stringify(maps).replaceAll('관측 캠프로', '병원으로')
+  return renameFacilities(maps);
+}
+function renameFacilities(data) {
+  const clean = JSON.stringify(data).replaceAll('관측 캠프로', '병원으로')
     .replaceAll('관측 캠프', '병원').replaceAll('캠프 의무원', '병원 의무원');
   return JSON.parse(clean);
 }
-module.exports = {reviseMaps};
+module.exports = {reviseMaps, renameFacilities};

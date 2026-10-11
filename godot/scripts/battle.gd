@@ -1545,12 +1545,13 @@ func end_battle(res: String) -> String:
 				await Msg.say(o.win_msg, tn(), {"keep": true})
 		else:
 			await banner("동료가 모두 지쳤어요")
-			# 진 상대에게 돈을 건네지 않는다. 캠프까지 옮겨 주는 응급 이송비(가진 돈의 20%)만 낸다
+			# 진 상대에게 돈을 건네지 않는다. 치료 장소까지의 응급 이송비(가진 돈의 20%)만 낸다
 			var lost := int(Game.g.money) / 5
 			Game.g.money = int(Game.g.money) - lost
 			if lost > 0:
 				await banner("응급 이송비 -%s" % Game.money(lost))
-			await banner("가까운 캠프로 돌아가요")
+			var recovery: Dictionary = Game.recovery_point()
+			await banner("병원으로 돌아가요" if str(recovery.map).begins_with("center") else "안전한 곳으로 돌아가요")
 	Msg.hide_box()
 	await Game.fade_to(1.0, 0.35)
 	return res

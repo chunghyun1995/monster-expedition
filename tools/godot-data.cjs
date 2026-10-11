@@ -26,6 +26,6 @@ const out={types:ctx.TYPES,chart:ctx.CHART,moves:ctx.MV,species:sp,natures:ctx.N
   stn:ctx.STN,status:ctx.STATUS,catn:ctx.CATN,human_sid:ctx.HUMAN_SID,
   fight:{npc:ctx.FIGHT,role:ctx.FIGHT_ROLE,cls:ctx.FIGHT_CLASS,look:ctx.FIGHT_LOOK,subst:ctx.SUBST,refuse:ctx.SUBST_REFUSE},
   maps:require('./hospital-maps.cjs').reviseMaps(maps)};
-fs.writeFileSync(path.join(root,'godot/data/game.json'),JSON.stringify(out));
+fs.writeFileSync(path.join(root,'godot/data/game.json'),JSON.stringify(require('./hospital-maps.cjs').renameFacilities(out)));
 console.log('species',Object.keys(sp).length,'moves',Object.keys(out.moves).length,'looks',looks.length,'maps',Object.keys(maps).length,
   'npcs',Object.values(maps).reduce((s,m)=>s+m.npcs.length,0));
