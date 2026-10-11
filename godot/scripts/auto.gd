@@ -7,9 +7,10 @@ var last_dir := ""
 var pending_dir := ""
 var controls: CanvasLayer
 var buttons := {}
+var fight_on := false   # 지금 전투의 자동전투. 전투마다 설정(autoStart, 기본 끔)으로 다시 시작
 
 func fight_enabled() -> bool:
-	return int(Game.settings.get("autoBattle",0)) != 0 or mode != ""
+	return fight_on or mode != ""
 
 func talk_enabled() -> bool:
 	return mode != "" or (is_instance_valid(active_battle) and fight_enabled())
@@ -26,8 +27,11 @@ func bind_world(value: World) -> void:
 		buttons[key] = _round_button(key)
 	buttons.battle.pressed.connect(func() -> void:
 		await Guides.show_once("battle")
-		Game.settings.autoBattle = 0 if int(Game.settings.get("autoBattle",0)) else 1
-		Game.save_settings())
+		if is_instance_valid(active_battle):
+			fight_on = not fight_on
+		else:
+			Game.settings.autoStart = 0 if int(Game.settings.get("autoStart",0)) else 1
+			Game.save_settings())
 	buttons.tower.pressed.connect(func() -> void: world.run_script(go_tower))
 	buttons.hunt.pressed.connect(func() -> void:
 		if mode == "hunt":
@@ -93,7 +97,7 @@ func _process(_delta: float) -> void:
 		"stop": mode != "" and (shown or battling),
 	}
 	var texts := {"tower": "탑", "hunt": "자동\n사냥", "climb": "자동\n등반", "stop": "자동\n중지",
-		"battle": "자동\n진행중" if mode != "" else ("자동전투\nON" if fight_enabled() else "자동\n전투")}
+		"battle": "자동\n진행중" if mode != "" else ("자동전투\nON" if (fight_enabled() if battling else int(Game.settings.get("autoStart",0)) != 0) else "자동\n전투")}
 	var y := 186.0 if battling else 108.0
 	for key in ORDER:
 		var b: Button = buttons[key]
@@ -101,7 +105,7 @@ func _process(_delta: float) -> void:
 		if not b.visible:
 			continue
 		b.text = texts[key]
-		var on: bool = (key == "battle" and fight_enabled()) or (key == "hunt" and mode == "hunt")
+		var on: bool = (key == "battle" and (fight_enabled() if battling else int(Game.settings.get("autoStart",0)) != 0)) or (key == "hunt" and mode == "hunt")
 		_paint(b, ON_COLOR if on else COLORS[key])
 		b.size = Vector2(ROUND, ROUND)
 		b.position = Vector2(screen.x - ROUND - 16, y)
@@ -114,7 +118,7 @@ func _process(_delta: float) -> void:
 		var direction := pending_dir if pending_dir != "" else grass_step()
 		if direction == "":
 			stop()
-			world.run_script(func() -> void: await Msg.say("이동할 수 있는 풀숲이 없어서 자동 사냥을 멈췄어요."))
+			world.run_script(func() -> void: await Msg.say("이동할 수 있는 관측 구역이 없어서 자동 사냥을 멈췄어요."))
 		else:
 			pending_dir = direction
 			world._try_move(direction)
@@ -166,8 +170,8 @@ func grass_step() -> String:
 			var next: Vector2i = cell + World.DV[direction]
 			if visited.has(next) or not world.passable(next,direction) or world.npc_at(next) != null or not world.item_at(next).is_empty():
 				continue
-			# Never walk through warps, scripted triggers, ledges or map edges.
-			if world.tile(next.x,next.y) in ["D","L","O","Q"] or world.m.warps.has("%d,%d" % [next.x,next.y]):
+			# Never walk through warps, scripted triggers or map edges.
+			if world.tile(next.x,next.y) in ["D","O","Q"] or world.m.warps.has("%d,%d" % [next.x,next.y]):
 				continue
 			var scripted := false
 			var triggers: Array = world.m.get("trig", [])

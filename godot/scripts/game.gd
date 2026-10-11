@@ -9,7 +9,7 @@ const COUNTER := {1: 15, 4: 15, 7: 15, 17: 15, 10: 15, 19: 15, 23: 15}
 const DIGK := "영일이삼사오육칠팔구"
 
 var g: Dictionary = {}
-var settings := {"text": 1, "anim": 1, "bgm": 3, "sfx": 1, "style": 0, "tips": 1, "autoBattle": 0}
+var settings := {"text": 1, "anim": 1, "bgm": 3, "sfx": 1, "style": 0, "tips": 1, "autoStart": 0}   # autoStart: 전투를 자동전투로 시작(기본 끔)
 var dev := ""
 var auto_text := false      # 개발용: 대화를 자동으로 넘김
 

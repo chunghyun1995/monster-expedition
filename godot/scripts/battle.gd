@@ -108,6 +108,7 @@ func run(opts: Dictionary, world: World) -> String:
 	o = opts
 	w = world
 	Auto.active_battle = self
+	Auto.fight_on = int(Game.settings.get("autoStart", 0)) != 0
 	tree_exiting.connect(func() -> void: Auto.active_battle = null)
 	wild = o.kind == "wild"
 	for e in o.get("team", []):
@@ -357,7 +358,7 @@ func _intro_wild() -> void:
 	if f.get("shiny", false):
 		await _shiny_fx(fp)
 	make_hud("e")
-	await bsay("풀숲이 흔들리더니 %s 모습을 드러냈다!" % J(N(f), "이"))
+	await bsay("신호를 따라가자 %s 모습을 드러냈다!" % J(N(f), "이"))
 
 
 func _intro_trainer() -> void:
@@ -1443,8 +1444,11 @@ func end_battle(res: String) -> String:
 				if str(o.get("lose", "")) != "":
 					await Msg.say(o.lose, tn(), {"keep": true})
 			if o.kind != "npc" and foe.size():
-				var last_lv: int = int(foe[foe.size() - 1].lv)
-				var prize: int = int(Data.D.tclass[o.cls].m) * last_lv
+				# 조사 지원금: 상대 동료 전체 레벨 합 × 직무 등급 (마지막 동료 레벨 × 직업 배율 방식이 아님)
+				var lv_sum := 0
+				for f in foe:
+					lv_sum += int(f.lv)
+				var prize: int = (6 + int(Data.D.tclass[o.cls].m) / 4) * lv_sum
 				Game.g.money = int(Game.g.money) + prize
 				await bsay("%s 조사 지원금으로 %s 받았다!" % [J(Game.g.name, "은"), J(Game.money(prize), "을")], true)
 	elif res == "lose":
@@ -1460,9 +1464,11 @@ func end_battle(res: String) -> String:
 				await Msg.say(o.win_msg, tn(), {"keep": true})
 		else:
 			await bsay("%s의 동료가 모두 지쳤다!" % Game.g.name, true)
-			var lost := int(Game.g.money) / 2
+			# 진 상대에게 돈을 건네지 않는다. 캠프까지 옮겨 주는 응급 이송비(가진 돈의 20%)만 낸다
+			var lost := int(Game.g.money) / 5
 			Game.g.money = int(Game.g.money) - lost
-			await bsay(("%s 응급 이송비로 %s 냈다..." if wild else "%s 겨루기 약속대로 %s 건넸다...") % [J(Game.g.name, "은"), J(Game.money(lost), "을")], true)
+			if lost > 0:
+				await bsay("%s 응급 이송비로 %s 냈다..." % [J(Game.g.name, "은"), J(Game.money(lost), "을")], true)
 			await bsay("조사를 멈추고 가까운 캠프로 돌아간다...", true)
 	Msg.hide_box()
 	await Game.fade_to(1.0, 0.35)
