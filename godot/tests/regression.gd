@@ -247,7 +247,7 @@ func test_restored_features(world: World) -> void:
 	check(str(Game.g.map) == "home" and world.P == Vector2i(7,3), "Tower exit did not restore entry position")
 	world.busy = true
 	Game.g.party = [Game.make_mon(1,20)]
-	Game.settings.autoBattle = 1
+	Game.settings.autoStart = 1
 	var previous_anim: int = Game.settings.anim
 	Game.settings.anim = 0
 	var result := await world.battle({"kind":"wild","team":[[7,1]],"bg":"meadow"})
@@ -274,7 +274,7 @@ func test_restored_features(world: World) -> void:
 	while not climb_state.done and Time.get_ticks_msec() < deadline:
 		await get_tree().process_frame
 	check(climb_state.done and str(Game.g.map) == "towerLobby" and Auto.mode == "", "Defeated auto climber must return to lobby without waiting for input")
-	Game.settings.autoBattle = 0
+	Game.settings.autoStart = 0
 	Game.settings.anim = previous_anim
 	world.enter_map("home",Vector2i(7,3),"down",{"quiet":true})
 	world.busy = false

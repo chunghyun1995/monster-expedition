@@ -8,6 +8,15 @@ const DV := {"up": Vector2i.UP, "down": Vector2i.DOWN, "left": Vector2i.LEFT, "r
 const OPP := {"up": "down", "down": "up", "left": "right", "right": "left"}
 const WATER_SHADER := preload("res://shaders/water.gdshader")
 const BLD := {"H": 6, "K": 7, "B": 8, "C": 9, "M": 10, "G": 11, "T": 12}
+# 관측 구역(","): 지도마다 바닥 질감·색·낮은 장식이 다르고, 가장자리에 점선 테두리를 그린다
+# g: terrain 칸, tint: 바닥 색, deco: props 칸, every: 몇 칸마다 장식 하나, mod: 장식 색
+const ZONES := {
+	"route1": {"g": 2, "tint": Color(0.95, 1.0, 0.82), "deco": 3, "h": 34.0, "every": 3, "sway": 1.4},
+	"route2": {"g": 2, "tint": Color(0.74, 0.88, 0.74), "deco": 4, "h": 30.0, "every": 5, "sway": 0.0},
+	"route3": {"g": 14, "tint": Color(1.0, 0.92, 0.88), "deco": 4, "h": 26.0, "every": 5, "sway": 0.0, "mod": Color(0.62, 0.55, 0.52)},
+	"route4": {"g": 2, "tint": Color(1.0, 0.96, 0.78), "deco": 2, "h": 34.0, "every": 3, "sway": 1.0},
+	"route5": {"g": 2, "tint": Color(0.84, 0.95, 0.95), "deco": 3, "h": 28.0, "every": 4, "sway": 1.6},
+}
 const STARTERS := [[4, 4, 10], [5, 4, 19], [6, 4, 23]]
 const DEF_TEXT := {"S": ["책이 가득 꽂혀 있다."], "v": ["TV에서 재미있는 방송을 하고 있다."], "b": ["푹신해 보이는 침대다."],
 	"p": ["잘 가꿔진 화분이다."], "r": ["커다란 바위다. 꿈쩍도 하지 않는다."], "~": ["맑은 물이 반짝이고 있다."], "h": ["회복 장치다."]}
@@ -160,6 +169,8 @@ func _ground_index(c: String) -> int:
 			return 14
 		if c == "^" or c == "O":
 			return 12
+		if c == ",":
+			return int(_zone().g)
 		return 13 if m.has("pal") and m.pal.has("ash") else 0
 	if c == "w":
 		return 11
@@ -168,6 +179,10 @@ func _ground_index(c: String) -> int:
 	if c == "%":
 		return 14
 	return 8 if m.get("floor", "") == "wood" else 9
+
+
+func _zone() -> Dictionary:
+	return ZONES.get(str(m.id), ZONES.route1)
 
 
 func _floor_tint(t: int) -> Color:
@@ -206,12 +221,9 @@ func _draw_ground(node: Node2D, only_water: bool) -> void:
 			var fx := -1.0 if x & 1 else 1.0
 			var fy := -1.0 if y & 1 else 1.0
 			node.draw_set_transform(Vector2(x * T + T / 2.0, y * T + T / 2.0), 0, Vector2(fx, fy))
-			node.draw_texture_rect_region(tex, Rect2(-T / 2.0 - 0.5, -T / 2.0 - 0.5, T + 1, T + 1), src, _floor_tint(t))
+			node.draw_texture_rect_region(tex, Rect2(-T / 2.0 - 0.5, -T / 2.0 - 0.5, T + 1, T + 1), src, _zone().tint if c == "," else _floor_tint(t))
 			node.draw_set_transform(Vector2(x * T, y * T))
 			match c:
-				"L":
-					node.draw_rect(Rect2(0, T * 0.7, T, T * 0.3), Color(0.27, 0.47, 0.29))
-					node.draw_rect(Rect2(0, T * 0.7, T, 4), Color(0.62, 0.78, 0.57))
 				"w":
 					if tile(x, y + 1) != "w":
 						node.draw_rect(Rect2(0, T - 10, T, 10), Color(m.get("wall", "#e8d8b8")).darkened(0.35))
@@ -227,6 +239,19 @@ func _draw_ground(node: Node2D, only_water: bool) -> void:
 						node.draw_rect(Rect2(8, 8 + i * 14, T - 16, 7), Color(0.79, 0.77, 0.84))
 				"^":
 					node.draw_rect(Rect2(0, T - 8, T, 8), Color(0, 0, 0, 0.18))
+				",":
+					# 관측 구역 테두리(점선)
+					var edge := Color(1.0, 0.97, 0.8, 0.6)
+					for k in 4:
+						var a := 4 + k * 16
+						if tile(x, y - 1) != ",":
+							node.draw_rect(Rect2(a, 1, 8, 3), edge)
+						if tile(x, y + 1) != ",":
+							node.draw_rect(Rect2(a, T - 4, 8, 3), edge)
+						if tile(x - 1, y) != ",":
+							node.draw_rect(Rect2(1, a, 3, 8), edge)
+						if tile(x + 1, y) != ",":
+							node.draw_rect(Rect2(T - 4, a, 3, 8), edge)
 			if c == "~" and only_water:
 				# 물가: 위쪽 땅과 맞닿는 곳에 흰 물결
 				var up := tile(x, y - 1)
@@ -242,7 +267,13 @@ func _make_prop(x: int, y: int, c: String) -> void:
 			"#":
 				spec = {"i": 1 if (m.bg == "forest" and (x + y) % 2) or (x * 7 + y * 3) % 5 == 0 else 0, "h": 124.0, "sway": 0.7, "shadow": true, "dy": -2}
 			",":
-				spec = {"i": 2, "h": 58.0, "sway": 1.0, "dy": 7}
+				# 키 큰 풀 대신 몇 칸마다 낮은 장식 하나
+				var z := _zone()
+				if (x * 7 + y * 13) % int(z.every) != 0:
+					return
+				spec = {"i": z.deco, "h": z.h, "sway": z.sway, "dy": -8}
+				if z.has("mod"):
+					spec.mod = z.mod
 			"f":
 				spec = {"i": 3, "h": 40.0, "sway": 1.6, "dy": -10}
 			"r":
@@ -286,6 +317,8 @@ func _make_prop(x: int, y: int, c: String) -> void:
 	p.setup_atlas("props", spec.i, spec.h, {"breath": 0.0, "sway": spec.get("sway", 0.0), "speed": 0.8 + randf() * 0.4},
 		spec.get("shadow", false), Vector2i(4, 6))
 	p.position = Vector2(x * T + T / 2.0 + (randf_range(-3, 3) if out else 0.0), y * T + T + spec.dy)
+	if spec.has("mod"):
+		p.modulate = spec.mod
 	if c == ",":
 		grass[Vector2i(x, y)] = p
 
@@ -338,6 +371,31 @@ func _make_buildings() -> void:
 		s.scale = Vector2((w + 8) / 192.0, (h + 28) / 192.0)
 		s.position = Vector2(-w / 2.0 - 4, -h - 26)
 		root.add_child(s)
+		_name_plate(root, b)
+
+
+# 건물 문 위에 무슨 건물인지 이름판을 단다 (문이 이어지는 실내 지도 이름, 마을 이름은 뺌)
+func _name_plate(root: Node2D, b: Dictionary) -> void:
+	var rect := Rect2i(b.pos, b.size)
+	for key in m.warps:
+		var xy: PackedStringArray = str(key).split(",")
+		var door := Vector2i(int(xy[0]), int(xy[1]))
+		if not rect.has_point(door):
+			continue
+		var t := str(Data.map(str(m.warps[key][0])).get("name", ""))
+		t = t.trim_prefix(str(m.name) + " ").trim_suffix(" 로비")
+		if t == "":
+			return
+		var p := Panel.new()
+		p.add_theme_stylebox_override("panel", UI.box(Color(0.98, 0.94, 0.82), Color(0.36, 0.25, 0.16), 8, 3))
+		var l := UI.label(p, t, Vector2.ZERO, 22, Color(0.24, 0.17, 0.11))
+		root.add_child(p)
+		var ls := l.get_minimum_size()
+		p.size = Vector2(ls.x + 20, ls.y + 6)
+		l.position = Vector2(10, 3)
+		var top := float(door.y * T) - root.position.y
+		p.position = Vector2((door.x + 0.5) * T - root.position.x - p.size.x / 2.0, top - p.size.y - 6)
+		return
 
 
 func _make_tables() -> void:
@@ -428,8 +486,6 @@ func passable(c: Vector2i, d: String) -> bool:
 	if t == "":
 		return false
 	if out:
-		if t == "L":
-			return d == "down"
 		if t == "O":
 			return Game.flag("legendQuest")
 		return ".,=fQD:".contains(t)
@@ -533,18 +589,6 @@ func _try_move(d: String) -> void:
 			await _edge_warp(link, side)
 		moving = false
 		return
-	if out and c == "L" and d == "down":
-		var ly := to + v
-		if passable(ly, "down") and npc_at(ly) == null and item_at(ly).is_empty():
-			P = ly
-			Sound.sfx("jump")
-			await player.hop(_pos(P), d)
-			Sound.sfx("land")
-			moving = false
-			await _on_step()
-		else:
-			moving = false
-		return
 	if not free_cell(to, d):
 		_chain = false
 		Sound.sfx("bump")
@@ -598,7 +642,32 @@ func _on_step() -> void:
 		await run_script(func() -> void: await _trainer_spot(tr))
 		return
 	if tile(P.x, P.y) == "," and not m.enc.is_empty() and not Game.alive().is_empty() and randf() < 0.11:
-		await run_script(_wild)
+		await run_script(func() -> void:
+			await _signal_cue()
+			await _wild())
+
+
+# 생물이 나오기 직전: 공명등 신호음과 함께 발밑에서 퍼지는 파동
+func _signal_cue() -> void:
+	Sound.sfx("sparkle")
+	var ring := Node2D.new()
+	ring.position = player.position + Vector2(0, -24)
+	ring.z_index = 5
+	ents.add_child(ring)
+	var k := {"r": 0.0}
+	var paint := func() -> void:
+		for i in 2:
+			var r: float = k.r - i * 28.0
+			if r > 0:
+				ring.draw_arc(Vector2.ZERO, r, 0, TAU, 48, Color(0.55, 1.0, 0.9, clampf(1.0 - k.r / 160.0, 0.0, 1.0)), 5.0)
+	var grow := func(v: float) -> void:
+		k.r = v
+		ring.queue_redraw()
+	ring.draw.connect(paint)
+	var tw := create_tween()
+	tw.tween_method(grow, 0.0, 160.0, 0.55)
+	await tw.finished
+	ring.queue_free()
 
 
 func do_warp(w: Array, door: bool) -> void:
@@ -655,7 +724,8 @@ func _sight_check() -> NPC:
 	for n in npcs:
 		if not n.visible:
 			continue
-		var live: bool = (n.info.has("trainer") and n.info.trainer != null and not Game.flag(n.id)) or (n.info.get("sight", false) and n.info.get("trainer") == null)
+		# 길에서 마주친 원정가는 먼저 다가와 대결을 걸지 않는다(말을 걸었을 때만 기록 비교). 이야기 장면만 시선으로 시작
+		var live: bool = n.info.get("sight", false) and n.info.get("trainer") == null
 		if not live:
 			continue
 		var v: Vector2i = DV[n.dir]
@@ -691,6 +761,10 @@ func trainer_talk(n: NPC) -> void:
 	for l in tr.intro:
 		n.nod()
 		await say(l, trainer_name(n))
+	if await Msg.ask("기록 비교 제안을 받아들일까?", ["받아들인다", "다음에"], "", 0, 1) != 0:
+		n.nod()
+		await say("흥, 오늘은 봐주지." if tr.cls in ["grunt", "boss"] else "준비되면 언제든 다시 말 걸어 줘!", trainer_name(n))
+		return
 	var r := await battle({"kind": "trainer", "cls": tr.cls, "name": tr.name, "team": tr.team, "lose": tr.lose, "look": n.look, "bg": m.bg, "npc": n.id})
 	if r == "win":
 		Game.set_flag(n.id)
@@ -721,7 +795,7 @@ func _wander(delta: float) -> void:
 		n.wait_t = randf_range(1.5, 4.5)
 		var d: String = DV.keys().pick_random()
 		var to: Vector2i = n.cell + DV[d]
-		if absi(to.x - n.home.x) > 2 or absi(to.y - n.home.y) > 2 or not passable(to, d) or "DLm".contains(tile(to.x, to.y)) \
+		if absi(to.x - n.home.x) > 2 or absi(to.y - n.home.y) > 2 or not passable(to, d) or "Dm".contains(tile(to.x, to.y)) \
 				or npc_at(to) != null or not item_at(to).is_empty() or to == P:
 			n.face(d)
 			continue
@@ -787,6 +861,7 @@ func _talk_npc(n: NPC) -> void:
 		await ev.subst_talk(n)
 	elif n.info.get("trainer") != null and not Game.flag(n.id):
 		await trainer_talk(n)
+		b0 = -1   # 기록 비교를 미뤘으면 '싸우자' 선택지를 또 묻지 않는다
 	elif n.info.get("trainer") != null:
 		await Msg.talk(n.info.trainer.after, trainer_name(n))
 	elif n.info.get("talk", false):

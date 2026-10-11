@@ -100,7 +100,7 @@ func trig_cond_town_0() -> bool:
 
 
 func trig_town_0() -> void:
-	await say("앗, 풀숲에서 무언가 바스락거린다...")
+	await say("길 너머 관측 구역에서 생물의 신호가 잡힌다...")
 	await say("생물 없이 가는 건 위험할 것 같다. 먼저 연구소에 들르자!")
 	await w.walk_player(["down"])
 
