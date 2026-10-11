@@ -12,5 +12,5 @@
 - [x] 1 title.gd(마을 4,13에서 시작, Game.dev=opening_starter), events.gd choose_starter/give_starter(sid)/lab_briefing, 캡슐 제거, 테스트 수정
 - [x] 2 battle.gd·events.gd·menus.gd 애칭 질문 제거, menus.gd rename()
 - [x] 3 battle.gd make_hud/_follow_hud/hide_hud → 머리 위 바 (CI 확인 전)
-- [ ] 4 데이터 ","→땅 + 구역마다 조사 나무(새 타일), world.gd 상호작용·그리기, auto.gd 자동 사냥, 문구
+- [x] 4 tools/survey-trees-pass.py(실행 완료, 다시 실행 금지: 나무 28그루 J), world.gd survey_tree/_survey_plate/tree_dir_at, auto.gd 자동 사냥, 문구 (CI 확인 전)
 - [ ] CI 테스트 → 웹 화면 확인 → 문서(SIMILARITY_AUDIT) → PR → 머지 → 링크

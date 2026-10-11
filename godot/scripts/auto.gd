@@ -115,10 +115,18 @@ func _process(_delta: float) -> void:
 			stop()
 			world.run_script(func() -> void: await Msg.say("체력이나 사냥 장소를 확인해 주세요. 자동 사냥을 멈췄어요."))
 			return
+		# 조사 나무 옆이면 나무 쪽을 보고 조사, 아니면 가장 가까운 나무 옆으로 이동
+		var face := world.tree_dir_at(world.P)
+		if face != "" and pending_dir == "":
+			if world.player.dir != face:
+				world.player.turn(face)
+			else:
+				world.run_script(world.survey_tree)
+			return
 		var direction := pending_dir if pending_dir != "" else grass_step()
 		if direction == "":
 			stop()
-			world.run_script(func() -> void: await Msg.say("이동할 수 있는 관측 구역이 없어서 자동 사냥을 멈췄어요."))
+			world.run_script(func() -> void: await Msg.say("조사할 수 있는 나무가 없어서 자동 사냥을 멈췄어요."))
 		else:
 			pending_dir = direction
 			world._try_move(direction)
@@ -160,12 +168,9 @@ func grass_step() -> String:
 	while at < queue.size() and at < 900:
 		var cell: Vector2i = queue[at]
 		at += 1
-		if cell != start and world.tile(cell.x,cell.y) == ",":
+		if cell != start and world.tree_dir_at(cell) != "":
 			return str(visited[cell])
 		var directions: Array = ["left","right","up","down"]
-		if world.tile(start.x,start.y) == "," and last_dir != "":
-			directions.erase(World.OPP[last_dir])
-			directions.push_front(World.OPP[last_dir])
 		for direction in directions:
 			var next: Vector2i = cell + World.DV[direction]
 			if visited.has(next) or not world.passable(next,direction) or world.npc_at(next) != null or not world.item_at(next).is_empty():
@@ -180,8 +185,6 @@ func grass_step() -> String:
 				if Rect2i(int(trigger.x),int(trigger.y),int(trigger.w),int(trigger.h)).has_point(next) and (not trigger.cond or world.ev.trig_cond(world.m.id,i)):
 					scripted = true
 			if scripted: continue
-			if cell == start and world.tile(start.x,start.y) == "," and world.tile(next.x,next.y) != ",":
-				continue
 			visited[next] = direction if cell == start else visited[cell]
 			queue.append(next)
 	return ""
@@ -235,6 +238,6 @@ func move_index(mon: Dictionary, foe: Dictionary):
 
 func answer(text: String, options: Array):
 	if not talk_enabled(): return null
-	if "다른 동료를 내보낼까" in text or "직접 나서" in text or "익히지 않고 넘어갈까" in text: return 0
+	if "다른 동료를 내보낼까" in text or "직접 나서" in text or "익히지 않고 넘어갈까" in text or "조사를 시작할까요" in text: return 0
 	if "동료를 바꿀까" in text or "익힐까" in text: return options.size()-1
 	return null
