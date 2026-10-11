@@ -906,19 +906,42 @@ func emote(who, kind := "!") -> void:
 		await Emote.pop(player, kind, -player.height - 70, 0.5, player.body)
 
 
+## 물건 받기: 획득 효과음과 "손에 넣었다/주머니에 넣었다" 대사 없이, 화면 위쪽에 짧은 알림 하나만 띄운다
 func give_item(id: String, n := 1) -> void:
-	var it: Dictionary = Data.D.items[id]
-	Game.g.bag[id] = int(Game.g.bag.get(id, 0)) + n
+	await give_items([[id, n]])
+
+
+## 여러 물건을 한 번에 받는다 (알림 하나)
+func give_items(list: Array) -> void:
+	var names: Array = []
+	for e in list:
+		var it: Dictionary = Data.D.items[str(e[0])]
+		Game.g.bag[str(e[0])] = int(Game.g.bag.get(str(e[0]), 0)) + int(e[1])
+		names.append(("%s ×%d" % [it.n, int(e[1])]) if int(e[1]) > 1 else str(it.n))
 	sparkle_player()
-	await Sound.jingle("key" if it.p == "key" else "item")
-	var nm: String = Game.g.name
-	await say("%s %s 손에 넣었다!" % [Game.josa(nm, "은"), ("%s %d개를" % [it.n, n]) if n > 1 else Game.josa(it.n, "을")])
-	if it.p != "key":
-		var pocket := ""
-		for p in Data.D.pockets:
-			if p[0] == it.p:
-				pocket = p[1]
-		await say("%s %s 가방의 %s 주머니에 넣었다." % [Game.josa(nm, "은"), Game.josa(it.n, "을"), pocket])
+	await item_toast("받은 물건 · " + ", ".join(names))
+
+
+func item_toast(t: String) -> void:
+	var vs := get_viewport().get_visible_rect().size
+	var w := vs.x - 80.0
+	var p := UI.panel(ui, Rect2(40, 216 if Game.flag("pad") else 110, w, 76), Color(0.98, 0.96, 0.88))
+	p.name = "ItemToast"
+	var l := UI.label(p, t, Vector2(20, 18), 26)
+	l.size = Vector2(w - 40, 40)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var need := l.get_minimum_size().y
+	if need > 40:
+		l.size.y = need
+		p.size.y = need + 36
+	p.modulate.a = 0.0
+	var tw := p.create_tween()
+	tw.tween_property(p, "modulate:a", 1.0, 0.2)
+	tw.tween_interval(1.6)
+	tw.tween_property(p, "modulate:a", 0.0, 0.3)
+	tw.tween_callback(p.queue_free)
+	await get_tree().create_timer(0.2 if Game.auto_text else 1.0).timeout
 
 
 func sparkle_player() -> void:

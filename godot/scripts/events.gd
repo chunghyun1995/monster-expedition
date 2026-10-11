@@ -259,11 +259,10 @@ func lab_briefing() -> void:
 	Game.set_flag("rival1")
 	var o := "한결 조사관"
 	await say("안전 점검 완료. 동료의 체력과 기술을 회복했어. 생태기록과 원정패드에 오늘 의뢰를 등록하자.", o)
-	await w.give_item("dex")
+	# 처음 받는 세 가지 장비는 한 번에 받는다
+	await w.give_items([["dex", 1], ["pad", 1], ["shoes", 1]])
 	Game.set_flag("dex")
-	await w.give_item("pad")
 	Game.set_flag("pad")
-	await w.give_item("shoes")
 	Game.set_flag("shoes")
 	await w.give_item("ball", 5)
 	await say("공명등은 생물을 가두는 장비가 아니야. 가까이 놓고 주파수를 맞추면 함께 조사할 연결이 생겨.", o)

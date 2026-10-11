@@ -97,6 +97,61 @@ func bsay(t: String, wait := false) -> void:
 		await Msg.say(t, "", {"keep": true, "auto": 0.45 + t.length() * 0.016})
 
 
+# 전투 중에는 "~했다" 진행 문장을 대화 창에 쓰지 않는다.
+# 기술 이름·효과(상성·급소·상태·능력치·회복)는 피해 숫자 위에 짧은 토스트로, 승패·보상은 가운데 배너로 알린다
+const C_INFO := Color(1.0, 0.95, 0.78)
+const C_GOOD := Color(0.55, 1.0, 0.6)
+const C_BAD := Color(1.0, 0.5, 0.45)
+const C_DIM := Color(0.82, 0.86, 0.92)
+const C_GOLD := Color(1.0, 0.85, 0.3)
+const C_STATUS := Color(0.86, 0.62, 1.0)
+
+
+func _beat() -> void:
+	await get_tree().create_timer(0.12).timeout
+
+
+func pop(who, text: String, color := C_INFO) -> void:
+	if Msg.is_open():
+		Msg.hide_box()   # 행동 지시 문장이 턴 내내 남지 않게
+	var p: Puppet = who if who is Puppet else hud_owner(str(who))
+	if p == null or not is_instance_valid(p) or not p.is_visible_in_tree():
+		await _beat()
+		return
+	var l := Label.new()
+	l.text = text
+	l.add_theme_font_size_override("font_size", 30)
+	l.add_theme_color_override("font_color", color)
+	l.add_theme_constant_override("outline_size", 9)
+	l.add_theme_color_override("font_outline_color", Color(0.1, 0.08, 0.12))
+	stage.add_child(l)
+	var sz := l.get_minimum_size()
+	var at := p.center() + Vector2(0, -p.size.y * 0.35 - 72)
+	l.position = Vector2(clampf(at.x - sz.x / 2.0, 8.0, VS.x - sz.x - 8.0), maxf(8.0, at.y - sz.y / 2.0))
+	l.modulate.a = 0.0
+	var tw := l.create_tween()
+	tw.tween_property(l, "modulate:a", 1.0, 0.12)
+	tw.parallel().tween_property(l, "position:y", l.position.y - 26, 0.6).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(l, "modulate:a", 0.0, 0.3).set_delay(0.3)
+	tw.tween_callback(l.queue_free)
+	await get_tree().create_timer(0.55 if anim() and not Game.auto_text else 0.15).timeout
+
+
+func banner(text: String, hold := 1.0) -> void:
+	Msg.hide_box()
+	var panel := UI.panel(hud, Rect2(VS.x / 2.0 - 300, SH * 0.42 - 40, 600, 80), Color(0.1, 0.12, 0.18, 0.88), Color(0.95, 0.9, 0.75))
+	var l := UI.label(panel, text, Vector2(0, 18), 28, Color.WHITE)
+	l.size = Vector2(600, 44)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	panel.modulate.a = 0.0
+	var tw := panel.create_tween()
+	tw.tween_property(panel, "modulate:a", 1.0, 0.15)
+	tw.tween_interval(hold if not Game.auto_text else 0.1)
+	tw.tween_property(panel, "modulate:a", 0.0, 0.2)
+	tw.tween_callback(panel.queue_free)
+	await tw.finished
+
+
 func anim() -> bool:
 	return int(Game.settings.anim) == 1
 
@@ -387,13 +442,13 @@ func _intro_wild() -> void:
 	if f.get("shiny", false):
 		await _shiny_fx(fp)
 	make_hud("e")
-	await bsay("신호를 따라가자 %s 모습을 드러냈다!" % J(N(f), "이"))
+	await _beat()
 
 
 func _intro_trainer() -> void:
 	tr = _person(look_of(), false, 250.0, FOE_POS + Vector2(VS.x * 0.5, 0))
 	await _walk_in(tr, FOE_POS, 0.8)
-	await bsay("%s 실력 겨루기를 청했다!" % J(tn(), "이"), true)
+	await _beat()
 	await send_foe()
 
 
@@ -407,7 +462,6 @@ func send_foe() -> void:
 	tr.visible = true
 	tr.position = FOE_POS + Vector2(VS.x * 0.4, 0)
 	await _walk_in(tr, FOE_POS + Vector2(110, 0), 0.35)
-	bsay("%s의 동료 %s 앞으로 나섰다!" % [tn(), J(N(f), "이")])
 	Sound.sfx("throw")
 	await _throw_pose(tr, -1)
 	if fp:
@@ -427,7 +481,6 @@ func send_player() -> void:
 	st.p = [0, 0, 0, 0, 0, 0]
 	if not part.has(p):
 		part.append(p)
-	bsay("%s, 함께 현장을 살피자." % N(p))
 	if me == null:
 		me = _person("player", true, 330.0, ME_POS + Vector2(-VS.x * 0.6, 40))
 	me.visible = true
@@ -474,7 +527,7 @@ func _npc_hero_start() -> void:
 	tr = _person(look_of(), false, 300.0, FOE_POS + Vector2(VS.x * 0.5, 0))
 	await _walk_in(tr, FOE_POS, 0.8)
 	make_hud("e")
-	await bsay("%s의 대결이 시작됐다!" % J(tn(), "과"), true)
+	await _beat()
 
 
 func _foe_hero_start() -> void:
@@ -492,7 +545,7 @@ func _foe_hero_start() -> void:
 	await _angry(tr)
 	await Msg.say("이게 무슨 짓이야! 내 생물을 돌려줘!", tn(), {"keep": true})
 	make_hud("e")
-	await bsay("화가 난 %s 직접 덤벼들었다!" % J(tn(), "이"), true)
+	await _beat()
 
 
 func _angry(p: Puppet) -> void:
@@ -521,9 +574,9 @@ func hero_start() -> bool:
 	Sound.sfx("run")
 	await _walk_in(me, ME_POS, 0.4)
 	make_hud("p")
-	await bsay("%s 지친 동료들 앞을 막아섰다!" % J(Game.g.name, "은"), true)
+	await _beat()
 	var foe_n: String = tn() if foe_hero != null else ("야생 " + N(fm()) if wild else N(fm()))
-	await bsay("%s 앞에 %s 직접 맞선다!" % [foe_n, J(Game.g.name, "이")])
+	await _beat()
 	return true
 
 
@@ -603,7 +656,7 @@ func choose_action() -> Dictionary:
 				await Guides.show_once("moves")
 				var p := pm()
 				if p.moves.all(func(x: Dictionary) -> bool: return int(x.pp) <= 0):
-					await bsay("%s 쓸 수 있는 기술이 없다!" % J(N(p), "은"), true)
+					await pop("p", "쓸 수 있는 기술 없음", C_DIM)
 					return {"type": "move", "mi": "struggle"}
 				var f := fm()
 				var opts: Array = []
@@ -692,15 +745,15 @@ func do_turn(act: Dictionary):
 	var e_act := {"type": "item"} if leader_heal else {"type": "move", "id": ai_move(f, pm())}
 	if act.type == "run":
 		if not wild:
-			await bsay("겨루기 도중에는 자리를 뜰 수 없다!", true)
+			await banner("겨루기 중에는 자리를 뜰 수 없어요")
 			return null
 		if try_run():
 			await _run_away()
 			return "run"
-		await bsay("빠져나갈 틈이 없다!")
+		await pop("p", "도망 실패", C_BAD)
 		moved.p = true
 	elif act.type == "switch":
-		await bsay("%s, 잠깐 쉬어!" % N(pm()))
+		await _beat()
 		await recall("p")
 		pi = int(act.idx)
 		await send_player()
@@ -718,7 +771,7 @@ func do_turn(act: Dictionary):
 		moved.p = true
 	if e_act.type == "item":
 		used_item = true
-		await bsay("%s 진한 약초 습포를 사용했다!" % J(tn(), "은"))
+		await pop("e", "약초 습포", C_GOOD)
 		await _heal_fx(fp)
 		await anim_hp("e", f, f.hp + 60)
 		moved.e = true
@@ -789,7 +842,7 @@ func check_faints():
 					await _run_away()
 					result = "run"
 					return "done"
-				await bsay("빠져나갈 틈이 없다!", true)
+				await pop("p", "도망 실패", C_BAD)
 		Msg.hide_box()
 		pi = await Menus.party_screen("forced", {"start": pi, "current": pi})
 		Msg.place("battle")
@@ -806,7 +859,7 @@ func next_foe() -> void:
 			var j := await Menus.party_screen("battle", {"start": pi, "current": pi})
 			Msg.place("battle")
 			if j >= 0:
-				await bsay("%s, 잠깐 쉬어!" % N(pm()))
+				await _beat()
 				await recall("p")
 				pi = j
 				await send_foe()
@@ -831,17 +884,17 @@ func use_move(side: String, id: String, mi) -> void:
 			u.st = ""
 			u.slp = 0
 			upd_hud(side)
-			await bsay("%s 졸음에서 깨어났다!" % J(bname(side), "은"))
+			await pop(side, "깨어남", C_DIM)
 		else:
 			await status_fx(side, "slp")
-			await bsay("%s 꾸벅꾸벅 졸고 있다." % J(bname(side), "은"))
+			await pop(side, "졸음", C_STATUS)
 			return
 	if flinch.get(side, false):
-		await bsay("%s 움찔해서 움직이지 못했다!" % J(bname(side), "은"))
+		await pop(side, "움찔", C_DIM)
 		return
 	if u.st == "par" and randf() * 100 < 25:
 		await status_fx(side, "par")
-		await bsay("%s 저림 때문에 움직이지 못했다!" % J(bname(side), "은"))
+		await pop(side, "저림", C_STATUS)
 		return
 	var mv := Data.move(id)
 	if id != "struggle":
@@ -854,10 +907,10 @@ func use_move(side: String, id: String, mi) -> void:
 					slot = x
 		if slot:
 			slot.pp = maxi(0, int(slot.pp) - 1)
-	await bsay("%s, %s!" % [bname(side), mv.n])
+	await pop(side, mv.n, C_INFO)
 	if int(mv.a) and randi() % 100 >= int(mv.a):
 		await _miss_anim(side)
-		await bsay("%s의 기술이 빗나갔다." % bname(side))
+		await pop("e" if side == "p" else "p", "빗나감", C_DIM)
 		return
 	var fx: Dictionary = mv.fx
 	if mv.c == "x":
@@ -865,7 +918,7 @@ func use_move(side: String, id: String, mi) -> void:
 		if fx.has("status"):
 			var e := Data.eff(mv.t, Game.sp(t.sid).t)
 			if e == 0 or not can_status(t, fx.status):
-				await bsay("%s 이미 %s 상태다!" % [J(bname(ts), "은"), Data.D.status[fx.status].n] if t.st == fx.status else "그러나 효과가 없었다...")
+				await pop(ts, ("이미 %s" % Data.D.status[fx.status].n) if t.st == fx.status else "효과 없음", C_DIM)
 				return
 			await inflict(ts, fx.status)
 			return
@@ -881,28 +934,28 @@ func use_move(side: String, id: String, mi) -> void:
 		return
 	var r := dmg_calc(u, t, mv, st[side], st[ts])
 	if r.e == 0:
-		await bsay("%s의 속성이 이 기술의 피해를 차단했다." % bname(ts))
+		await pop(ts, "피해 없음", C_DIM)
 		return
 	await move_anim(side, mv, r)
 	var before: int = int(t.hp)
 	await anim_hp(ts, t, t.hp - r.d)
 	var dealt: int = before - int(t.hp)
 	if r.crit:
-		await bsay("빈틈 포착 · 정밀 타격!")
+		await pop(ts, "정밀 타격!", C_GOLD)
 	if r.e > 1:
-		await bsay("상성 우세 · 피해 배율 %s배" % str(r.e).trim_suffix(".0"))
+		await pop(ts, "효과 우세 ×%s" % str(r.e).trim_suffix(".0"), C_GOLD)
 	elif r.e < 1:
-		await bsay("상성 저항 · 피해 배율 %s배" % str(r.e).trim_suffix(".0"))
+		await pop(ts, "저항 ×%s" % str(r.e).trim_suffix(".0"), C_DIM)
 	if fx.has("drain") and u.hp > 0 and dealt > 0:
 		Sound.sfx("absorb")
 		await FX.projectile(stage, pup(ts).center(), pup(side).center(), "grass", 0.4, 40)
 		await anim_hp(side, u, u.hp + maxi(1, dealt * int(fx.drain) / 100))
-		await bsay("%s에게서 체력을 흡수했다!" % bname(ts))
+		await pop(side, "흡수", C_GOOD)
 	if fx.has("recoil") and dealt > 0:
 		var rr := maxi(1, (Game.max_hp(u) if id == "struggle" else dealt) * int(fx.recoil) / 100)
 		await _hurt(pup(side), Vector2.ZERO, 0.5)
 		await anim_hp(side, u, u.hp - rr)
-		await bsay("%s 반동을 받았다!" % J(bname(side), "은"))
+		await pop(side, "반동", C_BAD)
 	if t.hp > 0:
 		if fx.has("st") and randf() * 100 < float(fx.st[1]) and can_status(t, fx.st[0]):
 			await inflict(ts, fx.st[0])
@@ -961,14 +1014,14 @@ func inflict(side: String, s: String) -> void:
 		m.slp = 1 + randi() % 3
 	upd_hud(side)
 	await status_fx(side, s)
-	await bsay({"psn": "%s 독에 걸렸다!", "brn": "%s 화상을 입었다!", "par": "%s 몸이 저려 움직임이 둔해졌다!", "slp": "%s 꾸벅꾸벅 졸기 시작했다!"}[s] % J(bname(side), "은"))
+	await pop(side, {"psn": "독", "brn": "화상", "par": "저림", "slp": "졸음"}[s], C_STATUS)
 
 
 func stat_change(side: String, s: int, v: int) -> void:
 	var S: Array = st[side]
 	var nm := bname(side)
 	if (v > 0 and S[s] >= 6) or (v < 0 and S[s] <= -6):
-		await bsay("%s의 %s 이미 한계에 닿았다." % [nm, J(Data.D.stn[s], "은")])
+		await pop(side, "%s 한계" % Data.D.stn[s], C_DIM)
 		return
 	S[s] = clampi(S[s] + v, -6, 6)
 	var p := pup(side)
@@ -985,7 +1038,7 @@ func stat_change(side: String, s: int, v: int) -> void:
 		if up:
 			await _hop(p, 1, 18.0)
 		await tw.finished
-	await bsay("%s의 %s %s" % [nm, Data.D.stn[s], ("+%d" % v) if up else str(v)])
+	await pop(side, "%s %s" % [Data.D.stn[s], ("+%d" % v) if up else str(v)], C_GOLD if up else C_BAD)
 
 
 func end_turn() -> void:
@@ -998,18 +1051,18 @@ func end_turn() -> void:
 		if m.st == "psn" or m.st == "brn":
 			await status_fx(side, m.st)
 			await anim_hp(side, m, m.hp - maxi(1, Game.max_hp(m) / 8))
-			await bsay("%s %s 때문에 체력이 줄었다!" % [J(bname(side), "은"), "독" if m.st == "psn" else "화상"])
+			await pop(side, "독" if m.st == "psn" else "화상", C_STATUS)
 			if m.hp <= 0:
 				await faint(side)
 
 
 func heal_self(side: String, u: Dictionary, pct: int) -> void:
 	if u.hp >= Game.max_hp(u):
-		await bsay("그러나 체력이 이미 가득하다!")
+		await pop(side, "체력 가득", C_DIM)
 		return
 	Sound.sfx("heal")
 	await anim_hp(side, u, u.hp + maxi(1, Game.max_hp(u) * pct / 100))
-	await bsay("%s 체력을 회복했다!" % J(bname(side), "은"))
+	await pop(side, "회복", C_GOOD)
 
 
 func faint(side: String) -> void:
@@ -1023,7 +1076,7 @@ func faint(side: String) -> void:
 	Sound.sfx("faint")
 	await _faint_anim(p)
 	hide_hud(side)
-	await bsay("%s 지쳐서 물러났다!" % J(bname(side), "은"))
+	await pop(side, "지침", C_DIM)
 	if side == "e":
 		await gain_exp()
 
@@ -1035,13 +1088,13 @@ func use_item_battle(a: Dictionary) -> void:
 	var t: int = int(a.target)
 	var m: Dictionary = Game.g.party[t]
 	var it: Dictionary = Data.D.items[a.id]
-	await bsay("%s %s 사용했다!" % [J(Game.g.name, "은"), J(it.n, "을")])
+	await pop("p", str(it.n), C_GOOD)
 	if t == pi and it.has("heal") and m.hp > 0:
 		Game.g.bag[a.id] = int(Game.g.bag[a.id]) - 1
 		await _heal_fx(pp)
 		var b0: int = int(m.hp)
 		await anim_hp("p", m, mini(Game.max_hp(m), m.hp + int(it.heal)))
-		await bsay("%s의 체력이 %d 회복되었다!" % [N(m), int(m.hp) - b0])
+		await pop("p", "+%d" % (int(m.hp) - b0), C_GOOD)
 	else:
 		await Menus.apply_item(a.id, m)
 		Msg.place("battle")
@@ -1065,20 +1118,20 @@ func throw_ball(id: String) -> bool:
 	var e := fm()
 	var it: Dictionary = Data.D.items[id]
 	Game.g.bag[id] = int(Game.g.bag[id]) - 1
-	await bsay("%s 공명등으로 %s의 신호를 조율한다." % [Game.g.name, N(e)])
+	await _beat()
 	var bonus: float = {"slp": 2.0, "par": 1.5, "psn": 1.5, "brn": 1.5}.get(str(e.st), 1.0)
 	var n := _capture_chance(float(e.hp), float(Game.max_hp(e)), float(Game.sp(e.sid).c), float(it.ball), bonus)
 	var cap := await _capsule_throw(fp, id, n)
 	if n >= 3:
 		Sound.stop_music(true)
 		await Sound.jingle("caught")
-		await bsay("공명 연결 완료. %s와 원정을 함께할 수 있다." % N(e), true)
+		await banner("동행 연결 · %s" % N(e))
 		var is_new = not Game.g.caught.has(int(e.sid))
 		Game.g.caught[int(e.sid)] = 1
 		Game.g.seen[int(e.sid)] = 1
 		e.ot = Game.g.name
 		if is_new:
-			await bsay("현장 노트에 %s의 동행 신호를 기록했다." % N(e), true)
+			await banner("새 동행 기록 · %s" % N(e))
 		hide_hud("e")
 		Msg.hide_box()
 		if not wild:
@@ -1086,11 +1139,11 @@ func throw_ball(id: String) -> bool:
 			if e.get("met") == null:
 				e.met = {"map": w.m.name, "lv": int(e.lv)}
 		if Game.add_mon(e) == "box":
-			await bsay("%s 보관함으로 전송되었다!" % J(N(e), "은"), true)
+			await banner("%s → 보관함" % N(e))
 		if cap:
 			cap.queue_free()
 		return true
-	await bsay(["신호가 흩어졌다. 주변의 움직임을 먼저 살펴보자.", "주파수가 어긋났다. 생물의 상태에 맞춰 다시 조율하자.", "연결이 잠시 닿았지만 유지되지 않았다."][mini(n, 2)])
+	await pop("e", "조율 실패", C_DIM)
 	return false
 
 
@@ -1114,9 +1167,9 @@ func _recruit() -> void:
 	o.captured = true
 	if str(o.get("npc", "")) != "":
 		Game.set_flag("cap_" + str(o.npc))
-	await bsay("%s 동료가 되었다!" % J(name, "이"), true)
+	await banner("%s 합류" % name)
 	if Game.add_mon(m) == "box":
-		await bsay("%s 보관함으로 갔다!" % J(name, "은"), true)
+		await banner("%s → 보관함" % name)
 
 
 func give_back() -> void:
@@ -1132,7 +1185,7 @@ func give_back() -> void:
 		tr.position = FOE_POS + Vector2(VS.x * 0.5, 0)
 		await _walk_in(tr, FOE_POS, 0.4)
 	await Msg.say("흥, 내 생물은 돌려받겠어!", tn(), {"keep": true})
-	await bsay("%s %s 되찾아 갔다..." % [J(tn(), "은"), J(", ".join(names), "을")], true)
+	await banner("되찾아 감 · %s" % ", ".join(names))
 
 
 # =====================================================================
@@ -1161,7 +1214,7 @@ func hero_turn():
 	var foe_n: String = tn() if vs_t else ("야생 " + N(f) if wild else N(f))
 	if i < 2:
 		var a: Dictionary = HERO_ACT[i]
-		await bsay("%s %s 했다!" % [J(Game.g.name, "은"), J(a.n, "을")])
+		await pop("p", str(a.n), C_INFO)
 		if i == 0:
 			await _rock_throw(me, target)
 		else:
@@ -1176,25 +1229,25 @@ func hero_turn():
 				await _hurt(fp, Vector2(1, -0.5).normalized(), 1.0)
 				await anim_hp("e", f, f.hp - dmg2)
 			if i == 1 and randf() < 0.35:
-				await bsay("반동으로 %s도 조금 다쳤다!" % Game.g.name)
+				await pop("p", "반동", C_BAD)
 				await _hero_hp(h.hp - int(round(h.max * 0.06)))
 		else:
-			await bsay("하지만 %s에게 빗나갔다!" % foe_n)
+			await pop("e", "빗나감", C_DIM)
 	elif i == 2 and heal != "":
 		Game.g.bag[heal] = int(Game.g.bag[heal]) - 1
-		await bsay("%s %s 꿀꺽 마셨다!" % [J(Game.g.name, "은"), J(Data.D.items[heal].n, "을")])
+		await pop("p", str(Data.D.items[heal].n), C_GOOD)
 		await _heal_fx(me)
 		await _hero_hp(h.hp + int(round(h.max * (0.6 if heal == "super" else 0.35))))
 	else:
 		if wild:
 			if randf() < 0.6:
 				Sound.sfx("run")
-				await bsay("동료들을 데리고 조용히 자리를 벗어났다.", true)
+				await _beat()
 				return "run"
-			await bsay("빠져나갈 틈이 없다!")
+			await pop("p", "도망 실패", C_BAD)
 		else:
 			guard = true
-			await bsay("%s 몸을 웅크리고 버틴다!" % J(Game.g.name, "은"))
+			await pop("p", "버티기", C_INFO)
 	if vs_t:
 		if foe_hero.hp <= 0:
 			return await _foe_hero_down()
@@ -1202,10 +1255,10 @@ func hero_turn():
 		await faint("e")
 		if not wild and fi < foe.size() - 1:
 			fi += 1
-			await bsay("%s 숨을 고른다..." % J(Game.g.name, "은"))
+			await pop("p", "숨 고르기", C_INFO)
 			await send_foe()
 			return null
-		await bsay("%s 직접 승리를 거머쥐었다!" % J(Game.g.name, "이"), true)
+		await banner("직접 승리!")
 		return "win"
 	if vs_t:
 		await trainer_act(true, guard)
@@ -1213,7 +1266,7 @@ func hero_turn():
 		var av = f.moves.filter(func(x: Dictionary) -> bool: return int(x.pp) > 0 and int(Data.move(x.id).p) > 0)
 		var id: String = av.pick_random().id if av.size() else f.moves[0].id
 		var mv := Data.move(id)
-		await bsay("%s, %s!" % [foe_n, mv.n])
+		await pop("e", mv.n, C_INFO)
 		if anim():
 			await _attack_motion(fp, me, mv)
 		var pw := float(mv.p) if int(mv.p) else 40.0
@@ -1223,12 +1276,12 @@ func hero_turn():
 			await _hero_hp(h.hp - maxi(1, int(round(raw))))
 		else:
 			await _dodge(me)
-			await bsay("%s 몸을 날려 피했다!" % J(Game.g.name, "은"))
+			await pop("p", "회피", C_DIM)
 	if h.hp <= 0:
 		Sound.sfx("faint")
 		await _faint_anim(me)
 		hide_hud("p")
-		await bsay("%s 힘이 다해 쓰러졌다..." % J(Game.g.name, "은"), true)
+		await banner("기력 소진")
 		return "lose"
 	return null
 
@@ -1259,16 +1312,16 @@ func foe_hero_turn():
 		if o.kind == "npc":
 			await _run_away()
 			return "run"
-		await bsay("화가 난 상대가 길을 막고 있다!", true)
+		await banner("상대가 길을 막고 있어요")
 		return null
 	if act.type == "switch":
-		await bsay("%s, 잠깐 쉬어!" % N(pm()))
+		await _beat()
 		await recall("p")
 		pi = int(act.idx)
 		await send_player()
 	elif act.type == "item":
 		if Data.D.items[act.id].has("ball"):
-			await bsay("사람에게는 공명등을 던질 수 없다! 대결에서 실력으로 이기자.", true)
+			await banner("사람에게는 공명등을 쓸 수 없어요")
 			return null
 		else:
 			await use_item_battle(act)
@@ -1295,23 +1348,23 @@ func mon_vs_trainer(mi) -> void:
 			u.st = ""
 			u.slp = 0
 			upd_hud("p")
-			await bsay("%s 졸음에서 깨어났다!" % J(N(u), "은"))
+			await pop("p", "깨어남", C_DIM)
 		else:
 			await status_fx("p", "slp")
-			await bsay("%s 꾸벅꾸벅 졸고 있다." % J(N(u), "은"))
+			await pop("p", "졸음", C_STATUS)
 			return
 	if u.st == "par" and randf() * 100 < 25:
 		await status_fx("p", "par")
-		await bsay("%s 저림 때문에 움직이지 못했다!" % J(N(u), "은"))
+		await pop("p", "저림", C_STATUS)
 		return
 	var id: String = "struggle" if str(mi) == "struggle" else u.moves[int(mi)].id
 	var mv := Data.move(id)
 	if id != "struggle":
 		u.moves[int(mi)].pp = maxi(0, int(u.moves[int(mi)].pp) - 1)
-	await bsay("%s, %s!" % [N(u), mv.n])
+	await pop("p", mv.n, C_INFO)
 	if int(mv.a) and randi() % 100 >= int(mv.a):
 		await _dodge(tr)
-		await bsay("%s의 기술이 빗나갔다." % N(u))
+		await pop("e", "빗나감", C_DIM)
 		return
 	if not int(mv.p):
 		await _status_motion(pp, tr, mv)
@@ -1322,7 +1375,7 @@ func mon_vs_trainer(mi) -> void:
 			for e in mv.fx.self:
 				await stat_change("p", int(e[0]), int(e[1]))
 		else:
-			await bsay("하지만 %s 아랑곳하지 않는다!" % J(tn(), "은"))
+			await pop("e", "효과 없음", C_DIM)
 		return
 	await _attack_motion(pp, tr, mv)
 	var su := Game.calc(u)
@@ -1335,15 +1388,15 @@ func mon_vs_trainer(mi) -> void:
 	FX.number(stage, tr.center() + Vector2(0, -tr.size.y * 0.35), str(d), Color(1, 0.85, 0.3) if crit else Color.WHITE, 58 if crit else 46)
 	await _foe_hero_hp(t.hp - d)
 	if crit:
-		await bsay("빈틈 포착 · 정밀 타격!")
+		await pop("e", "정밀 타격!", C_GOLD)
 	if mv.fx.has("drain") and u.hp > 0:
 		Sound.sfx("absorb")
 		await anim_hp("p", u, u.hp + maxi(1, d * int(mv.fx.drain) / 100))
-		await bsay("%s에게서 체력을 흡수했다!" % tn())
+		await pop("p", "흡수", C_GOOD)
 	if mv.fx.has("recoil"):
 		var rr := maxi(1, (Game.max_hp(u) if id == "struggle" else d) * int(mv.fx.recoil) / 100)
 		await anim_hp("p", u, u.hp - rr)
-		await bsay("%s 반동을 받았다!" % J(N(u), "은"))
+		await pop("p", "반동", C_BAD)
 	if u.hp <= 0:
 		await faint("p")
 
@@ -1352,13 +1405,13 @@ func trainer_act(on_hero: bool, guard: bool) -> void:
 	var t: Dictionary = foe_hero
 	if not t.healed and t.hp < t.max * 0.3:
 		t.healed = true
-		await bsay("%s 진한 약초 습포를 벌컥벌컥 마셨다!" % J(tn(), "은"))
+		await pop("e", "약초 습포", C_GOOD)
 		await _heal_fx(tr)
 		await _foe_hero_hp(t.hp + int(round(t.max * 0.45)))
 		return
 	var kick := randf() >= 0.6
 	var a: Dictionary = FOE_ACT[1 if kick else 0]
-	await bsay("%s, %s!" % [tn(), a.n])
+	await pop("e", str(a.n), C_INFO)
 	var target: Puppet = me if on_hero else pp
 	await _lunge(tr, target, {"t": "human"}, kick)
 	if on_hero:
@@ -1369,7 +1422,7 @@ func trainer_act(on_hero: bool, guard: bool) -> void:
 			await _hero_hp(h.hp - maxi(1, int(round(raw))))
 		else:
 			await _dodge(me)
-			await bsay("%s 몸을 날려 피했다!" % J(Game.g.name, "은"))
+			await pop("p", "회피", C_DIM)
 		return
 	var u := pm()
 	if randi() % 100 < int(a.acc):
@@ -1378,7 +1431,7 @@ func trainer_act(on_hero: bool, guard: bool) -> void:
 		await anim_hp("p", u, u.hp - dmg)
 	else:
 		await _dodge(pp)
-		await bsay("%s 재빨리 피했다!" % J(N(u), "은"))
+		await pop("p", "회피", C_DIM)
 	if u.hp <= 0:
 		await faint("p")
 
@@ -1399,7 +1452,7 @@ func _foe_hero_down() -> String:
 	Sound.sfx("faint")
 	await _sit_down(tr)
 	hide_hud("e")
-	await bsay("%s 털썩 주저앉았다!" % J(tn(), "은"), true)
+	await banner("승리!")
 	if stolen.size():
 		await Msg.say("크윽... 졌다. 그 생물은 이제 네 거야. 잘 돌봐 줘...", tn(), {"keep": true})
 	await _recruit()
@@ -1423,7 +1476,7 @@ func gain_exp() -> void:
 		gold += g2
 	for m in parts:
 		var gg := maxi(1, int(base / parts.size()))
-		await bsay("%s의 현장 경험 +%d" % [N(m), gg])
+		await pop("p", "%s 경험 +%d" % [N(m), gg], C_GOLD)
 		await add_exp(m, gg, m == pm() and pp != null and pp.visible)
 
 
@@ -1456,7 +1509,7 @@ func end_battle(res: String) -> String:
 		Sound.music("victory")
 	if res == "win":
 		if wild and gold > 0:
-			await bsay("%s 조사 수당으로 %s 받았다!" % [J(Game.g.name, "은"), J(Game.money(gold), "을")], true)
+			await banner("조사 수당 +%s" % Game.money(gold))
 		if not wild:
 			if captured == null:
 				if tr == null:
@@ -1466,7 +1519,7 @@ func end_battle(res: String) -> String:
 				tr.position = FOE_POS + Vector2(VS.x * 0.5, 0)
 				hide_hud("e")
 				await _walk_in(tr, FOE_POS, 0.45)
-				await bsay("%s의 겨루기를 마쳤다!" % J(tn(), "과"), true)
+				await _beat()
 				if str(o.get("lose", "")) != "":
 					await Msg.say(o.lose, tn(), {"keep": true})
 			if o.kind != "npc" and foe.size():
@@ -1476,7 +1529,7 @@ func end_battle(res: String) -> String:
 					lv_sum += int(f.lv)
 				var prize: int = (6 + int(Data.D.tclass[o.cls].m) / 4) * lv_sum
 				Game.g.money = int(Game.g.money) + prize
-				await bsay("%s 조사 지원금으로 %s 받았다!" % [J(Game.g.name, "은"), J(Game.money(prize), "을")], true)
+				await banner("조사 지원금 +%s" % Game.money(prize))
 	elif res == "lose":
 		if stolen.size():
 			await give_back()
@@ -1489,13 +1542,13 @@ func end_battle(res: String) -> String:
 			if str(o.get("win_msg", "")) != "" and o.kind != "npc":
 				await Msg.say(o.win_msg, tn(), {"keep": true})
 		else:
-			await bsay("%s의 동료가 모두 지쳤다!" % Game.g.name, true)
+			await banner("동료가 모두 지쳤어요")
 			# 진 상대에게 돈을 건네지 않는다. 캠프까지 옮겨 주는 응급 이송비(가진 돈의 20%)만 낸다
 			var lost := int(Game.g.money) / 5
 			Game.g.money = int(Game.g.money) - lost
 			if lost > 0:
-				await bsay("%s 응급 이송비로 %s 냈다..." % [J(Game.g.name, "은"), J(Game.money(lost), "을")], true)
-			await bsay("조사를 멈추고 가까운 캠프로 돌아간다...", true)
+				await banner("응급 이송비 -%s" % Game.money(lost))
+			await banner("가까운 캠프로 돌아가요")
 	Msg.hide_box()
 	await Game.fade_to(1.0, 0.35)
 	return res
@@ -1662,7 +1715,7 @@ func _run_away() -> void:
 			pp.p("walk_phase", k * 18.0)
 			pp.lift = absf(sin(k * 18.0)) * 10.0, 0.0, 1.0, 0.55).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 		await tw.finished
-	await bsay("조용히 자리를 벗어났다.", true)
+	await _beat()
 
 
 func move_anim(side: String, mv: Dictionary, r: Dictionary) -> void:
