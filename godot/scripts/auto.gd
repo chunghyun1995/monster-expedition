@@ -94,7 +94,8 @@ func _process(_delta: float) -> void:
 	}
 	var texts := {"tower": "탑", "hunt": "자동\n사냥", "climb": "자동\n등반", "stop": "자동\n중지",
 		"battle": "자동\n진행중" if mode != "" else ("자동전투\nON" if fight_enabled() else "자동\n전투")}
-	var y := 20.0 if battling else 108.0
+	var y := screen.y - 50.0 if battling else 108.0
+	var battle_column := 0
 	for key in ORDER:
 		var b: Button = buttons[key]
 		b.visible = vis[key]
@@ -105,6 +106,11 @@ func _process(_delta: float) -> void:
 		_paint(b, ON_COLOR if on else COLORS[key])
 		b.size = Vector2(ROUND, ROUND)
 		b.position = Vector2(screen.x - ROUND - 16, y)
+		if battling:
+			b.size = Vector2(180, 42)
+			b.position = Vector2(screen.x - 196 - battle_column * 192, y)
+			b.text = b.text.replace("\n", " ")
+			battle_column += 1
 		y += ROUND + 12
 	if free and mode == "hunt":
 		if party_ratio() < 0.35 or Game.alive().is_empty() or world.m.enc.is_empty():
@@ -114,7 +120,7 @@ func _process(_delta: float) -> void:
 		var direction := pending_dir if pending_dir != "" else grass_step()
 		if direction == "":
 			stop()
-			world.run_script(func() -> void: await Msg.say("이동할 수 있는 풀숲이 없어서 자동 사냥을 멈췄어요."))
+			world.run_script(func() -> void: await Msg.say("이동할 수 있는 나무 사이의 길이 없어서 자동 사냥을 멈췄어요."))
 		else:
 			pending_dir = direction
 			world._try_move(direction)
@@ -231,6 +237,7 @@ func move_index(mon: Dictionary, foe: Dictionary):
 
 func answer(text: String, options: Array):
 	if not talk_enabled(): return null
+	if "무언가 발견했다" in text and mode == "hunt": return 0
 	if "다음 몬스터" in text or "직접 맞서" in text or "포기하겠습니까" in text: return 0
 	if "교체하겠습니까" in text or "배우게 하겠습니까" in text or "이름을 붙여" in text: return options.size()-1
 	return null

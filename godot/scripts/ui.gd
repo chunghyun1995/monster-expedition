@@ -74,7 +74,7 @@ static func button(parent: Node, text: String, rect: Rect2, color: Color, size :
 
 
 ## Container-managed width and vertical scrolling keep long descriptions readable.
-static func scroll_text(parent: Node, value: String, rect: Rect2, font_size := 28) -> ScrollContainer:
+static func scroll_text(parent: Node, value: String, rect: Rect2, font_size := 28, color := INK) -> ScrollContainer:
 	var scroll := ScrollContainer.new()
 	scroll.name = "DescriptionScroll"
 	scroll.position = rect.position
@@ -86,7 +86,7 @@ static func scroll_text(parent: Node, value: String, rect: Rect2, font_size := 2
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	label.add_theme_font_size_override("font_size", font_size)
-	label.add_theme_color_override("font_color", INK)
+	label.add_theme_color_override("font_color", color)
 	label.text = value
 	scroll.add_child(label)
 	return scroll

@@ -19,6 +19,7 @@ var _mode := "field"
 var _picker: Control      # 선택지·목록이 떠 있을 때
 var _pick = null
 var _auto_seen := {}
+var _choice_rows := 0
 
 
 ## 자동 점검용: 같은 질문(숫자 무시)이 3번 넘게 나오면 true
@@ -30,12 +31,12 @@ func _auto_seen_too_much(t: String) -> bool:
 
 func _ready() -> void:
 	layer = 60
-	box = UI.panel(self, Rect2(16, 900, 688, 210))
+	box = UI.panel(self, Rect2(16, 900, 688, 210), Color("#141d29"), Color("#638b96"))
 	box.mouse_filter = Control.MOUSE_FILTER_STOP
 	box.gui_input.connect(func(e: InputEvent) -> void:
 		if e is InputEventMouseButton and e.pressed:
 			_advance())
-	text = UI.label(box, "", Vector2(28, 22), 32)
+	text = UI.label(box, "", Vector2(28, 22), 32, Color("#f2f5f7"))
 	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text.add_theme_constant_override("line_spacing", 10)
 	name_tag = UI.label(self, "", Vector2.ZERO, 26, Color.WHITE)
@@ -90,14 +91,27 @@ func place(mode: String) -> void:
 			_rect = Rect2(16, s.y * 0.5 - 100, s.x - 32, 200)
 		_:
 			_rect = Rect2(16, TouchPad.reserved_top(s) - 16 - 220, s.x - 32, 220)
+	if _choice_rows > 0:
+		var choice_height := 156.0 + _choice_rows * 88.0
+		var bottom := s.y - 74.0 if mode == "battle" else _rect.end.y
+		_rect = Rect2(_rect.position.x, bottom - choice_height, _rect.size.x, choice_height)
 	box.position = _rect.position
 	box.size = _rect.size
-	text.size = Vector2(_rect.size.x - 56, _rect.size.y - 40)
+	text.size = Vector2(_rect.size.x - 56, 116.0 if _choice_rows > 0 else _rect.size.y - 40)
+	if _choice_rows > 0 and is_instance_valid(_picker):
+		var index := 0
+		for button in _picker.get_children():
+			if button is Button:
+				button.position = _rect.position + Vector2(24, 144 + index * 88)
+				button.size = Vector2(_rect.size.x - 48, 76)
+				index += 1
 	name_tag.position = _rect.position + Vector2(24, -44)
 	arrow.position = Vector2(_rect.size.x - 54, _rect.size.y - 46)
 
 
 func hide_box() -> void:
+	_choice_rows = 0
+	place(_mode)
 	box.visible = false
 	name_tag.visible = false
 	arrow.visible = false
@@ -174,6 +188,10 @@ func _advance() -> void:
 # ---------------- 선택지 ----------------
 ## 질문 + 버튼. B는 마지막 항목(cancel_idx)
 func ask(t: String, options: Array, who := "", start := 0, cancel_idx := -2) -> int:
+	if _mode == "battle" and is_instance_valid(Auto.active_battle):
+		Auto.active_battle._clear_menu()
+	_choice_rows = options.size()
+	place(_mode)
 	await say(t, who, {"keep": true, "nowait": true})
 	var auto_answer = Auto.answer(t, options)
 	if auto_answer != null:
@@ -192,13 +210,18 @@ func ask(t: String, options: Array, who := "", start := 0, cancel_idx := -2) -> 
 	add_child(layer)
 	_picker = layer
 	_pick = null
-	var w := 340.0
-	var h := 84.0
-	var x := _rect.position.x + _rect.size.x - w
-	var y := _rect.position.y - (h + 12) * options.size() - 8
+	var w := _rect.size.x - 48
+	var h := 76.0
+	var x := _rect.position.x + 24
+	var y := _rect.position.y + 144
 	var btns: Array = []
 	for i in options.size():
-		var b := UI.button(layer, options[i], Rect2(x, y + i * (h + 12), w, h), Color(0.25, 0.5, 0.75) if i == start else Color(0.42, 0.45, 0.52), 30)
+		var b := UI.button(layer, options[i], Rect2(x, y + i * 88, w, h), Color(0.18, 0.4, 0.5) if i == start else Color(0.23, 0.29, 0.37), 26)
+		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		for style in ["normal", "hover", "pressed", "disabled", "focus"]:
+			var background := b.get_theme_stylebox(style)
+			background.content_margin_top = 4
+			background.content_margin_bottom = 4
 		b.pressed.connect(func() -> void: _pick = i)
 		b.modulate.a = 0
 		b.create_tween().tween_property(b, "modulate:a", 1.0, 0.15).set_delay(i * 0.04)
