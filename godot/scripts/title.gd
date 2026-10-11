@@ -37,7 +37,8 @@ func _ready() -> void:
 	sub.add_theme_constant_override("outline_size", 8)
 	sub.add_theme_color_override("font_outline_color", Color(0.18, 0.2, 0.3))
 	var y := vs.y * 0.5
-	for e in [[14, 150, y - 140, 150.0], [1, vs.x - 150, y - 60, 150.0], [7, vs.x * 0.5 + 40, y + 30, 170.0], [30, vs.x * 0.5 - 170, y - 250, 130.0]]:
+	# 짹짹이·번개냥·개굴물·물방울 (유사성 점검의 그림 교체 후보 생물은 타이틀에 쓰지 않는다)
+	for e in [[10, 150, y - 140, 130.0], [18, vs.x - 170, y - 60, 160.0], [19, vs.x * 0.5 + 20, y + 30, 150.0], [4, vs.x - 110, y + 100, 110.0]]:
 		var p := Puppet.new()
 		add_child(p)
 		p.setup_mon(e[0], false, e[3])
@@ -236,11 +237,11 @@ func _dev(arg: String) -> void:
 		_menu()
 		return
 	Game.new_game("하늘" if Game.settings.tips == 0 else "테스트")
-	Game.g.party = [Game.make_mon(1, 14), Game.make_mon(4, 12), Game.make_mon(7, 12)]
+	Game.g.party = [Game.make_mon(10, 14), Game.make_mon(19, 12), Game.make_mon(23, 12)]
 	for k in ["starter", "dex", "pad", "shoes", "labIntro", "rival1", "rivalLeft"]:
 		Game.set_flag(k)
-	Game.g.starter = 1
-	Game.g.rival_starter = 4
+	Game.g.starter = 10
+	Game.g.rival_starter = 15
 	Game.g.bag = {"ball": 10, "great": 5, "potion": 5, "super": 3, "lvup": 3}
 	Game.g.map = p[1] if p.size() > 1 else "town"
 	Game.g.x = int(p[2]) if p.size() > 2 else 10
