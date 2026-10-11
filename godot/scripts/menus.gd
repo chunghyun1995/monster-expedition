@@ -3,8 +3,8 @@ extends Node
 
 const BOX_MIN := 10
 const STAGE_N := ["기본", "1단계", "완전체"]
-const BADGES := [["반석 관측 인증", "단단", Color(0.62, 0.55, 0.45)], ["물결 관측 인증", "하라", Color(0.35, 0.6, 0.95)],
-	["불꽃 관측 인증", "화련", Color(0.95, 0.42, 0.22)], ["번개 관측 인증", "찌나", Color(0.98, 0.8, 0.2)], ["창공 관측 인증", "하늬", Color(0.55, 0.82, 1.0)]]
+const BADGES := [["지반 센서 복구", "단단", Color(0.62, 0.55, 0.45)], ["수변 센서 복구", "하라", Color(0.35, 0.6, 0.95)],
+	["열원 센서 복구", "화련", Color(0.95, 0.42, 0.22)], ["통신 센서 복구", "찌나", Color(0.98, 0.8, 0.2)], ["고도 센서 복구", "하늬", Color(0.55, 0.82, 1.0)]]
 const REGION := {"town": ["새싹마을", 0.12, 0.85], "route1": ["솔바람길", 0.12, 0.55], "city": ["돌기둥마을", 0.12, 0.22], "route2": ["이끼숲길", 0.33, 0.22],
 	"town2": ["물결마을", 0.55, 0.22], "route3": ["잿빛 화산길", 0.55, 0.55], "town3": ["붉은재마을", 0.55, 0.85], "route4": ["갈대 들길", 0.72, 0.85],
 	"town4": ["철탑마을", 0.88, 0.85], "route5": ["구름 능선길", 0.88, 0.5], "town5": ["하늘봉마을", 0.88, 0.16]}
@@ -789,7 +789,7 @@ func map_screen(w: World) -> void:
 		tw.tween_property(dot, "scale", Vector2(1.4, 1.4), 0.4)
 		tw.tween_property(dot, "scale", Vector2.ONE, 0.4)
 		UI.label(layer, "현재 위치: %s" % w.m.name, Vector2(50, area.end.y + 30), 32)
-	UI.label(layer, "걸음 수 %d · 관측 인증 %d개 · 생태기록 %d" % [int(Game.g.steps), Game.badge_count(), Game.g.caught.size()], Vector2(50, area.end.y + 80), 26)
+	UI.label(layer, "걸음 수 %d · 복구 기록 %d개 · 생태기록 %d" % [int(Game.g.steps), Game.badge_count(), Game.g.caught.size()], Vector2(50, area.end.y + 80), 26)
 	var back := UI.button(layer, "닫기", Rect2(s.x - 260, s.y - 130, 236, 100), Color(0.3, 0.32, 0.38), 30)
 	var done := [false]
 	back.pressed.connect(func() -> void: done[0] = true)
@@ -805,7 +805,7 @@ func map_screen(w: World) -> void:
 # 리포트 · 설정
 # =====================================================================
 func save_menu(w: World) -> bool:
-	var r := await Msg.ask("%s · 관측 인증 %d · 생태기록 %d · %s\n지금까지의 조사를 현장 일지에 저장할까요?" % [w.m.name, Game.badge_count(), Game.g.caught.size(), Game.fmt_time(float(Game.g.play_ms))],
+	var r := await Msg.ask("%s · 복구 기록 %d · 생태기록 %d · %s\n지금까지의 조사를 현장 일지에 저장할까요?" % [w.m.name, Game.badge_count(), Game.g.caught.size(), Game.fmt_time(float(Game.g.play_ms))],
 		["일지 저장", "그만두기"])
 	if r != 0:
 		return false
@@ -1365,5 +1365,5 @@ func credits(w: World, final: bool) -> void:
 	else:
 		w.enter_map("town2", Vector2i(19, 13), "down", {"quiet": true})
 	await Game.fade_to(0.0, 0.6)
-	await Msg.say("다섯 관측소의 데이터가 연결되었습니다. 벨로리아의 기상 기록이 모두에게 공개됩니다!" if final else "축하합니다! 두 번째 관측 인증을 얻었습니다!")
+	await Msg.say("다섯 관측소의 데이터가 연결되었습니다. 벨로리아의 기상 기록이 모두에게 공개됩니다!" if final else "수변 센서 복구와 안전 점검을 마쳤습니다. 잿빛 화산길이 개방되었습니다!")
 	await Msg.say("생태기록을 모두 채우거나, 생물을 더 강하게 키워 보세요. 원정은 계속됩니다!")

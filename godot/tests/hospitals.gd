@@ -2,6 +2,7 @@ extends Node
 
 var failed := false
 const TOWNS := ["city", "town2", "town3", "town4", "town5"]
+const ROAD_GATES := ["trig_cond_city_0", "cond_t2_gate", "cond_t3_gate", "cond_t4_north", "cond_t5_gate"]
 
 func check(ok: bool, message: String) -> void:
 	if not ok:
@@ -61,8 +62,15 @@ func _ready() -> void:
 		check(reachable(world, world.P, world.npcs[0].cell + Vector2i.DOWN), "Officer cannot be reached from the door")
 		await capture("station-%d" % (i+1))
 		Game.g.party = [Game.make_mon(19,100)]
+		check(world.ev.call(ROAD_GATES[i]), "Unsafe road must remain closed before sensor restoration")
 		await world.ev.talk(world.npcs[0])
 		check(int(Game.g.badges[i]) == 1, "Officer victory failed to register station certification")
+		check(not world.ev.call(ROAD_GATES[i]), "Road did not open after successful restoration")
+		# 출시 전 일지는 station_online 키가 없어도 기존 진행을 유지해야 한다.
+		var restored_save: Dictionary = Game.g.duplicate(true)
+		restored_save.flags.erase("station_online%d" % i)
+		Game.load_save(restored_save)
+		check(not world.ev.call(ROAD_GATES[i]), "Legacy completed save relocked a restored road")
 		world.P = Vector2i(3,6)
 		await world._on_step()
 		check(Game.g.map == TOWNS[i], "Station exit warp broken")
@@ -81,6 +89,7 @@ func _ready() -> void:
 	world.queue_free()
 	await get_tree().process_frame
 	print("HOSPITALS_", "FAIL" if failed else "PASS")
+	print("SAFETY_PROGRESSION_", "FAIL" if failed else "PASS")
 	get_tree().quit(1 if failed else 0)
 
 func lose_battle(world: World, state: Dictionary) -> void:

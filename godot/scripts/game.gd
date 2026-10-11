@@ -1,6 +1,6 @@
 extends Node
 ## 게임 상태(리포트)와 생물 계산. 기존 웹 게임(mon.js·world.js·menus.js)과 같은 공식·같은 데이터 구조.
-## g: 저장되는 모든 것 (이름·돈·파티·보관함·가방·깃발·생태기록·관측 인증·회복 지점·위치 …)
+## g: 저장되는 모든 것 (이름·돈·파티·보관함·가방·깃발·생태기록·복구 기록·회복 지점·위치 …)
 
 const SAVE_PATH := "user://report.save"
 const SETTINGS_PATH := "user://settings.cfg"
@@ -138,7 +138,7 @@ func recovery_point() -> Dictionary:
 	update_recovery(str(g.map))
 	var hospital := str(g.get("hospital_map", ""))
 	if not _valid_hospital(hospital):
-		# 옛 일지가 초기 마을에 있어도 관측 인증을 이미 얻었다면 병원으로 복귀한다.
+		# 옛 일지가 초기 마을에 있어도 복구 기록을 이미 얻었다면 병원으로 복귀한다.
 		for i in range(4, -1, -1):
 			if int(g.badges[i]):
 				hospital = "center%d" % (i + 1)
