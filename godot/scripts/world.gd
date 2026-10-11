@@ -919,7 +919,7 @@ func give_items(list: Array) -> void:
 		Game.g.bag[str(e[0])] = int(Game.g.bag.get(str(e[0]), 0)) + int(e[1])
 		names.append(("%s ×%d" % [it.n, int(e[1])]) if int(e[1]) > 1 else str(it.n))
 	sparkle_player()
-	await Msg.toast("받은 물건 · " + ", ".join(names))
+	await Msg.notice("받은 물건 · " + ", ".join(names))
 
 
 func sparkle_player() -> void:

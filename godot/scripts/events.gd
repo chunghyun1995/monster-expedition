@@ -117,7 +117,7 @@ func talk_mom(_n: NPC) -> void:
 	await Sound.jingle("heal")
 	await w.fade(0.0)
 	Game.g.heal = {"map": "home", "x": 4, "y": 6}
-	await Msg.toast("동료 회복 완료")
+	await Msg.notice("동료 회복 완료")
 	await say("힘내렴! 엄마는 언제나 응원할게.", o)
 
 
@@ -245,7 +245,7 @@ func give_starter(sid: int) -> void:
 	Game.add_mon(mon)
 	Game.g.seen[sid] = 1
 	Game.g.caught[sid] = 1
-	await Msg.toast("동행 기록 · %s  (이름은 동료 메뉴에서 바꿀 수 있어요)" % Game.name_of(mon))
+	await Msg.notice("동행 기록 · %s  (이름은 동료 메뉴에서 바꿀 수 있어요)" % Game.name_of(mon))
 
 
 ## 연구소 첫 방문: 도윤과 안전 점검 대결, 장비 받기
@@ -312,7 +312,7 @@ func badge(i: int, leader: String, badge_name: String) -> void:
 	Game.set_flag("station_online%d" % i)
 	w.sparkle_player()
 	await Menus.badge_fx(w, i)
-	await Msg.toast("관측 인증 · %s  (현장 책임자 %s)" % [badge_name, leader])
+	await Msg.notice("관측 인증 · %s  (현장 책임자 %s)" % [badge_name, leader])
 
 
 func talk_leader1(_n: NPC) -> void:
@@ -508,7 +508,7 @@ func talk_boss(_n: NPC) -> void:
 	w.refresh_npcs()
 	await w.sleep(0.4)
 	Sound.sfx("save")
-	await Msg.toast("발전기 재가동 · 철탑마을 전기 복구")
+	await Msg.notice("발전기 재가동 · 철탑마을 전기 복구")
 	await w.give_item("lvup", 3)
 
 
@@ -630,16 +630,16 @@ func legend_battle(sid: int, lv: int, bg: String) -> void:
 	Game.set_flag("awake%d" % sid)
 	if r == "caught":
 		Game.set_flag("cap%d" % sid)
-		await Msg.toast("%s 합류" % s.n)
+		await Msg.notice("%s 합류" % s.n)
 	elif r == "win":
-		await Msg.toast("%s의 기운은 남아 있어요 · 다시 찾아오면 만날 수 있어요" % s.n)
+		await Msg.notice("%s의 기운은 남아 있어요 · 다시 찾아오면 만날 수 있어요" % s.n)
 	else:
-		await Msg.toast("%s · 아직 이곳에 있어요" % s.n)
+		await Msg.notice("%s · 아직 이곳에 있어요" % s.n)
 	if first and sid != 34 and LEGENDS.all(func(L: Dictionary) -> bool: return F("awake%d" % L.sid)):
 		Sound.sfx("shake")
 		FX.shake(w, 16.0, 0.6)
 		await say("...!")
-		await Msg.toast("하늘봉에서 큰 울림 · 세 생물의 기운이 깨어났어요")
+		await Msg.notice("하늘봉에서 큰 울림 · 세 생물의 기운이 깨어났어요")
 
 
 # =====================================================================
@@ -740,7 +740,7 @@ func talk_tw_guard(n: NPC) -> void:
 	var r := await w.battle({"kind": "trainer", "cls": "tower", "name": "%d층 수호자" % f, "look": n.look, "team": tower_team(f), "no_lose": true,
 		"lose": "...길을 열어 주지.", "win_msg": "다시 도전하도록.", "bg": "lab"})
 	if r != "win":
-		await Msg.toast("%d층에서 도전 종료 · 로비로 돌아가요" % f)
+		await Msg.notice("%d층에서 도전 종료 · 로비로 돌아가요" % f)
 		w.heal_party()
 		await w.fade(1.0, 0.3)
 		w.enter_map("towerLobby", Vector2i(5, 8), "up", {"quiet": true})
@@ -754,22 +754,22 @@ func talk_tw_guard(n: NPC) -> void:
 	if f % 10 == 0:
 		w.heal_party()
 		Sound.sfx("heal")
-		await Msg.toast("%d층 돌파 · 동료 회복" % f)
+		await Msg.notice("%d층 돌파 · 동료 회복" % f)
 		var prize := f * 40
 		Game.g.money = int(Game.g.money) + prize
-		await Msg.toast("탑 보상 +%s" % Game.money(prize))
+		await Msg.notice("탑 보상 +%s" % Game.money(prize))
 		await w.give_item("lvup", maxi(1, f / 20))
 		if f % 50 == 0:
 			await w.give_item("revive", 2)
 	if f == 100:
 		Game.set_flag("towerClear")
 		await Sound.jingle("badge")
-		await Msg.toast("무한의 탑 100층 정복!")
+		await Msg.notice("무한의 탑 100층 정복!")
 		await w.give_item("hyper", 5)
 		await w.give_item("lvup", 10)
-		await Msg.toast("탑 꼭대기 · 벨로리아 전체가 내려다보여요")
+		await Msg.notice("탑 꼭대기 · 벨로리아 전체가 내려다보여요")
 		return
-	await Msg.toast("위층 계단이 열렸어요")
+	await Msg.notice("위층 계단이 열렸어요")
 
 
 func trig_towerFloor_0() -> void:
@@ -836,7 +836,7 @@ func subst_talk(n: NPC) -> void:
 		await Sound.jingle("heal")
 		await w.fade(0.0)
 		Game.g.heal = {"map": "home", "x": 4, "y": 6}
-		await Msg.toast("동료 회복 완료")
+		await Msg.notice("동료 회복 완료")
 		await say("네 엄마 몫까지 아줌마가 응원할게!", s.name)
 		return
 	await talk(n)

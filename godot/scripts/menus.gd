@@ -407,19 +407,19 @@ func apply_item(id: String, m: Dictionary) -> void:
 		m.hp = maxi(1, int(Game.max_hp(m) * float(it.revive)))
 		m.st = ""
 		Sound.sfx("heal")
-		await Msg.toast("%s · 기운 회복" % Game.name_of(m))
+		await Msg.notice("%s · 기운 회복" % Game.name_of(m))
 		return
 	if it.has("heal"):
 		var b0: int = int(m.hp)
 		m.hp = mini(Game.max_hp(m), int(m.hp) + int(it.heal))
 		Sound.sfx("heal")
-		await Msg.toast("%s · 체력 +%d" % [Game.name_of(m), int(m.hp) - b0])
+		await Msg.notice("%s · 체력 +%d" % [Game.name_of(m), int(m.hp) - b0])
 		return
 	if it.has("cure"):
 		m.st = ""
 		m.slp = 0
 		Sound.sfx("heal")
-		await Msg.toast("%s · 상태 회복" % Game.name_of(m))
+		await Msg.notice("%s · 상태 회복" % Game.name_of(m))
 
 
 # =====================================================================
@@ -481,9 +481,9 @@ func learn_move(m: Dictionary, id: String) -> void:
 	if m.moves.size() < 4:
 		m.moves.append({"id": id, "pp": int(d.pp)})
 		Sound.jingle("level")
-		await Msg.toast("%s · 새 기술 %s" % [n, nmv])
+		await Msg.notice("%s · 새 기술 %s" % [n, nmv])
 		return
-	await Msg.toast("%s · 새 기술 %s (기술 칸이 가득 찼어요)" % [n, nmv])
+	await Msg.notice("%s · 새 기술 %s (기술 칸이 가득 찼어요)" % [n, nmv])
 	while true:
 		var r := await Msg.ask("기존 기술 하나를 내려놓고 %s 익힐까?" % Game.josa(nmv, "을"), ["예", "아니오"])
 		if r == 0:
@@ -495,13 +495,13 @@ func learn_move(m: Dictionary, id: String) -> void:
 			if i >= 0:
 				var old: String = Data.move(m.moves[i].id).n
 				m.moves[i] = {"id": id, "pp": int(d.pp)}
-				await Msg.toast("%s · %s 내려놓음" % [n, old])
+				await Msg.notice("%s · %s 내려놓음" % [n, old])
 				Sound.jingle("level")
-				await Msg.toast("%s · 새 기술 %s" % [n, nmv])
+				await Msg.notice("%s · 새 기술 %s" % [n, nmv])
 				return
 		var q := await Msg.ask("%s 익히지 않고 넘어갈까?" % Game.josa(nmv, "을"), ["예", "아니오"])
 		if q == 0:
-			await Msg.toast("%s · %s 익히지 않음" % [n, nmv])
+			await Msg.notice("%s · %s 익히지 않음" % [n, nmv])
 			return
 
 
@@ -544,7 +544,7 @@ func evolve(m: Dictionary) -> void:
 	Msg.place("field")
 	Sound.music("evolve")
 	await Game.fade_to(0.0, 0.3)
-	Msg.toast("%s · 탈바꿈 시작" % old_name)
+	Msg.notice("%s · 탈바꿈 시작" % old_name)
 	await Sound.cry(from)
 	a.p("glow_color", Color.WHITE)
 	b.p("glow_color", Color.WHITE)
@@ -579,7 +579,7 @@ func evolve(m: Dictionary) -> void:
 		a.tp(t3, "glow", 0.0, 0.4)
 		await t3.finished
 		await Sound.cry(from)
-		await Msg.toast("%s · 지금 모습 유지" % old_name)
+		await Msg.notice("%s · 지금 모습 유지" % old_name)
 	else:
 		a.visible = false
 		b.visible = true
@@ -606,7 +606,7 @@ func evolve(m: Dictionary) -> void:
 		b.tp(t6, "squash", 0.0, 0.5).set_trans(Tween.TRANS_ELASTIC)
 		Sound.cry(to)
 		await Sound.jingle("evolved")
-		await Msg.toast("탈바꿈 · %s → %s" % [old_name, Game.sp(to).n])
+		await Msg.notice("탈바꿈 · %s → %s" % [old_name, Game.sp(to).n])
 		await learn_moves(m)
 	await Game.fade_to(1.0, 0.3)
 	layer.queue_free()
@@ -818,7 +818,7 @@ func save_menu(w: World) -> bool:
 	await Msg.say("현장 일지를 저장하는 중...", "", {"auto": 0.8})
 	if Game.save_game():
 		Sound.jingle("save")
-		await Msg.toast("현장 일지 저장 완료")
+		await Msg.notice("현장 일지 저장 완료")
 		return true
 	await Msg.say("현장 일지를 저장하지 못했습니다...")
 	return false
@@ -984,7 +984,7 @@ func shop_sell() -> void:
 			continue
 		Game.g.bag[id] = int(Game.g.bag[id]) - n
 		Game.g.money = int(Game.g.money) + n * int(it.price) / 2
-		await Msg.toast("판매 +%s" % Game.money(n * int(it.price) / 2))
+		await Msg.notice("판매 +%s" % Game.money(n * int(it.price) / 2))
 
 
 func nurse(w: World, n: NPC) -> void:
@@ -1051,18 +1051,18 @@ func box_grow() -> Array:
 func pc_menu(_w: World) -> void:
 	await Guides.show_once("pc")
 	Sound.sfx("menu")
-	await Msg.toast("보관 단말 접속")
+	await Msg.notice("보관 단말 접속")
 	var grown := box_grow()
 	if grown.size():
 		Sound.jingle("level")
-		await Msg.toast("맡겨 둔 생물들이 그동안 훈련했어요")
+		await Msg.notice("맡겨 둔 생물들이 그동안 훈련했어요")
 		for r in grown:
 			var t := "%s Lv%d → %s 자랐다!" % [Game.josa(Game.name_of(r.m), "은"), int(r.from), Game.josa("Lv%d" % int(r.to), "로")]
 			if r.learned.size():
 				t += " 새로 %s 배웠다!" % Game.josa(", ".join(r.learned), "을")
 			await Msg.say(t)
 			if r.full.size():
-				await Msg.toast("(%s도 배울 수 있었지만 기술 칸이 가득 차 있어요)" % ", ".join(r.full))
+				await Msg.notice("(%s도 배울 수 있었지만 기술 칸이 가득 차 있어요)" % ", ".join(r.full))
 	while true:
 		var c := await Msg.ask("무엇을 할까?", ["동료 맡기기", "동료 데려오기", "그만두기"])
 		if c == 0:
@@ -1109,7 +1109,7 @@ func pc_menu(_w: World) -> void:
 				pending_evo.append(m2)
 		else:
 			break
-	await Msg.toast("보관 단말 접속 종료")
+	await Msg.notice("보관 단말 접속 종료")
 	await run_pending_evo()
 
 
