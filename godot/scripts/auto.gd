@@ -236,5 +236,5 @@ func move_index(mon: Dictionary, foe: Dictionary):
 func answer(text: String, options: Array):
 	if not talk_enabled(): return null
 	if "다른 동료를 내보낼까" in text or "직접 나서" in text or "익히지 않고 넘어갈까" in text: return 0
-	if "동료를 바꿀까" in text or "익힐까" in text or "애칭을 지어" in text: return options.size()-1
+	if "동료를 바꿀까" in text or "익힐까" in text: return options.size()-1
 	return null

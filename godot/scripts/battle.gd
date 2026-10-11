@@ -1052,10 +1052,7 @@ func throw_ball(id: String) -> bool:
 			await bsay("현장 노트에 %s의 동행 신호를 기록했다." % N(e), true)
 		hide_hud("e")
 		Msg.hide_box()
-		if wild:
-			await w.nickname_prompt(e)
-			Msg.place("battle")
-		else:
+		if not wild:
 			stolen.append(e)
 			if e.get("met") == null:
 				e.met = {"map": w.m.name, "lv": int(e.lv)}

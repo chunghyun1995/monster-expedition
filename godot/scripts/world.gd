@@ -17,7 +17,6 @@ const ZONES := {
 	"route4": {"g": 2, "tint": Color(1.0, 0.96, 0.78), "deco": 2, "h": 34.0, "every": 3, "sway": 1.0},
 	"route5": {"g": 2, "tint": Color(0.84, 0.95, 0.95), "deco": 3, "h": 28.0, "every": 4, "sway": 1.6},
 }
-const STARTERS := [[4, 4, 10], [5, 4, 19], [6, 4, 23]]
 const DEF_TEXT := {"S": ["책이 가득 꽂혀 있다."], "v": ["TV에서 재미있는 방송을 하고 있다."], "b": ["푹신해 보이는 침대다."],
 	"p": ["잘 가꿔진 화분이다."], "r": ["커다란 바위다. 꿈쩍도 하지 않는다."], "~": ["맑은 물이 반짝이고 있다."], "h": ["회복 장치다."]}
 
@@ -413,19 +412,6 @@ func _make_tables() -> void:
 		s.position = Vector2(0, -h - 6)
 		root.add_child(s)
 		ents.add_child(root)
-		# Capsules belong to their table: draw above its surface, but retain
-		# the table's Y-sort order so someone standing in front occludes both.
-		if str(Game.g.map) == "lab":
-			for starter in STARTERS:
-				var cell := Vector2i(starter[0], starter[1])
-				if not Rect2i(b.pos, b.size).has_point(cell):
-					continue
-				if Game.flag("starter") and (starter[2] == int(Game.g.starter) or starter[2] == int(Game.g.rival_starter)):
-					continue
-				var capsule := Capsule.make("ball", 13.0)
-				capsule.name = "StarterCapsule%d" % starter[2]
-				capsule.position = Vector2(cell.x * T + T / 2.0, cell.y * T + T * 0.13) - root.position
-				root.add_child(capsule)
 
 
 func _make_heal_balls(n: int) -> void:
@@ -948,16 +934,6 @@ func heal_party() -> void:
 
 func fade(a: float, dur := 0.35) -> void:
 	await Game.fade_to(a, dur)
-
-
-func nickname_prompt(mon: Dictionary) -> void:
-	var s: Dictionary = Game.sp(mon.sid)
-	var r := await ask("%s에게 애칭을 지어 줄까?" % s.n, ["예", "아니오"])
-	if r != 0:
-		return
-	var v := await Msg.name_input("%s의 이름은?" % s.n, "", 6, [], true)
-	if v != "" and v != s.n:
-		mon.nick = v
 
 
 func banner(t: String) -> void:
