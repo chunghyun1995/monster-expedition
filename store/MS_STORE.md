@@ -33,6 +33,7 @@ GitHub 저장소 **Settings → Secrets and variables → Actions → Variables*
 - **속성**: 범주 게임 › 롤플레잉, 개인정보처리방침 `https://chunghyun1995.github.io/monster-expedition/privacy.html`
 - **연령 등급**: IARC 설문 — 플레이 스토어와 같은 답(만화풍 판타지 폭력, 피 없음, 비속어·구매·소통 없음)
 - **스토어 목록**: 설명 문구는 `store/README.md`의 스토어 등록정보 문구를 그대로 쓰면 됩니다. 스크린샷은 Windows 화면 크기를 요구하므로 zip판을 PC에서 실행해 찍거나 `store/screenshots/`의 세로 화면을 사용합니다.
+- **게임 표시 이미지**(스토어 목록 › 스토어 로고): `store/ms/box-art-1x1.png`(1:1 박스 아트, 2160×2160), `store/ms/poster-art-2x3.png`(2:3 포스터 아트, 1440×2160). `python3 tools/ms-store-art.py`로 다시 만듭니다.
 - **runFullTrust 사용 사유**(제한된 기능 질문): "Godot 엔진으로 만든 일반 데스크톱 게임 실행 파일(Win32)이라 전체 신뢰 실행이 필요함."
 
 ## 참고
