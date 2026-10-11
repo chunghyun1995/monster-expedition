@@ -13,7 +13,7 @@ const BLD := {"H": 6, "K": 7, "B": 8, "C": 9, "M": 10, "G": 11, "T": 12}
 const ZONES := {
 	"route1": {"g": 2, "tint": Color(0.95, 1.0, 0.82), "deco": 3, "h": 34.0, "every": 3, "sway": 1.4},
 	"route2": {"g": 2, "tint": Color(0.74, 0.88, 0.74), "deco": 4, "h": 30.0, "every": 5, "sway": 0.0},
-	"route3": {"g": 14, "tint": Color(1.0, 0.92, 0.88), "deco": 4, "h": 26.0, "every": 5, "sway": 0.0, "mod": Color(0.62, 0.55, 0.52)},
+	"route3": {"g": 15, "tint": Color(0.74, 0.72, 0.7), "deco": 4, "h": 26.0, "every": 5, "sway": 0.0, "mod": Color(0.62, 0.55, 0.52)},
 	"route4": {"g": 2, "tint": Color(1.0, 0.96, 0.78), "deco": 2, "h": 34.0, "every": 3, "sway": 1.0},
 	"route5": {"g": 2, "tint": Color(0.84, 0.95, 0.95), "deco": 3, "h": 28.0, "every": 4, "sway": 1.6},
 }

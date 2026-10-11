@@ -19,8 +19,9 @@
 - [x] 5 world.gd `_name_plate`
 - [x] 6 auto.gd `fight_on`, game.gd `autoStart`, battle.gd 시작 시 초기화, 설정 메뉴
 - [x] 7 project.godot `window/size/resizable.windows=false`
-- [ ] 회귀 테스트(tests/regression.tscn), new_survey 테스트 실행 → 실패 수정
-- [ ] 웹 내보내기로 화면 확인(관측 구역·이름판·원정가 대화)
+- [x] 회귀·new_survey 테스트: CI run 38113124629 build 통과 (fc44553)
+- [x] 웹 내보내기로 화면 확인(관측 구역·이름판·원정가 대화) — 화산길·건물 색은 재확인 필요
 - [ ] docs/SIMILARITY_AUDIT_2026-10-11.md에 2차 수정 기록, store/README.md 문구 확인
-- [ ] (검토) 관측 캠프 지붕 하트·보급소 파란 지붕 그림이 원작 건물을 연상 → 색 변경 여부
+- [x] 관측 캠프 지붕 청록+렌즈 문양, 보급소 호박색 (tools/recolor-buildings.py 실행 완료, 다시 실행 금지)
+- [x] 화산길 관측 구역 바닥이 용암(14)으로 나오던 것 → 15(모래)+회색
 - [ ] PR → CI → 머지 → 릴리스 링크(APK/AAB/MSIX/zip) 전달
