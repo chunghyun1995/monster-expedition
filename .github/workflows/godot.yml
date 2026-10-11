@@ -2,6 +2,8 @@
 #  - build: Godot 4.7.2로 웹 빌드 + 안드로이드 APK·AAB(Gradle 빌드, targetSdk 36, arm64·x86_64) 내보내기
 #           targetSdk·16KB 정렬·서명을 검사하고 아티팩트로 올림
 #  - emulator-test: Android 16 에뮬레이터에 설치해 실행 확인
+#  - windows-package: 윈도우 러너에서 실행 확인(헤드리스) 후 Microsoft Store용 MSIX와 zip 만들기
+#             MSIX 패키지 ID는 저장소 Variables(MSIX_IDENTITY_NAME·MSIX_PUBLISHER·MSIX_PUBLISHER_DISPLAY_NAME)로 정함
 #  - release: main 브랜치면 "godot-번호" 사전 출시(prerelease)로 게시 (기존 WebView 앱 릴리스는 그대로 최신 유지)
 #             수동 실행(workflow_dispatch)에서 tag를 주면 그 릴리스의 설명문과 파일을 새로 고친다
 name: Godot
@@ -11,10 +13,12 @@ on:
     paths:
       - 'godot/**'
       - '.github/workflows/godot.yml'
+      - 'store/msix/**'
   pull_request:
     paths:
       - 'godot/**'
       - '.github/workflows/godot.yml'
+      - 'store/msix/**'
   workflow_dispatch:
     inputs:
       tag:
@@ -99,7 +103,7 @@ jobs:
           echo "::add-mask::$ME_KEYSTORE_PASSWORD"
           echo "GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=$ME_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
 
-      - name: 내보내기 (웹·APK·AAB)
+      - name: 내보내기 (웹·APK·AAB·Windows)
         run: |
           cd godot
           # 버전 코드: 빌드 시각(분) — 매번 커진다
@@ -120,13 +124,22 @@ jobs:
           "$GODOT" --headless --path . --export-release "Android AAB" build/android/monster-expedition-godot.aab
           # 에뮬레이터 테스트 전용(x86_64) — 배포하지 않음
           "$GODOT" --headless --path . --export-release "Android APK Test" build/android/test-x86_64.apk
-          ls -la build/web build/android
+          # Windows(Microsoft Store용): exe에 데이터 내장. 아이콘 넣기가 실패하면 아이콘 없이 다시 내보낸다
+          mkdir -p build/windows
+          sed -i "s/^application\/file_version=.*/application\/file_version=\"4.0.$GITHUB_RUN_NUMBER.0\"/; s/^application\/product_version=.*/application\/product_version=\"4.0.$GITHUB_RUN_NUMBER.0\"/" export_presets.cfg
+          if ! "$GODOT" --headless --path . --export-release "Windows Desktop" build/windows/VeloriaFieldnotes.exe; then
+            echo "::warning::exe 아이콘 넣기 실패 — 아이콘 없이 다시 내보냄"
+            sed -i 's/^application\/modify_resources=true/application\/modify_resources=false/' export_presets.cfg
+            "$GODOT" --headless --path . --export-release "Windows Desktop" build/windows/VeloriaFieldnotes.exe
+          fi
+          test -s build/windows/VeloriaFieldnotes.exe
+          ls -la build/web build/android build/windows
           test -s build/web/index.wasm
           test -s build/android/monster-expedition-godot.apk
           test -s build/android/monster-expedition-godot.aab
           test -s build/android/test-x86_64.apk
           echo "### 크기" >> "$GITHUB_STEP_SUMMARY"
-          du -h build/android/*.apk build/android/*.aab | sed 's/^/    /' >> "$GITHUB_STEP_SUMMARY"
+          du -h build/android/*.apk build/android/*.aab build/windows/* | sed 's/^/    /' >> "$GITHUB_STEP_SUMMARY"
 
       - name: 검사 (targetSdk 36 · 16KB 정렬 · 서명)
         env:
@@ -159,6 +172,104 @@ jobs:
         with:
           name: godot-android-test
           path: godot/build/android/test-x86_64.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: godot-windows
+          path: godot/build/windows
+
+  windows-package:
+    needs: build
+    runs-on: windows-latest
+    env:
+      MSIX_NAME: ${{ vars.MSIX_IDENTITY_NAME || 'chunghyun1995.VeloriaFieldnotes' }}
+      MSIX_PUBLISHER: ${{ vars.MSIX_PUBLISHER || 'CN=VeloriaFieldnotesDev' }}
+      MSIX_PUBLISHER_NAME: ${{ vars.MSIX_PUBLISHER_DISPLAY_NAME || 'chunghyun1995' }}
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: store/msix
+      - uses: actions/download-artifact@v4
+        with:
+          name: godot-windows
+          path: win
+
+      - name: 실행 확인 (헤드리스로 타이틀까지 켰다 끄기)
+        run: |
+          Get-ChildItem win | Format-Table Name, Length
+          $out = & .\win\VeloriaFieldnotes.console.exe --headless --quit-after 900 2>&1 | Out-String
+          $code = $LASTEXITCODE
+          $out | Select-Object -Last 40
+          if ($code -ne 0) { throw "종료 코드 $code" }
+          if ($out -match 'SCRIPT ERROR|Parse Error') { throw "스크립트 오류" }
+
+      - name: zip · MSIX 만들기
+        run: |
+          $v = "4.0.$env:GITHUB_RUN_NUMBER.0"
+          New-Item -ItemType Directory -Force dist, layout, layout\Assets | Out-Null
+          Get-ChildItem win -File | Where-Object { $_.Name -notlike '*.console.exe' } | Copy-Item -Destination layout
+          Copy-Item store\msix\*.png layout\Assets
+          Compress-Archive -Path (Get-ChildItem layout -File).FullName -DestinationPath dist\VeloriaFieldnotes-windows-x64.zip
+          $manifest = @"
+          <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+            xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+            xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+            IgnorableNamespaces="uap rescap">
+            <Identity Name="$env:MSIX_NAME" Publisher="$env:MSIX_PUBLISHER" Version="$v" ProcessorArchitecture="x64" />
+            <Properties>
+              <DisplayName>벨로리아 생태기록</DisplayName>
+              <PublisherDisplayName>$env:MSIX_PUBLISHER_NAME</PublisherDisplayName>
+              <Logo>Assets\StoreLogo.png</Logo>
+            </Properties>
+            <Dependencies>
+              <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.22621.0" />
+            </Dependencies>
+            <Resources>
+              <Resource Language="ko-KR" />
+            </Resources>
+            <Applications>
+              <Application Id="VeloriaFieldnotes" Executable="VeloriaFieldnotes.exe" EntryPoint="Windows.FullTrustApplication">
+                <uap:VisualElements DisplayName="벨로리아 생태기록" Description="폭풍에 끊긴 관측망을 잇는 생태 조사 RPG"
+                  BackgroundColor="transparent" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png">
+                  <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" Square71x71Logo="Assets\Square71x71Logo.png" Square310x310Logo="Assets\Square310x310Logo.png" />
+                </uap:VisualElements>
+              </Application>
+            </Applications>
+            <Capabilities>
+              <rescap:Capability Name="runFullTrust" />
+            </Capabilities>
+          </Package>
+          "@
+          Set-Content -Path layout\AppxManifest.xml -Value $manifest -Encoding utf8NoBOM
+          $kit = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.*\x64" -Directory | Sort-Object Name -Descending | Select-Object -First 1
+          & "$($kit.FullName)\makeappx.exe" pack /d layout /p dist\VeloriaFieldnotes.msix /o
+          if ($LASTEXITCODE -ne 0) { throw "makeappx 실패" }
+          "KIT=$($kit.FullName)" | Out-File -Append $env:GITHUB_ENV
+          Get-ChildItem dist | Format-Table Name, Length
+          "### Windows`n- MSIX $v · $env:MSIX_NAME · $env:MSIX_PUBLISHER" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+
+      - name: MSIX 설치 확인 (임시 인증서로 서명한 사본)
+        run: |
+          $cert = New-SelfSignedCertificate -Type CodeSigningCert -Subject $env:MSIX_PUBLISHER -CertStoreLocation Cert:\CurrentUser\My -TextExtension @("2.5.29.19={text}false")
+          $pw = ConvertTo-SecureString -String "test" -Force -AsPlainText
+          Export-PfxCertificate -Cert $cert -FilePath test.pfx -Password $pw | Out-Null
+          Import-Certificate -FilePath (Export-Certificate -Cert $cert -FilePath test.cer).FullName -CertStoreLocation Cert:\LocalMachine\TrustedPeople | Out-Null
+          Copy-Item dist\VeloriaFieldnotes.msix test.msix
+          & "$env:KIT\signtool.exe" sign /fd SHA256 /f test.pfx /p test test.msix
+          if ($LASTEXITCODE -ne 0) { throw "서명 실패" }
+          Add-AppxPackage -Path test.msix
+          $pkg = Get-AppxPackage -Name $env:MSIX_NAME
+          if (-not $pkg) { throw "설치되지 않음" }
+          $pkg | Format-List Name, Version, InstallLocation
+          if (-not (Test-Path (Join-Path $pkg.InstallLocation "VeloriaFieldnotes.exe"))) { throw "설치 폴더에 exe 없음" }
+          Remove-AppxPackage -Package $pkg.PackageFullName
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: godot-windows-package
+          path: dist
 
   emulator-test:
     needs: build
@@ -209,7 +320,7 @@ jobs:
           path: shot.png
 
   release:
-    needs: [build, emulator-test]
+    needs: [build, emulator-test, windows-package]
     if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/fix/original-expedition-release') && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
@@ -218,6 +329,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: godot-android
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: godot-windows-package
           path: dist
       - uses: softprops/action-gh-release@v2
         with:
@@ -229,6 +344,8 @@ jobs:
           files: |
             dist/monster-expedition-godot.apk
             dist/monster-expedition-godot.aab
+            dist/VeloriaFieldnotes.msix
+            dist/VeloriaFieldnotes-windows-x64.zip
           body: |
             **벨로리아 생태기록 / VELORIA FIELDNOTES** — Godot Android 개정판
 
@@ -240,6 +357,7 @@ jobs:
             - Android 의존성 고지와 라이선스 전문 포함
 
             APK는 휴대폰 설치용(arm64), AAB는 Google Play 콘솔 업로드용입니다.
+            Windows: `VeloriaFieldnotes.msix`는 Microsoft Store(Partner Center) 업로드용, `VeloriaFieldnotes-windows-x64.zip`은 압축을 풀어 바로 실행하는 PC판입니다.
             Android 7.0 이상 · targetSdk 36 · 16KB 정렬·서명 검사·Android 16 실행 검증.
             기존 Android 패키지 ID와 업데이트 서명 키를 유지합니다.
 
