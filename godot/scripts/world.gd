@@ -919,29 +919,7 @@ func give_items(list: Array) -> void:
 		Game.g.bag[str(e[0])] = int(Game.g.bag.get(str(e[0]), 0)) + int(e[1])
 		names.append(("%s ×%d" % [it.n, int(e[1])]) if int(e[1]) > 1 else str(it.n))
 	sparkle_player()
-	await item_toast("받은 물건 · " + ", ".join(names))
-
-
-func item_toast(t: String) -> void:
-	var vs := get_viewport().get_visible_rect().size
-	var w := vs.x - 80.0
-	var p := UI.panel(ui, Rect2(40, 216 if Game.flag("pad") else 110, w, 76), Color(0.98, 0.96, 0.88))
-	p.name = "ItemToast"
-	var l := UI.label(p, t, Vector2(20, 18), 26)
-	l.size = Vector2(w - 40, 40)
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	var need := l.get_minimum_size().y
-	if need > 40:
-		l.size.y = need
-		p.size.y = need + 36
-	p.modulate.a = 0.0
-	var tw := p.create_tween()
-	tw.tween_property(p, "modulate:a", 1.0, 0.2)
-	tw.tween_interval(1.6)
-	tw.tween_property(p, "modulate:a", 0.0, 0.3)
-	tw.tween_callback(p.queue_free)
-	await get_tree().create_timer(0.2 if Game.auto_text else 1.0).timeout
+	await Msg.toast("받은 물건 · " + ", ".join(names))
 
 
 func sparkle_player() -> void:
