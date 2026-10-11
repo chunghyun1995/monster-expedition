@@ -150,6 +150,8 @@ var _lowhp_t := 0.0
 
 ## 내 생물 체력이 20% 이하면 삐삐 경고음 (웹 게임과 같은 1.1초 간격)
 func _process(delta: float) -> void:
+	for side in huds:
+		_follow_hud(side)
 	_lowhp_t += delta
 	if _lowhp_t < 1.1:
 		return
@@ -200,51 +202,78 @@ func _build() -> void:
 
 
 # ---------------- HUD ----------------
+# 구석 상자 대신 생물·사람 머리 위에 이름·레벨 한 줄과 체력바를 띄운다 (_process에서 따라다님)
+const HUD_W := 210.0
+
+func hud_owner(side: String) -> Puppet:
+	if side == "e":
+		return tr if foe_hero != null else fp
+	return me if hero != null else pp
+
+
 func make_hud(side: String) -> void:
 	if huds.has(side):
 		huds[side].root.queue_free()
-	var bw := (VS.x - 60.0) / 2.0
-	var rect := Rect2(VS.x - bw - 20, 24, bw, 150) if side == "e" else Rect2(20, 24, bw, 150)
-	var root := UI.panel(hud, rect, Color(0.94, 0.97, 0.94, 0.97), Color("#426b69"))
-	var nm := UI.label(root, "", Vector2(16, 10), 26)
-	nm.size.x = bw - 118
+	var root := Control.new()
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.size = Vector2(HUD_W, 64)
+	hud.add_child(root)
+	var nm := UI.label(root, "", Vector2(0, 0), 21, Color.WHITE)
+	nm.add_theme_constant_override("outline_size", 6)
+	nm.add_theme_color_override("font_outline_color", Color(0.1, 0.12, 0.18))
+	nm.size.x = HUD_W - 100
 	nm.clip_text = true
-	var lv := UI.label(root, "", Vector2(bw - 100, 12), 24, Color(0.3, 0.33, 0.4))
-	var bar_bg := ColorRect.new()
-	bar_bg.color = Color(0.25, 0.27, 0.3)
-	bar_bg.position = Vector2(80, 64)
-	bar_bg.size = Vector2(bw - 104, 18)
+	var lv := UI.label(root, "", Vector2(HUD_W - 100, 0), 19, Color(1.0, 0.93, 0.7))
+	lv.add_theme_constant_override("outline_size", 6)
+	lv.add_theme_color_override("font_outline_color", Color(0.1, 0.12, 0.18))
+	lv.size.x = 100
+	lv.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	var bar_bg := Panel.new()
+	bar_bg.add_theme_stylebox_override("panel", UI.box(Color(0.15, 0.17, 0.22, 0.92), Color(0.95, 0.95, 0.9), 8, 2))
+	bar_bg.position = Vector2(0, 30)
+	bar_bg.size = Vector2(HUD_W, 18)
 	root.add_child(bar_bg)
-	UI.label(root, "체력", Vector2(16, 54), 20, Color(0.85, 0.55, 0.2))
 	var bar := ColorRect.new()
-	bar.position = Vector2(3, 3)
+	bar.position = Vector2(4, 4)
 	bar_bg.add_child(bar)
 	var hp_txt: Label = null
 	var exp_bar: ColorRect = null
 	var exp_bg: ColorRect = null
 	if side == "p":
-		hp_txt = UI.label(root, "", Vector2(80, 88), 26)
 		exp_bg = ColorRect.new()
-		exp_bg.color = Color(0.25, 0.27, 0.3)
-		exp_bg.position = Vector2(bw - 16, 58)
-		exp_bg.size = Vector2(8, 72)
+		exp_bg.color = Color(0.15, 0.17, 0.22, 0.85)
+		exp_bg.position = Vector2(2, 50)
+		exp_bg.size = Vector2(HUD_W - 4, 5)
 		root.add_child(exp_bg)
 		exp_bar = ColorRect.new()
-		exp_bar.color = Color("#d8aa56")
-		exp_bar.size = Vector2(4, 0)
-		exp_bar.position = Vector2(2, 70)
-		UI.label(root, "성장", Vector2(bw - 60, 130), 16, Color("#79603b"))
+		exp_bar.color = Color("#e6bd62")
+		exp_bar.size = Vector2(0, 5)
 		exp_bg.add_child(exp_bar)
-	huds[side] = {"root": root, "nm": nm, "lv": lv, "bar": bar, "bw": bw - 110, "hp": hp_txt, "exp": exp_bar, "exp_bg": exp_bg, "rect": rect}
+		hp_txt = UI.label(root, "", Vector2(HUD_W + 8, 24), 20, Color.WHITE)
+		hp_txt.add_theme_constant_override("outline_size", 6)
+		hp_txt.add_theme_color_override("font_outline_color", Color(0.1, 0.12, 0.18))
+	huds[side] = {"root": root, "nm": nm, "lv": lv, "bar": bar, "bw": HUD_W - 8, "hp": hp_txt, "exp": exp_bar, "exp_bg": exp_bg}
 	upd_hud(side)
-	root.position.x = -bw - 30 if side == "e" else VS.x + 30
-	root.create_tween().tween_property(root, "position:x", rect.position.x, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_follow_hud(side)
+	root.modulate.a = 0.0
+	root.create_tween().tween_property(root, "modulate:a", 1.0, 0.25)
+
+
+func _follow_hud(side: String) -> void:
+	if not huds.has(side):
+		return
+	var p := hud_owner(side)
+	var r: Control = huds[side].root
+	if p == null or not is_instance_valid(p):
+		return
+	var top := p.position.y - p.size.y * absf(p.scale.y) - p.hover - p.lift
+	r.position = Vector2(clampf(p.position.x - HUD_W / 2.0, 12.0, VS.x - HUD_W - 80.0), clampf(top - 70.0, 8.0, SH - 80.0))
 
 
 func hide_hud(side: String) -> void:
 	if huds.has(side):
 		var r: Control = huds[side].root
-		r.create_tween().tween_property(r, "position:x", -450.0 if side == "e" else VS.x + 30, 0.25)
+		r.create_tween().tween_property(r, "modulate:a", 0.0, 0.2)
 
 
 func upd_hud(side: String, hp = null) -> void:
@@ -278,7 +307,7 @@ func upd_hud(side: String, hp = null) -> void:
 		if h.exp_bg:
 			h.exp_bg.visible = true
 	var k := clampf(v / mx, 0, 1)
-	h.bar.size = Vector2(h.bw * k, 12)
+	h.bar.size = Vector2(h.bw * k, 10)
 	h.bar.color = Color("#3baba2") if k > 0.5 else Color("#d7a255") if k > 0.2 else Color("#c96d68")
 	if h.hp:
 		h.hp.text = "%d / %d" % [maxi(0, ceili(v)), int(mx)]
@@ -291,14 +320,14 @@ func set_exp(instant := false) -> void:
 	var lo := Game.exp_for(int(m.lv))
 	var hi := Game.exp_for(int(m.lv) + 1)
 	var k := 1.0 if int(m.lv) >= 100 else clampf(float(int(m.exp) - lo) / maxf(1, hi - lo), 0, 1)
+	var full: float = huds.p.exp_bg.size.x
 	var draw_growth := func(value: float) -> void:
-		huds.p.exp.size = Vector2(4, 68.0 * value)
-		huds.p.exp.position = Vector2(2, 70.0 - 68.0 * value)
+		huds.p.exp.size = Vector2(full * value, 5)
 	if instant:
 		draw_growth.call(k)
 	else:
 		var tw := create_tween()
-		tw.tween_method(draw_growth, huds.p.exp.size.y / 68.0, k, 0.6)
+		tw.tween_method(draw_growth, huds.p.exp.size.x / maxf(1.0, full), k, 0.6)
 		await tw.finished
 
 
