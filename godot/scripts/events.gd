@@ -114,7 +114,7 @@ func talk_mom(_n: NPC) -> void:
 	await say("%s, 피곤하지 않니? 잠깐 쉬었다 가렴." % nm(), o)
 	await w.fade(1.0)
 	w.heal_party()
-	await Sound.jingle("heal")
+	await w.sleep(0.4)   # 회복 음악 없이 잠깐 쉬었다가 밝아진다
 	await w.fade(0.0)
 	Game.g.heal = {"map": "home", "x": 4, "y": 6}
 	await Msg.notice("동료 회복 완료")
@@ -833,7 +833,7 @@ func subst_talk(n: NPC) -> void:
 		await say("피곤해 보이는구나. 잠깐 쉬었다 가렴.", s.name)
 		await w.fade(1.0)
 		w.heal_party()
-		await Sound.jingle("heal")
+		await w.sleep(0.4)   # 회복 음악 없이 잠깐 쉬었다가 밝아진다
 		await w.fade(0.0)
 		Game.g.heal = {"map": "home", "x": 4, "y": 6}
 		await Msg.notice("동료 회복 완료")

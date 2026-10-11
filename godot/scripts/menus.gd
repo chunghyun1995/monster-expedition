@@ -430,7 +430,6 @@ func level_up(m: Dictionary, show_box := true) -> void:
 	m.lv = int(m.lv) + 1
 	var n := Game.calc(m)
 	m.hp = mini(n[0], int(m.hp) + n[0] - o[0])
-	Sound.jingle("level")
 	await Msg.say("%s 레벨 %d 달성!" % [Game.josa(Game.name_of(m), "은"), int(m.lv)], "", {"keep": true})
 	if show_box:
 		var s := vs()
@@ -480,7 +479,6 @@ func learn_move(m: Dictionary, id: String) -> void:
 	var n := Game.name_of(m)
 	if m.moves.size() < 4:
 		m.moves.append({"id": id, "pp": int(d.pp)})
-		Sound.jingle("level")
 		await Msg.notice("%s · 새 기술 %s" % [n, nmv])
 		return
 	await Msg.notice("%s · 새 기술 %s (기술 칸이 가득 찼어요)" % [n, nmv])
@@ -496,7 +494,6 @@ func learn_move(m: Dictionary, id: String) -> void:
 				var old: String = Data.move(m.moves[i].id).n
 				m.moves[i] = {"id": id, "pp": int(d.pp)}
 				await Msg.notice("%s · %s 내려놓음" % [n, old])
-				Sound.jingle("level")
 				await Msg.notice("%s · 새 기술 %s" % [n, nmv])
 				return
 		var q := await Msg.ask("%s 익히지 않고 넘어갈까?" % Game.josa(nmv, "을"), ["예", "아니오"])
@@ -998,7 +995,6 @@ func nurse(w: World, n: NPC) -> void:
 	await n.face("left")
 	await w.heal_anim()
 	Game.heal_party()
-	await Sound.jingle("heal")
 	await n.face("down")
 	var wp: Array = w.m.warps.get("6,9", [])
 	if wp.size():
@@ -1054,7 +1050,6 @@ func pc_menu(_w: World) -> void:
 	await Msg.notice("보관 단말 접속")
 	var grown := box_grow()
 	if grown.size():
-		Sound.jingle("level")
 		await Msg.notice("맡겨 둔 생물들이 그동안 훈련했어요")
 		for r in grown:
 			var t := "%s Lv%d → %s 자랐다!" % [Game.josa(Game.name_of(r.m), "은"), int(r.from), Game.josa("Lv%d" % int(r.to), "로")]
