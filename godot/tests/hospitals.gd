@@ -23,6 +23,10 @@ func _ready() -> void:
 	world.busy = true
 	Game.g.heal = {"map":"lab", "x":5, "y":8}
 	check(Game.recovery_point().map == "lab", "Before the first city, laboratory recovery must remain available")
+	Game.g.towerRet = {"map":"lab", "x":5, "y":8, "dir":"up"}
+	world.enter_map("towerLobby", Vector2i(5,8), "up", {"quiet":true})
+	check(Game.recovery_point().map == "lab", "Early tower shortcut must not register a future town hospital")
+	world.enter_map("lab", Vector2i(5,8), "up", {"quiet":true})
 	for i in 5:
 		Game.new_game("기존일지")
 		Game.g.map = TOWNS[i]
@@ -69,6 +73,9 @@ func _ready() -> void:
 	world.enter_map("town4", Vector2i(10,10), "down", {"quiet":true})
 	world.enter_map("route4", Vector2i(10,10), "down", {"quiet":true})
 	check(Game.recovery_point().map == "center4", "Travel must keep the most recently visited town hospital")
+	Game.g.towerRet = {"map":"route4", "x":10, "y":10, "dir":"down"}
+	world.enter_map("towerLobby", Vector2i(5,8), "up", {"quiet":true})
+	check(Game.recovery_point().map == "center4", "Tower shortcut changed the visited town hospital")
 	Msg.hide_box()
 	world.queue_free()
 	await get_tree().process_frame

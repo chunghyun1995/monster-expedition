@@ -106,6 +106,13 @@ func load_save(s: Dictionary) -> void:
 
 ## 마을 도착만으로 병원 복귀를 등록한다. 기존 일지의 집/연구소 지점도 보정한다.
 func update_recovery(map_id: String) -> void:
+	if map_id in ["towerLobby", "towerFloor"]:
+		# 어디서든 탑에 빠르게 다녀올 수 있다. 방문하지 않은 하늘봉 병원을 등록하지 않는다.
+		if _valid_hospital(str(g.get("hospital_map", ""))):
+			return
+		var back: Dictionary = g.get("towerRet", {})
+		if not back.is_empty() and str(back.map) not in ["towerLobby", "towerFloor"]:
+			map_id = str(back.map)
 	var mp: Dictionary = Data.map(map_id)
 	var hospital := str(mp.get("hospital", ""))
 	if hospital == "":
