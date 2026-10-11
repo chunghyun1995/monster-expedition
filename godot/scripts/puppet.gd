@@ -19,7 +19,7 @@ var _t := randf() * 10.0
 static var _shadow_tex: Texture2D
 
 
-## 몬스터(sid) 또는 사람(외형) 그림으로 만든다
+## 생물(sid) 또는 사람(외형) 그림으로 만든다
 func setup_mon(sid: int, back: bool, height: float) -> Puppet:
 	var sp: Dictionary = Data.species(sid)
 	if sp.has("human"):

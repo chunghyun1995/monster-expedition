@@ -53,7 +53,7 @@ func type_color(t: String) -> Color:
 	return Color(D.types[t].c)
 
 
-## 공격 타입 하나가 방어 타입들에 주는 배율
+## 공격 속성 하나가 방어 속성들에 주는 배율
 func eff(atk: String, defs: Array) -> float:
 	var m := 1.0
 	var row: Dictionary = D.chart.get(atk, {})

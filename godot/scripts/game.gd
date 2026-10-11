@@ -1,5 +1,5 @@
 extends Node
-## 게임 상태(리포트)와 몬스터 계산. 기존 웹 게임(mon.js·world.js·menus.js)과 같은 공식·같은 데이터 구조.
+## 게임 상태(리포트)와 생물 계산. 기존 웹 게임(mon.js·world.js·menus.js)과 같은 공식·같은 데이터 구조.
 ## g: 저장되는 모든 것 (이름·돈·파티·보관함·가방·깃발·생태기록·관측 인증·회복 지점·위치 …)
 
 const SAVE_PATH := "user://report.save"
@@ -117,7 +117,7 @@ func save_settings() -> void:
 	c.save(SETTINGS_PATH)
 
 
-# ---------------- 몬스터 ----------------
+# ---------------- 생물 ----------------
 func sp(sid) -> Dictionary:
 	return Data.species(int(sid))
 

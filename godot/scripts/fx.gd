@@ -69,7 +69,7 @@ static func burst(parent: Node, pos: Vector2, c1: Color, c2: Color, amount := 24
 	return p
 
 
-## 기술 타입별 맞는 순간의 파티클
+## 기술 속성별 맞는 순간의 파티클
 static func hit(parent: Node, pos: Vector2, t: String, scale := 1.0) -> void:
 	var c: Array = TYPE_FX.get(t, TYPE_FX.normal)
 	burst(parent, pos, c[0], c[1], int(26 * scale), c[2] * scale, c[3], c[4], c[5] * scale, c[6])

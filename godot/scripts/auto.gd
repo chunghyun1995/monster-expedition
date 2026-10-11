@@ -94,7 +94,7 @@ func _process(_delta: float) -> void:
 	}
 	var texts := {"tower": "탑", "hunt": "자동\n사냥", "climb": "자동\n등반", "stop": "자동\n중지",
 		"battle": "자동\n진행중" if mode != "" else ("자동전투\nON" if fight_enabled() else "자동\n전투")}
-	var y := 20.0 if battling else 108.0
+	var y := 186.0 if battling else 108.0
 	for key in ORDER:
 		var b: Button = buttons[key]
 		b.visible = vis[key]
@@ -142,7 +142,7 @@ func party_ratio() -> float:
 func start_hunt() -> void:
 	if world.busy or world.moving: return
 	if world.m.enc.is_empty() or party_ratio() < 0.35:
-		world.run_script(func() -> void: await Msg.say("야생 몬스터가 나오는 곳에서 동료를 회복시킨 뒤 사용해 주세요."))
+		world.run_script(func() -> void: await Msg.say("야생 생물이 나오는 곳에서 동료를 회복시킨 뒤 사용해 주세요."))
 		return
 	world.run_script(func() -> void:
 		await Guides.show_once("auto")
@@ -231,6 +231,6 @@ func move_index(mon: Dictionary, foe: Dictionary):
 
 func answer(text: String, options: Array):
 	if not talk_enabled(): return null
-	if "다음 몬스터" in text or "직접 맞서" in text or "포기하겠습니까" in text: return 0
-	if "교체하겠습니까" in text or "배우게 하겠습니까" in text or "이름을 붙여" in text: return options.size()-1
+	if "다른 동료를 내보낼까" in text or "직접 나서" in text or "익히지 않고 넘어갈까" in text: return 0
+	if "동료를 바꿀까" in text or "익힐까" in text or "애칭을 지어" in text: return options.size()-1
 	return null

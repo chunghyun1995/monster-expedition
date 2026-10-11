@@ -1,5 +1,5 @@
 extends Node2D
-## 타이틀: 배경 위에서 몬스터들이 저마다의 움직임으로 숨 쉬고, 주인공이 걸어 들어온다.
+## 타이틀: 배경 위에서 생물들이 저마다의 움직임으로 숨 쉬고, 주인공이 걸어 들어온다.
 ## 이어하기 / 처음부터(오프닝) / 설정 / 웹 게임 저장 코드로 불러오기
 
 var _busy := false
@@ -69,7 +69,7 @@ func _menu() -> void:
 	var sv := Game.read_save()
 	while true:
 		var btns: Array = [
-			{"text": ("이어하기\n%s · 관측 인증 %d · 생태기록 %d · %s" % [sv.name, _badges(sv), sv.caught.size(), Game.fmt_time(float(sv.get("play_ms", 0)))]) if not sv.is_empty() else "이어하기\n리포트 없음",
+			{"text": ("이어하기\n%s · 관측 인증 %d · 생태기록 %d · %s" % [sv.name, _badges(sv), sv.caught.size(), Game.fmt_time(float(sv.get("play_ms", 0)))]) if not sv.is_empty() else "이어하기\n저장된 일지 없음",
 				"rect": Rect2(60, vs.y - 520, vs.x - 120, 130), "color": Color(0.3, 0.5, 0.8), "disabled": sv.is_empty(), "size": 30},
 			{"text": "처음부터 시작", "rect": Rect2(60, vs.y - 375, vs.x - 120, 100), "color": Color(0.86, 0.36, 0.42), "size": 34},
 			{"text": "설정", "rect": Rect2(60, vs.y - 260, vs.x - 120, 90), "color": Color(0.42, 0.45, 0.52), "size": 30},
@@ -84,7 +84,7 @@ func _menu() -> void:
 			await Menus.options_menu()
 			continue
 		if i == 1 and not sv.is_empty():
-			var c := await Msg.ask("기존 리포트가 있습니다. 처음부터 시작하면 리포트를 저장할 때 덮어쓰게 됩니다. 괜찮습니까?", ["처음부터 시작", "돌아가기"], "", 1)
+			var c := await Msg.ask("기존 현장 일지가 있습니다. 처음부터 시작해서 저장하면 덮어쓰게 됩니다. 괜찮습니까?", ["처음부터 시작", "돌아가기"], "", 1)
 			if c != 0:
 				continue
 		if i == 0:
@@ -163,7 +163,7 @@ func _import_code(sv: Dictionary) -> bool:
 	var info := "%s · 관측 인증 %d · 생태기록 %d · %s" % [result.name, _badges(result), result.caught.size(), Game.fmt_time(float(result.play_ms))]
 	var q := "%s\n이 모험을 불러올까요?" % info
 	if not sv.is_empty():
-		q = "%s\n이 기기의 리포트(%s)는 코드의 내용으로 바뀌어요. 불러올까요?" % [info, sv.name]
+		q = "%s\n이 기기의 현장 일지(%s)는 코드의 내용으로 바뀌어요. 불러올까요?" % [info, sv.name]
 	if await Msg.ask(q, ["불러오기", "그만두기"], "", 0) != 0:
 		return false
 	Game.load_save(result)
