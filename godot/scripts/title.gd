@@ -212,14 +212,15 @@ func _intro() -> void:
 	await Msg.say("원정 접수처에 새 의뢰가 도착했습니다. 폭풍 뒤의 숲은 이전 기록과 달라졌습니다.", "현장통신")
 	var name := await Msg.name_input("현장 기록에 서명할 이름", "", 6, ["하늘", "태양", "바다", "별이", "민준", "서연", "지호", "유나"])
 	Game.new_game(name)
-	Game.g.map = "lab"
-	Game.g.x = 5
-	Game.g.y = 8
-	Game.g.dir = "up"
-	Game.g.heal = {"map": "lab", "x": 5, "y": 8}
-	await Msg.say("%s 원정가의 접수가 완료됐습니다. 현장통신소에서 조사 동료와 장비를 확인해 주세요." % name, "현장통신")
+	# 마을(집 앞)에서 시작해 바로 첫 동료를 고른다. 장비는 연구소에서 받는다
+	Game.g.map = "town"
+	Game.g.x = 4
+	Game.g.y = 13
+	Game.g.dir = "down"
+	Game.g.heal = {"map": "home", "x": 4, "y": 6}
+	await Msg.say("%s 원정가의 접수가 완료됐습니다. 새싹마을에서 첫 조사를 시작해 주세요." % name, "현장통신")
 	await Game.fade_to(1.0, 0.35)
-	Game.dev = "field_briefing"
+	Game.dev = "opening_starter"
 	Game.change_scene("res://scenes/world.tscn")
 
 

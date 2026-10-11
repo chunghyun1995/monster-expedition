@@ -8,16 +8,6 @@ const DV := {"up": Vector2i.UP, "down": Vector2i.DOWN, "left": Vector2i.LEFT, "r
 const OPP := {"up": "down", "down": "up", "left": "right", "right": "left"}
 const WATER_SHADER := preload("res://shaders/water.gdshader")
 const BLD := {"H": 6, "K": 7, "B": 8, "C": 9, "M": 10, "G": 11, "T": 12}
-# 관측 구역(","): 지도마다 바닥 질감·색·낮은 장식이 다르고, 가장자리에 점선 테두리를 그린다
-# g: terrain 칸, tint: 바닥 색, deco: props 칸, every: 몇 칸마다 장식 하나, mod: 장식 색
-const ZONES := {
-	"route1": {"g": 2, "tint": Color(0.95, 1.0, 0.82), "deco": 3, "h": 34.0, "every": 3, "sway": 1.4},
-	"route2": {"g": 2, "tint": Color(0.74, 0.88, 0.74), "deco": 4, "h": 30.0, "every": 5, "sway": 0.0},
-	"route3": {"g": 15, "tint": Color(0.74, 0.72, 0.7), "deco": 4, "h": 26.0, "every": 5, "sway": 0.0, "mod": Color(0.62, 0.55, 0.52)},
-	"route4": {"g": 2, "tint": Color(1.0, 0.96, 0.78), "deco": 2, "h": 34.0, "every": 3, "sway": 1.0},
-	"route5": {"g": 2, "tint": Color(0.84, 0.95, 0.95), "deco": 3, "h": 28.0, "every": 4, "sway": 1.6},
-}
-const STARTERS := [[4, 4, 10], [5, 4, 19], [6, 4, 23]]
 const DEF_TEXT := {"S": ["책이 가득 꽂혀 있다."], "v": ["TV에서 재미있는 방송을 하고 있다."], "b": ["푹신해 보이는 침대다."],
 	"p": ["잘 가꿔진 화분이다."], "r": ["커다란 바위다. 꿈쩍도 하지 않는다."], "~": ["맑은 물이 반짝이고 있다."], "h": ["회복 장치다."]}
 
@@ -169,8 +159,6 @@ func _ground_index(c: String) -> int:
 			return 14
 		if c == "^" or c == "O":
 			return 12
-		if c == ",":
-			return int(_zone().g)
 		return 13 if m.has("pal") and m.pal.has("ash") else 0
 	if c == "w":
 		return 11
@@ -179,10 +167,6 @@ func _ground_index(c: String) -> int:
 	if c == "%":
 		return 14
 	return 8 if m.get("floor", "") == "wood" else 9
-
-
-func _zone() -> Dictionary:
-	return ZONES.get(str(m.id), ZONES.route1)
 
 
 func _floor_tint(t: int) -> Color:
@@ -221,7 +205,7 @@ func _draw_ground(node: Node2D, only_water: bool) -> void:
 			var fx := -1.0 if x & 1 else 1.0
 			var fy := -1.0 if y & 1 else 1.0
 			node.draw_set_transform(Vector2(x * T + T / 2.0, y * T + T / 2.0), 0, Vector2(fx, fy))
-			node.draw_texture_rect_region(tex, Rect2(-T / 2.0 - 0.5, -T / 2.0 - 0.5, T + 1, T + 1), src, _zone().tint if c == "," else _floor_tint(t))
+			node.draw_texture_rect_region(tex, Rect2(-T / 2.0 - 0.5, -T / 2.0 - 0.5, T + 1, T + 1), src, _floor_tint(t))
 			node.draw_set_transform(Vector2(x * T, y * T))
 			match c:
 				"w":
@@ -239,19 +223,6 @@ func _draw_ground(node: Node2D, only_water: bool) -> void:
 						node.draw_rect(Rect2(8, 8 + i * 14, T - 16, 7), Color(0.79, 0.77, 0.84))
 				"^":
 					node.draw_rect(Rect2(0, T - 8, T, 8), Color(0, 0, 0, 0.18))
-				",":
-					# 관측 구역 테두리(점선)
-					var edge := Color(1.0, 0.97, 0.8, 0.6)
-					for k in 4:
-						var a := 4 + k * 16
-						if tile(x, y - 1) != ",":
-							node.draw_rect(Rect2(a, 1, 8, 3), edge)
-						if tile(x, y + 1) != ",":
-							node.draw_rect(Rect2(a, T - 4, 8, 3), edge)
-						if tile(x - 1, y) != ",":
-							node.draw_rect(Rect2(1, a, 3, 8), edge)
-						if tile(x + 1, y) != ",":
-							node.draw_rect(Rect2(T - 4, a, 3, 8), edge)
 			if c == "~" and only_water:
 				# 물가: 위쪽 땅과 맞닿는 곳에 흰 물결
 				var up := tile(x, y - 1)
@@ -266,14 +237,8 @@ func _make_prop(x: int, y: int, c: String) -> void:
 		match c:
 			"#":
 				spec = {"i": 1 if (m.bg == "forest" and (x + y) % 2) or (x * 7 + y * 3) % 5 == 0 else 0, "h": 124.0, "sway": 0.7, "shadow": true, "dy": -2}
-			",":
-				# 키 큰 풀 대신 몇 칸마다 낮은 장식 하나
-				var z := _zone()
-				if (x * 7 + y * 13) % int(z.every) != 0:
-					return
-				spec = {"i": z.deco, "h": z.h, "sway": z.sway, "dy": -8}
-				if z.has("mod"):
-					spec.mod = z.mod
+			"J":
+				spec = {"i": 0, "h": 124.0, "sway": 0.7, "shadow": true, "dy": -2, "survey": true}
 			"f":
 				spec = {"i": 3, "h": 40.0, "sway": 1.6, "dy": -10}
 			"r":
@@ -317,8 +282,8 @@ func _make_prop(x: int, y: int, c: String) -> void:
 	p.setup_atlas("props", spec.i, spec.h, {"breath": 0.0, "sway": spec.get("sway", 0.0), "speed": 0.8 + randf() * 0.4},
 		spec.get("shadow", false), Vector2i(4, 6))
 	p.position = Vector2(x * T + T / 2.0 + (randf_range(-3, 3) if out else 0.0), y * T + T + spec.dy)
-	if spec.has("mod"):
-		p.modulate = spec.mod
+	if spec.get("survey", false):
+		_survey_plate(p)
 	if c == ",":
 		grass[Vector2i(x, y)] = p
 
@@ -413,19 +378,6 @@ func _make_tables() -> void:
 		s.position = Vector2(0, -h - 6)
 		root.add_child(s)
 		ents.add_child(root)
-		# Capsules belong to their table: draw above its surface, but retain
-		# the table's Y-sort order so someone standing in front occludes both.
-		if str(Game.g.map) == "lab":
-			for starter in STARTERS:
-				var cell := Vector2i(starter[0], starter[1])
-				if not Rect2i(b.pos, b.size).has_point(cell):
-					continue
-				if Game.flag("starter") and (starter[2] == int(Game.g.starter) or starter[2] == int(Game.g.rival_starter)):
-					continue
-				var capsule := Capsule.make("ball", 13.0)
-				capsule.name = "StarterCapsule%d" % starter[2]
-				capsule.position = Vector2(cell.x * T + T / 2.0, cell.y * T + T * 0.13) - root.position
-				root.add_child(capsule)
 
 
 func _make_heal_balls(n: int) -> void:
@@ -641,10 +593,38 @@ func _on_step() -> void:
 	if tr:
 		await run_script(func() -> void: await _trainer_spot(tr))
 		return
-	if tile(P.x, P.y) == "," and not m.enc.is_empty() and not Game.alive().is_empty() and randf() < 0.11:
-		await run_script(func() -> void:
-			await _signal_cue()
-			await _wild())
+
+
+# 조사 나무(J): 걸어 다니는 동안 생물이 나오지 않는다. 나무를 조사해야 근처 생물을 만난다
+func _survey_plate(tree: Node2D) -> void:
+	var p := Panel.new()
+	p.add_theme_stylebox_override("panel", UI.box(Color(0.98, 0.94, 0.82), Color(0.36, 0.25, 0.16), 8, 3))
+	var l := UI.label(p, "조사", Vector2.ZERO, 20, Color(0.24, 0.17, 0.11))
+	tree.add_child(p)
+	var ls := l.get_minimum_size()
+	p.size = Vector2(ls.x + 16, ls.y + 4)
+	l.position = Vector2(8, 2)
+	p.position = Vector2(-p.size.x / 2.0, -p.size.y - 2)
+
+
+func tree_dir_at(c: Vector2i) -> String:
+	for d in DV:
+		if tile(c.x + DV[d].x, c.y + DV[d].y) == "J":
+			return d
+	return ""
+
+
+func survey_tree() -> void:
+	if m.enc.is_empty():
+		await say("조용한 나무다. 근처에서 생물의 신호가 잡히지 않는다.")
+		return
+	if Game.alive().is_empty():
+		await say("동료들이 지쳐 있다. 먼저 회복하고 오자.")
+		return
+	if await ask("조사를 시작할까요?", ["시작하자", "돌아가자"], "", 0) != 0:
+		return
+	await _signal_cue()
+	await _wild()
 
 
 # 생물이 나오기 직전: 공명등 신호음과 함께 발밑에서 퍼지는 파동
@@ -847,6 +827,9 @@ func interact() -> void:
 	if c == "P":
 		await run_script(func() -> void: await Menus.pc_menu(self))
 		return
+	if c == "J":
+		await run_script(survey_tree)
+		return
 	if DEF_TEXT.has(c):
 		await run_script(func() -> void: await Msg.talk(DEF_TEXT[c]))
 
@@ -948,16 +931,6 @@ func heal_party() -> void:
 
 func fade(a: float, dur := 0.35) -> void:
 	await Game.fade_to(a, dur)
-
-
-func nickname_prompt(mon: Dictionary) -> void:
-	var s: Dictionary = Game.sp(mon.sid)
-	var r := await ask("%s에게 애칭을 지어 줄까?" % s.n, ["예", "아니오"])
-	if r != 0:
-		return
-	var v := await Msg.name_input("%s의 이름은?" % s.n, "", 6, [], true)
-	if v != "" and v != s.n:
-		mon.nick = v
 
 
 func banner(t: String) -> void:

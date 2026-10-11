@@ -96,18 +96,18 @@ func trig_run(map: String, i: int) -> void:
 # 새싹마을 · 집 · 연구소
 # =====================================================================
 func trig_cond_town_0() -> bool:
-	return not F("starter")
+	return not F("rival1")
 
 
 func trig_town_0() -> void:
-	await say("길 너머 관측 구역에서 생물의 신호가 잡힌다...")
-	await say("생물 없이 가는 건 위험할 것 같다. 먼저 연구소에 들르자!")
+	await say("길 너머에서 생물의 신호가 잡힌다...")
+	await say("장비 없이 가는 건 위험할 것 같다. 먼저 마을 위쪽 연구소에 들르자!")
 	await w.walk_player(["down"])
 
 
 func talk_mom(_n: NPC) -> void:
 	var o := "엄마"
-	if not F("starter"):
+	if not F("rival1"):
 		await say("일어났구나, %s! 한결 조사관님이 연구소로 와 달라고 하셨단다." % nm(), o)
 		await say("연구소는 마을 위쪽에 있는 큰 건물이야.", o)
 		return
@@ -123,7 +123,7 @@ func talk_mom(_n: NPC) -> void:
 
 func talk_sister(_n: NPC) -> void:
 	var o := "세은 누나"
-	if not F("starter"):
+	if not F("rival1"):
 		await say("%s는 벌써 연구소에 갔어! 성격이 급하다니까." % R, o)
 		return
 	if not F("gift1"):
@@ -136,9 +136,6 @@ func talk_sister(_n: NPC) -> void:
 
 func talk_prof(_n: NPC) -> void:
 	var o := "한결 조사관"
-	if not F("starter"):
-		await say("세 조사 동료는 각자 탐색을 도와주는 방식이 달라. 책상에서 동행 기록을 확인해 보렴.", o)
-		return
 	await say("회수한 기록은 발견 %d종, 동행 %d종이구나. 숫자보다 서식지를 어떻게 이해했는지가 중요하단다." % [Game.g.seen.size(), Game.g.caught.size()], o)
 	await say("관측소의 책임자에게 현장 조건을 물어보고, 센서망을 하나씩 연결해 보렴.", o)
 
@@ -152,7 +149,7 @@ func talk_rival_lab(_n: NPC) -> void:
 
 
 func trig_cond_lab_0() -> bool:
-	return not F("labIntro")
+	return not F("rival1")
 
 
 func trig_lab_0() -> void:
@@ -160,21 +157,24 @@ func trig_lab_0() -> void:
 	var o := "한결 조사관"
 	await w.emote(w.npc_by_id("prof"), "!")
 	await say("%s, 현장통신 의뢰를 받아 줘서 고맙구나. 폭풍이 지나간 뒤 다섯 관측소의 기록이 끊겼어." % nm(), o)
-	await say("도윤은 장비 운반을 맡았고, 너는 생물들과 함께 센서가 놓인 길을 조사해 주면 돼.", o)
-	await say("책상에는 짹짹이, 개굴물, 돌돌이의 동행 기록이 있어. 길 안내, 수변 탐색, 지반 조사 중 필요한 도움을 골라 보렴.", o)
+	if not F("starter"):   # 예전 저장: 동료를 고르기 전에 멈춘 경우
+		await give_starter(await choose_starter())
+	var mon: Dictionary = Game.g.party[0] if Game.g.party.size() else {}
+	await say("%s와 함께 왔구나. 도윤은 장비 운반을 맡았고, 너는 동료와 함께 센서가 놓인 길을 조사해 주면 돼." % Game.name_of(mon) if mon.size() else "도윤은 장비 운반을 맡았고, 너는 동료와 함께 센서가 놓인 길을 조사해 주면 돼.", o)
 	await say("나는 곡물 창고에서 만난 들쥐롱과 출발할게. 서로 다른 기록을 모아 와서 비교하자!", R)
+	await lab_briefing()
 
 
 func obj_lab_4_4() -> void:
-	await pick_starter(0)
+	await say("서식지별 조사 자료가 가지런히 정리되어 있다.")
 
 
 func obj_lab_5_4() -> void:
-	await pick_starter(1)
+	await obj_lab_4_4()
 
 
 func obj_lab_6_4() -> void:
-	await pick_starter(2)
+	await obj_lab_4_4()
 
 
 ## 생물을 크게 보여 주는 카드 (스타터 고르기·생태기록 등록)
@@ -210,37 +210,47 @@ func mon_card(sid: int) -> Control:
 	return root
 
 
-func pick_starter(i: int) -> void:
-	var sid: int = World.STARTERS[i][2]
-	if F("starter"):
-		await say("이미 등록한 동행 기록이다. 다른 동료와는 현장에서 다시 만날 수 있다.")
-		return
-	var s: Dictionary = Game.sp(sid)
-	var card := mon_card(sid)
-	var roles := ["길을 살피는 정찰 동료", "수변 흔적을 찾는 탐색 동료", "지반을 확인하는 조사 동료"]
-	var r := await ask("%s: %s와 첫 의뢰를 시작할까?" % [roles[i], s.n], ["동행 등록", "다른 기록 보기"], "한결 조사관")
-	card.queue_free()
-	if r == 0:
-		await give_starter(sid, false)
+## 새 게임을 시작하자마자(마을) 첫 동료를 고른다. 연구소 책상에서 고르는 장면은 없다
+const STARTER_CHOICES := [[10, "길을 살피는 정찰"], [19, "수변 흔적을 찾는 탐색"], [23, "지반을 확인하는 조사"]]
 
 
-func secret_starter() -> void:
-	# Old saves retain their companion; the three-declines electric starter route is retired.
-	await say("별도 동료 배정은 없다. 세 현장 기록 중 필요한 탐색 도움을 골라 보렴.", "한결 조사관")
+func choose_starter() -> int:
+	await say("첫 조사에 함께할 동료를 골라 주세요. 세 동료는 탐색을 돕는 방식이 달라요.", "현장통신")
+	while true:
+		var names: Array = []
+		for c in STARTER_CHOICES:
+			names.append("%s · %s" % [Game.sp(c[0]).n, c[1]])
+		var i := await ask("어떤 동료와 출발할까?", names, "현장통신")
+		if i < 0 or i >= STARTER_CHOICES.size():
+			continue
+		var sid: int = STARTER_CHOICES[i][0]
+		var card := mon_card(sid)
+		var r := await ask("%s와 함께 출발할까?" % Game.sp(sid).n, ["함께 출발", "다시 고르기"], "현장통신")
+		card.queue_free()
+		if r == 0:
+			return sid
+	return STARTER_CHOICES[0][0]
 
 
-func give_starter(sid: int, _secret: bool) -> void:
+func opening_starter() -> void:
+	await give_starter(await choose_starter())
+	await say("마을 위쪽 연구소에서 한결 조사관님이 장비를 준비해 두셨대요. 먼저 들러 주세요.", "현장통신")
+
+
+func give_starter(sid: int) -> void:
 	Game.g.starter = sid
 	Game.g.rival_starter = 15
 	Game.set_flag("starter")
-	var mon := Game.make_mon(sid, 5, {"met": {"map": "현장통신소", "lv": 5}, "ot": nm(), "shiny": false})
+	var mon := Game.make_mon(sid, 5, {"met": {"map": str(w.m.name), "lv": 5}, "ot": nm(), "shiny": false})
 	Game.add_mon(mon)
 	Game.g.seen[sid] = 1
 	Game.g.caught[sid] = 1
-	w.enter_map("lab", w.P, w.player.dir, {"quiet": true})
 	await Sound.jingle("key")
-	await say("%s와 동행 기록을 작성했다. 이름은 원정 메뉴에서 언제든 바꿀 수 있다." % Game.name_of(mon))
-	await w.nickname_prompt(mon)
+	await say("%s와 동행 기록을 작성했다. 이름은 동료 메뉴에서 언제든 바꿀 수 있다." % Game.name_of(mon))
+
+
+## 연구소 첫 방문: 도윤과 안전 점검 대결, 장비 받기
+func lab_briefing() -> void:
 	var rv := w.npc_by_id("rival_lab")
 	await say("현장에서는 기술을 잘못 쓰면 장비가 다칠 수 있어. 출발 전에 안전 점검을 해 보자.", R)
 	await w.battle({"kind": "trainer", "cls": "rival", "name": R, "team": Game.rival_team(1), "no_lose": true, "look": "rival", "bg": "lab",
@@ -882,6 +892,8 @@ func dev(cmd: String) -> void:
 	match parts[0]:
 		"field_briefing":
 			await w.run_script(func() -> void: await trig_lab_0())
+		"opening_starter":
+			await w.run_script(func() -> void: await opening_starter())
 		"intro_mom":
 			await w.run_script(func() -> void:
 				w.banner("우리 집")

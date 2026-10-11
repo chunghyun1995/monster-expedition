@@ -25,9 +25,12 @@ func onboarding(choice: int) -> void:
 	add_child(world)
 	world.set_process(false)
 	world.busy = true
+	# 첫 동료는 새 게임 시작(마을)에서 고르고, 연구소에서는 점검 대결과 장비만 받는다
+	world.enter_map("town", Vector2i(4, 13), "down", {"quiet":true})
+	await world.ev.give_starter([10,19,23][choice])
+	check(Game.flag("starter") and not Game.flag("rival1"), "Starter must be chosen before the laboratory briefing")
 	world.enter_map("lab", Vector2i(5, 8), "up", {"quiet":true})
 	await world.ev.trig_lab_0()
-	await world.ev.pick_starter(choice)
 	check(Game.g.starter == [10,19,23][choice] and Game.g.rival_starter == 15, "Survey partner allocation/counterpick regression")
 	check(Game.flag("starter") and Game.flag("rivalLeft") and Game.flag("dex") and Game.flag("pad"), "First survey onboarding did not complete")
 	check(Game.g.party.size() >= 1 and Game.alive().size() >= 1, "First survey battle left party unavailable")

@@ -176,8 +176,15 @@ func party_screen(mode: String, opts := {}) -> int:
 			if c == 1:
 				await summary(Game.g.party, i)
 			continue
-		var c2 := await Msg.ask("%s 어떻게 할까?" % Game.josa(Game.name_of(m), "을"), ["정보 보기", "순서 바꾸기", "합성하기", "취소"])
-		if c2 == 0:
+		var acts := ["정보 보기", "순서 바꾸기", "합성하기", "취소"]
+		if not Game.sp(m.sid).get("human", false):
+			acts.insert(2, "이름 바꾸기")
+		var picked := await Msg.ask("%s 어떻게 할까?" % Game.josa(Game.name_of(m), "을"), acts)
+		var act: String = acts[picked] if picked >= 0 and picked < acts.size() else "취소"
+		var c2 := ["정보 보기", "순서 바꾸기", "합성하기"].find(act)
+		if act == "이름 바꾸기":
+			await rename(m)
+		elif c2 == 0:
 			await summary(Game.g.party, i)
 		elif c2 == 1 and Game.g.party.size() > 1:
 			var j := await Msg.list(items, {"title": "%s 어디로 옮길까요?" % Game.josa(Game.name_of(m), "을"), "start": i})
@@ -190,6 +197,14 @@ func party_screen(mode: String, opts := {}) -> int:
 			await fusion_flow(null, {"m": m, "where": "party"})
 			at = mini(at, Game.g.party.size() - 1)
 	return -1
+
+
+## 동료 메뉴의 "이름 바꾸기": 비워 두면 원래 이름으로 돌아간다 (얻을 때는 묻지 않는다)
+func rename(m: Dictionary) -> void:
+	var base: String = Game.sp(m.sid).n
+	var v := await Msg.name_input("%s의 새 이름" % base, str(m.get("nick", "")), 6, [], true)
+	m.nick = "" if v == base else v
+	await Msg.say("이제 %s고 불러요." % Game.josa(Game.name_of(m), "이라"))
 
 
 ## 요약: 생물 정보 · 능력치 · 기술
@@ -1179,11 +1194,6 @@ func fusion_flow(_w, first = null) -> bool:
 	for t in Game.sp(to).t:
 		types.append(Data.type_name(t))
 	await Msg.say("합성 성공! %s 속성 %s 태어났다! (Lv%d)" % ["·".join(types), Game.josa(Game.sp(to).n, "이"), lv])
-	var r := await Msg.ask("%s에게 애칭을 지어 줄까?" % Game.sp(to).n, ["예", "아니오"])
-	if r == 0:
-		var v := await Msg.name_input("%s의 이름은?" % Game.sp(to).n, "", 6, [], true)
-		if v != "":
-			m.nick = v
 	_fx_layer_free()
 	if not Game.g.party.has(m):
 		await Msg.say("파티가 가득 차서 %s 보관함으로 보내졌다." % Game.josa(Game.name_of(m), "은"))

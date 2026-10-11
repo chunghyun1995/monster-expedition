@@ -25,12 +25,7 @@ func _ready() -> void:
 		check(Msg.name_tag.position.y >= 0, "Speaker tag outside viewport")
 	world.enter_map("lab", Vector2i(5,10), "up", {"quiet":true})
 	await get_tree().process_frame
-	var capsules := world.ents.find_children("StarterCapsule*", "", true, false)
-	check(capsules.size() == 3, "Three starter capsules must be on laboratory table")
-	for c in capsules:
-		check(c.get_parent().get_parent() == world.ents, "Starter capsule must inherit table Y-sort")
-		check(c.z_index == 0 and c.is_visible_in_tree(), "Starter capsule hidden or detached")
-		check(c.get_parent().get_child(0) is Sprite2D, "Capsule must draw after table sprite")
+	check(world.ents.find_children("StarterCapsule*", "", true, false).is_empty(), "Laboratory table must not offer starter capsules")
 	check(world.player.front.size.y == 90 and world.player.back.size.y == 90, "Player proportions must use NPC chibi atlas")
 	print("[regression] field layout, laboratory equipment and proportions")
 	for direction in ["down","up","left","right"]:
@@ -52,12 +47,6 @@ func _ready() -> void:
 	Msg.hide_box()
 	world.enter_map("lab", Vector2i(5,8), "up", {"quiet":true})
 	await capture("lab")
-	Game.g.flags["starter"] = true
-	Game.g.starter = 10
-	Game.g.rival_starter = 15
-	world.enter_map("lab", Vector2i(5,8), "up", {"quiet":true})
-	await get_tree().process_frame
-	check(world.ents.find_children("StarterCapsule*", "", true, false).size() == 2, "Only selected survey partner should disappear on re-entry")
 	world.enter_map("town", Vector2i(8,8), "down", {"quiet":true})
 	await capture("proportions")
 	Menus.license_notice()
