@@ -127,6 +127,8 @@ func pop(who, text: String, color := C_INFO) -> void:
 	stage.add_child(l)
 	var sz := l.get_minimum_size()
 	var at := p.center() + Vector2(0, -p.size.y * 0.35 - 72)
+	if not (who is Puppet) and huds.has(str(who)):   # 머리 위 체력바보다 위에
+		at.y = minf(at.y, (huds[str(who)].root as Control).position.y - 22)
 	l.position = Vector2(clampf(at.x - sz.x / 2.0, 8.0, VS.x - sz.x - 8.0), maxf(8.0, at.y - sz.y / 2.0))
 	l.modulate.a = 0.0
 	var tw := l.create_tween()
