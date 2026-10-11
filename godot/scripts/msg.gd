@@ -75,6 +75,36 @@ func _first_button(n: Node) -> Button:
 	return null
 
 
+## 대화 창 대신 쓰는 짧은 알림 (결과·획득·저장 등 "~했다" 서술을 대신한다). 화면 위쪽에 잠깐 떴다 사라진다
+func notice(t: String, hold := 1.6) -> void:
+	var v := vs()
+	var w := v.x - 80.0
+	var p := Panel.new()
+	p.name = "Notice"
+	p.add_theme_stylebox_override("panel", UI.box(Color(0.98, 0.96, 0.88), Color(0.27, 0.33, 0.42)))
+	p.position = Vector2(40, 216 if Game.flag("pad") else 110)
+	p.size = Vector2(w, 76)
+	add_child(p)
+	var l := UI.label(p, t, Vector2(20, 18), 26)
+	l.size = Vector2(w - 40, 40)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var need := l.get_minimum_size().y
+	if need > 40:
+		l.size.y = need
+		p.size.y = need + 36
+	for old in get_children():
+		if old != p and old.name.begins_with("Notice"):
+			p.position.y = maxf(p.position.y, (old as Control).position.y + (old as Control).size.y + 10)
+	p.modulate.a = 0.0
+	var tw := p.create_tween()
+	tw.tween_property(p, "modulate:a", 1.0, 0.2)
+	tw.tween_interval(hold)
+	tw.tween_property(p, "modulate:a", 0.0, 0.3)
+	tw.tween_callback(p.queue_free)
+	await get_tree().create_timer(0.2 if Game.auto_text else 1.0).timeout
+
+
 func vs() -> Vector2:
 	return get_viewport().get_visible_rect().size
 

@@ -106,5 +106,6 @@ Play Console › 정책 › 앱 콘텐츠에서 아래처럼 답하면 됩니다
 아이콘은 앱 런처 아이콘(`android/app/src/main/res/mipmap-xxxhdpi`)과 같은 그림입니다.
 
 ### Godot 판 스크린샷 다시 찍기
+`node tools/capture-godot-store.cjs <웹 빌드 주소/index.html> store/screenshots` 로 6장(타이틀·마을·조사 나무·전투·첫 동료 고르기·메뉴)을 한 번에 찍습니다.
 웹 내보내기(`godot/build/web`)를 열고 주소 뒤에 `#notips:w:지도:x:y[:명령]`을 붙이면 첫 사용 안내 없이 해당 장면에서 시작합니다
 (예: `#notips:w:route1:9:20:battle:24` 전투, `#notips:w:town:10:9:menu` 메뉴). 540×960 화면을 2배(deviceScaleFactor 2)로 찍으면 1080×1920이 됩니다.

@@ -906,19 +906,20 @@ func emote(who, kind := "!") -> void:
 		await Emote.pop(player, kind, -player.height - 70, 0.5, player.body)
 
 
+## 물건 받기: 획득 효과음과 "손에 넣었다/주머니에 넣었다" 대사 없이, 화면 위쪽에 짧은 알림 하나만 띄운다
 func give_item(id: String, n := 1) -> void:
-	var it: Dictionary = Data.D.items[id]
-	Game.g.bag[id] = int(Game.g.bag.get(id, 0)) + n
+	await give_items([[id, n]])
+
+
+## 여러 물건을 한 번에 받는다 (알림 하나)
+func give_items(list: Array) -> void:
+	var names: Array = []
+	for e in list:
+		var it: Dictionary = Data.D.items[str(e[0])]
+		Game.g.bag[str(e[0])] = int(Game.g.bag.get(str(e[0]), 0)) + int(e[1])
+		names.append(("%s ×%d" % [it.n, int(e[1])]) if int(e[1]) > 1 else str(it.n))
 	sparkle_player()
-	await Sound.jingle("key" if it.p == "key" else "item")
-	var nm: String = Game.g.name
-	await say("%s %s 손에 넣었다!" % [Game.josa(nm, "은"), ("%s %d개를" % [it.n, n]) if n > 1 else Game.josa(it.n, "을")])
-	if it.p != "key":
-		var pocket := ""
-		for p in Data.D.pockets:
-			if p[0] == it.p:
-				pocket = p[1]
-		await say("%s %s 가방의 %s 주머니에 넣었다." % [Game.josa(nm, "은"), Game.josa(it.n, "을"), pocket])
+	await Msg.notice("받은 물건 · " + ", ".join(names))
 
 
 func sparkle_player() -> void:
