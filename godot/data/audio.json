@@ -5,55 +5,55 @@
  "bgm": {
   "title": {
    "loop": true,
-   "sec": 33.684
+   "sec": 9.505
   },
   "town": {
    "loop": true,
-   "sec": 44.651
+   "sec": 10.787
   },
   "route": {
    "loop": true,
-   "sec": 30.968
+   "sec": 8.807
   },
   "city": {
    "loop": true,
-   "sec": 18.641
+   "sec": 10.213
   },
   "center": {
    "loop": true,
-   "sec": 20.645
+   "sec": 12.468
   },
   "gym": {
    "loop": true,
-   "sec": 16
+   "sec": 9.6
   },
   "wild": {
    "loop": true,
-   "sec": 14.656
+   "sec": 7.742
   },
   "trainer": {
    "loop": true,
-   "sec": 14.015
+   "sec": 8.136
   },
   "leader": {
    "loop": true,
-   "sec": 13.241
+   "sec": 7.442
   },
   "rival": {
    "loop": true,
-   "sec": 14.884
+   "sec": 8.136
   },
   "victory": {
    "loop": true,
-   "sec": 8.421
+   "sec": 9.231
   },
   "evolve": {
    "loop": true,
-   "sec": 9.32
+   "sec": 12.152
   },
   "intro": {
    "loop": true,
-   "sec": 23.133
+   "sec": 11.852
   }
  },
  "sfx": [
@@ -101,14 +101,14 @@
   "sparkle"
  ],
  "jingle": {
-  "heal": 3.216,
-  "item": 3.273,
-  "key": 3.743,
-  "level": 1.05,
-  "caught": 3.257,
-  "badge": 4.69,
-  "evolved": 3.878,
-  "save": 2.136
+  "heal": 3.569,
+  "item": 2.585,
+  "key": 2.854,
+  "level": 2.097,
+  "caught": 3.276,
+  "badge": 3.004,
+  "evolved": 3.466,
+  "save": 2.713
  },
  "cry": {
   "1": 0.463,
@@ -146,6 +146,6 @@
   "33": 0.529,
   "34": 0.427
  },
- "bgm_scale": 4.388411676733831,
+ "bgm_scale": 4.157280529881041,
  "sfx_scale": 4
 }

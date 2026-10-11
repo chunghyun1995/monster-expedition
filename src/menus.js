@@ -1,5 +1,5 @@
 /* =========================================================
-   menus.js — 원정패드, 메뉴, 파티, 요약, 가방, 도감, 트레이너 카드, 리포트, 설정, 상점, 센터, PC
+   menus.js — 원정패드, 메뉴, 파티, 요약, 가방, 생태기록, 원정가 카드, 리포트, 설정, 상점, 센터, PC
    ========================================================= */
 let botMode='title';
 const fmtTime=ms=>{const m=Math.floor(ms/60000);return`${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}`;};
@@ -46,14 +46,14 @@ const Pad={el:null,app:0,tm:null,
     <div style="display:flex;justify-content:space-between"><span>걸음 수</span><b>${(G.steps||0).toLocaleString()}보</b></div>
     <div style="display:flex;justify-content:space-between"><span>플레이 시간</span><b>${fmtTime(G.playMs)}</b></div>
     <div style="display:flex;justify-content:space-between"><span>소지금</span><b>${money(G.money)}</b></div>
-    <div style="display:flex;justify-content:space-between"><span>도감 (포획)</span><b>${Object.keys(G.caught).length} / ${DEX_N}</b></div>
-    <div style="display:flex;justify-content:space-between"><span>배지</span><b>${G.badges.filter(Boolean).length}개</b></div></div>`;}};
+    <div style="display:flex;justify-content:space-between"><span>생태기록 (포획)</span><b>${Object.keys(G.caught).length} / ${DEX_N}</b></div>
+    <div style="display:flex;justify-content:space-between"><span>관측 인증</span><b>${G.badges.filter(Boolean).length}개</b></div></div>`;}};
 
 /* ================= 시작 메뉴 ================= */
 let menuIdx=0;
 async function openMenu(){if(busy)return;busy=true;sfx('menu');
   try{while(true){
-    const T=[['dex','도감',G.flags.dex],['party','몬스터',G.party.length>0],['bag','가방',1],['card',G.name,1],['save','리포트',1],['opt','설정',1]];
+    const T=[['dex','생태기록',G.flags.dex],['party','몬스터',G.party.length>0],['bag','가방',1],['card',G.name,1],['save','리포트',1],['opt','설정',1]];
     const btns=T.map(([k,l,ok],i)=>({html:`<img src="${menuIcon(k)}" style="width:${U(24)};height:${U(24)};image-rendering:pixelated"><span style="font-size:${U(10.5)}">${ok?esc(l):'???'}</span>`,
       x:i%2?132:8,y:6+Math.floor(i/2)*54,w:116,h:48,cls:'tile',disabled:!ok}));
     btns.push({html:'닫기',x:78,y:168,w:100,h:20,cls:'dark'});
@@ -118,7 +118,7 @@ async function summary(lst,idx){let pg=0,mi=0;const tp=page(TOP,''),bp=el(BOT,'a
       <img class="abs big" src="${monIcon(m.sid,m.shiny)}" style="left:${U(8)};top:${U(24)};width:${U(96)};height:${U(96)}">
       <div class="abs" style="left:${U(8)};top:${U(122)};width:${U(96)};text-align:center;font-size:${U(11)}">${esc(N(m))}${m.shiny?' <span style="color:#e2566f">★</span>':''}</div>
       <div class="sheet kv" style="left:${U(112)};top:${U(24)};width:${U(136)};height:${U(112)};padding:${U(5)} ${U(8)}">
-      <b>도감 No.</b><span>${sp.human?'—':pad3(m.sid)}</span><b>종류</b><span>${sp.n}</span><b>타입</b><span>${typesHtml(m.sid)}</span><b>어버이</b><span>${esc(m.ot||G.name)}</span>
+      <b>생태기록 No.</b><span>${sp.human?'—':pad3(m.sid)}</span><b>종류</b><span>${sp.n}</span><b>타입</b><span>${typesHtml(m.sid)}</span><b>어버이</b><span>${esc(m.ot||G.name)}</span>
       <b>ID No.</b><span>${G.id}</span><b>레벨</b><span>${m.lv}</span><b>성격</b><span>${nat[0]}</span></div>
       <div class="sheet desc" style="left:${U(8)};top:${U(142)};width:${U(240)};height:${U(44)};padding:${U(4)} ${U(8)}">${nat[0]} 성격.<br>${m.met?`${esc(m.met.map)}에서 Lv${m.met.lv}일 때 만났다.`:'운명적으로 만났다.'}</div>`;}
     else if(pg===1){const bar=(v,maxv)=>`<div class="bar"><i style="width:${clamp(v/maxv*100,4,100)}%"></i></div>`;
@@ -176,7 +176,7 @@ async function bagScreen(mode){const tp=page(TOP,''),prevBot=botMode;botMode='me
     if(r===-2)continue;
     if(r<0){if(r===-1)return null;continue;}
     const id=ids[r],it=ITEMS[id];
-    if(it.p==='key'){await say(id==='pad'?'원정패드는 아래 화면에서 사용할 수 있다.':id==='dex'?'도감은 메뉴에서 볼 수 있다.':`${it.n}은 신고 있는 것만으로 효과가 있다.`);continue;}
+    if(it.p==='key'){await say(id==='pad'?'원정패드는 아래 화면에서 사용할 수 있다.':id==='dex'?'생태기록은 메뉴에서 볼 수 있다.':`${it.n}은 신고 있는 것만으로 효과가 있다.`);continue;}
     if(mode==='battle'){if(it.ball)return{id};if(it.lvup){await say('전투 중에는 마실 틈이 없다!');continue;}
       const t=await partyScreen('item',{tip:`${it.n}을(를) 누구에게 사용할까요?`});if(t<0)continue;
       if(!canUse(id,G.party[t])){await say('사용해도 효과가 없을 것 같다.');continue;}return{id,target:t};}
@@ -196,10 +196,10 @@ async function applyItem(id,m,o={}){const it=ITEMS[id];G.bag[id]--;
   if(it.heal){const b0=m.hp;m.hp=Math.min(maxHp(m),m.hp+it.heal);sfx('heal');if(o.anim)await o.anim(b0,m.hp);await say(`${N(m)}의 HP가 ${m.hp-b0} 회복되었다!`);return;}
   if(it.cure){m.st='';m.slp=0;sfx('heal');await say(`${N(m)}의 상태 이상이 나았다!`);}}
 
-/* ================= 도감 ================= */
-async function dexScreen(){const tp=page(TOP,''),prevBot=botMode;botMode='menu';guideSoon('dex','top','만난 몬스터는 <b>실루엣</b>, 붙잡은 몬스터는 <b>자세한 정보</b>가 기록돼요. 모든 칸을 채워 보세요!',{title:'도감'});const ids=Object.keys(SP).map(Number).filter(s=>!SP[s].human);let at=0;
+/* ================= 생태기록 ================= */
+async function dexScreen(){const tp=page(TOP,''),prevBot=botMode;botMode='menu';guideSoon('dex','top','만난 몬스터는 <b>실루엣</b>, 붙잡은 몬스터는 <b>자세한 정보</b>가 기록돼요. 모든 칸을 채워 보세요!',{title:'생태기록'});const ids=Object.keys(SP).map(Number).filter(s=>!SP[s].human);let at=0;
   const show=(id,bounce)=>{const sp=SP[id],seen=G.seen[id],cg=G.caught[id];
-    tp.innerHTML=`<div class="abs" style="inset:0;background:linear-gradient(#e2566f,#b63a52)"></div><div class="title-bar" style="background:linear-gradient(#3a2a3a,#241824)">몬스터 도감<span class="r">발견 ${Object.keys(G.seen).length} · 포획 ${Object.keys(G.caught).length}</span></div>
+    tp.innerHTML=`<div class="abs" style="inset:0;background:linear-gradient(#e2566f,#b63a52)"></div><div class="title-bar" style="background:linear-gradient(#3a2a3a,#241824)">몬스터 생태기록<span class="r">발견 ${Object.keys(G.seen).length} · 포획 ${Object.keys(G.caught).length}</span></div>
     <div class="abs" style="left:${U(8)};top:${U(24)};width:${U(100)};height:${U(100)};border-radius:${U(6)};background:${seen?'radial-gradient(#ffffff,#cfe8f8)':'#1d2030'};border:${U(2)} solid #3a2a3a"></div>
     ${seen?`<img class="abs big" src="${monIcon(id)}" style="left:${U(10)};top:${U(26)};width:${U(96)};height:${U(96)};${bounce?'animation:hop .25s 4 alternate':''}">`:`<div class="abs" style="left:${U(8)};top:${U(60)};width:${U(100)};text-align:center;color:#6a7190;font-size:${U(22)}">?</div>`}
     <div class="sheet" style="left:${U(114)};top:${U(24)};width:${U(134)};height:${U(100)};padding:${U(5)} ${U(8)}">
@@ -213,21 +213,21 @@ async function dexScreen(){const tp=page(TOP,''),prevBot=botMode;botMode='menu';
     if(r<0)break;at=r;const id=ids[r];if(G.seen[id]){show(id,1);cry(id);}else sfx('bad');}}
   finally{tp.remove();botMode=prevBot;}}
 
-/* ================= 트레이너 카드 ================= */
+/* ================= 원정가 카드 ================= */
 async function trainerCard(){const tp=page(TOP,''),bp=el(BOT,'abs','',[0,0,256,192]);const prevBot=botMode;botMode='menu';
   const d=new Date(G.start||Date.now());
   tp.innerHTML=`<div class="abs" style="inset:0;background:#2a3358"></div>
     <div class="abs" style="left:${U(10)};top:${U(12)};width:${U(236)};height:${U(168)};border-radius:${U(10)};background:linear-gradient(135deg,#6ab0ff,#3d6ad6);border:${U(2)} solid #1f3f7a;box-shadow:inset 0 0 0 ${U(2)} rgba(255,255,255,.4)"></div>
     <div class="abs" style="left:${U(22)};top:${U(20)};color:#fff;font-size:${U(9)};letter-spacing:${U(1)}">TRAINER CARD</div><div class="abs" style="left:${U(160)};top:${U(20)};color:#fff;font-size:${U(9)}">ID No.${G.id}</div>
     <div class="sheet kv" style="left:${U(20)};top:${U(36)};width:${U(148)};height:${U(134)};padding:${U(6)} ${U(8)}">
-     <b>이름</b><span>${esc(G.name)}</span><b>소지금</b><span>${money(G.money)}</span><b>도감</b><span>${Object.keys(G.caught).length}마리</span>
+     <b>이름</b><span>${esc(G.name)}</span><b>소지금</b><span>${money(G.money)}</span><b>생태기록</b><span>${Object.keys(G.caught).length}마리</span>
      <b>플레이 시간</b><span>${fmtTime(G.playMs)}</span><b>걸음 수</b><span>${(G.steps||0).toLocaleString()}</span><b>모험 시작</b><span>${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}</span></div>
     <canvas class="abs big" width="16" height="20" style="left:${U(178)};top:${U(56)};width:${U(56)};height:${U(70)}"></canvas>`;
   person(tp.querySelector('canvas').getContext('2d'),0,0,'down',0,LOOK.player);
-  bp.innerHTML=`<div class="backdrop" style="background:linear-gradient(#5a4a3a,#2a2018)"></div><div class="abs" style="left:${U(8)};top:${U(6)};color:#f2dca0;font-size:${U(10)}">배지 케이스</div>`;
-  const B2=[['반석 배지','단단'],['물결 배지','하라'],['불꽃 배지','화련'],['번개 배지','찌나'],['창공 배지','하늬']];
+  bp.innerHTML=`<div class="backdrop" style="background:linear-gradient(#5a4a3a,#2a2018)"></div><div class="abs" style="left:${U(8)};top:${U(6)};color:#f2dca0;font-size:${U(10)}">관측 인증 케이스</div>`;
+  const B2=[['반석 관측 인증','단단'],['물결 관측 인증','하라'],['불꽃 관측 인증','화련'],['번개 관측 인증','찌나'],['창공 관측 인증','하늬']];
   B2.forEach(([n,w],i)=>{const cx=i<3?24+i*72:40+(i-3)*72,cy=i<3?24:104,s=el(bp,'badge-slot','',[cx,cy,48,48]);if(G.badges[i])s.innerHTML=`<img src="${badgeIcon(i)}">`;
-    el(bp,'abs',`<div style="text-align:center;color:#f2dca0;font-size:${U(8)}">${G.badges[i]?n:'???'}<br><span style="font-size:${U(7)};color:#c8b080">${G.badges[i]?'관장 '+w:''}</span></div>`,[cx-14,cy+50,76,26]);
+    el(bp,'abs',`<div style="text-align:center;color:#f2dca0;font-size:${U(8)}">${G.badges[i]?n:'???'}<br><span style="font-size:${U(7)};color:#c8b080">${G.badges[i]?'현장 책임자 '+w:''}</span></div>`,[cx-14,cy+50,76,26]);
     s.addEventListener('click',e=>{e.stopPropagation();if(G.badges[i])sfx('sparkle');});});
   const cb=el(bp,'btn dark','돌아가기',[166,158,84,28]);
   return new Promise(res=>{const close=()=>{popH(h);tp.remove();bp.remove();botMode=prevBot;res();};const h={key(k){if(k==='b'||k==='a'||k==='menu'){sfx('back');close();}}};
@@ -319,7 +319,7 @@ function inputSaveCode(){const tp=page(TOP,`<div class="abs" style="inset:0;back
     const h={key(k){if(k==='b')close(null);}};pushH(h);setTimeout(()=>{if(!matchMedia('(pointer:coarse)').matches)ta.focus();},60);});}
 async function saveMenu(){const tp=page(TOP,`<div class="abs" style="inset:0;background:rgba(10,14,30,.55)"></div>
   <div class="sheet kv" style="left:${U(40)};top:${U(16)};width:${U(176)};padding:${U(8)} ${U(12)}"><b>장소</b><span>${esc(curMap().name)}</span><b>이름</b><span>${esc(G.name)}</span>
-  <b>배지</b><span>${G.badges.filter(Boolean).length}</span><b>도감</b><span>${Object.keys(G.caught).length}</span><b>플레이 시간</b><span>${fmtTime(G.playMs)}</span></div>`);
+  <b>관측 인증</b><span>${G.badges.filter(Boolean).length}</span><b>생태기록</b><span>${Object.keys(G.caught).length}</span><b>플레이 시간</b><span>${fmtTime(G.playMs)}</span></div>`);
   try{const r=await ask('지금까지의 모험을 리포트에 기록하시겠습니까?',['리포트에 기록','기록하고 저장 코드 만들기','그만두기'],{keep:1});if(r!==0&&r!==1){hideMsg();return false;}
     msg('리포트를 기록하고 있습니다...\n전원을 끄지 마세요.');await sleep(900);
     if(saveGame()){await Music.jingle('save');await say(`${J(G.name,'은')} 리포트에 제대로 기록했다!`,{keep:r===1});
@@ -350,7 +350,7 @@ async function shop(){const o={name:'점원'};let first=1;
 function shopTop(id,mode){const it=ITEMS[id];return`<div class="abs" style="inset:0;background:linear-gradient(#cfe0ff,#f2f6ff)"></div><div class="title-bar">몬스터 상점 · ${mode}<span class="r">${money(G.money)}</span></div>
   ${it?`<img class="abs big" src="${itemIcon(id)}" style="left:${U(20)};top:${U(36)};width:${U(48)};height:${U(48)}"><div class="sheet" style="left:${U(84)};top:${U(30)};width:${U(164)};height:${U(60)}"><div style="font-size:${U(11)}">${it.n}</div><div style="font-size:${U(9)};color:#6a7190">가방에 ${G.bag[id]||0}개</div></div>
   <div class="sheet desc" style="left:${U(8)};top:${U(98)};width:${U(240)};height:${U(50)}">${it.d}</div>`:''}`;}
-async function shopBuy(){const tp=page(TOP,'');let at=0;guideSoon('shop','bot','사고 싶은 물건을 고른 뒤 <b>▲ ▼</b>로 수량을 정해요. 배지를 모으면 파는 물건이 늘어나요.',{title:'상점'});
+async function shopBuy(){const tp=page(TOP,'');let at=0;guideSoon('shop','bot','사고 싶은 물건을 고른 뒤 <b>▲ ▼</b>로 수량을 정해요. 관측 인증를 모으면 파는 물건이 늘어나요.',{title:'상점'});
   try{while(true){const st=shopStock();
     const r=await list(st.map(k=>({html:`<img src="${itemIcon(k)}"><span>${ITEMS[k].n}</span><span class="r">${money(ITEMS[k].price)}</span>`})),
       {rect:[4,4,248,150],rowH:20,start:at,backdrop:true,bg:'linear-gradient(#5a8ad8,#3d5aa8)',buttons:[{html:'그만두기',x:170,y:160,w:82,h:28,cls:'dark',val:-1}],onMove:i=>tp.innerHTML=shopTop(st[i],'사기')});
@@ -359,7 +359,7 @@ async function shopBuy(){const tp=page(TOP,'');let at=0;guideSoon('shop','bot','
     msg(`${J(it.n,'을')} 몇 개 사시겠어요?`,{name:'점원'});const n=await numberPick({max,price:it.price,title:it.n});hideMsg();if(!n)continue;
     const ok=await ask(`${it.n} ${n}개, 총 ${money(n*it.price)}입니다. 괜찮으시겠어요?`,['예','아니오'],{name:'점원'});if(ok!==0)continue;
     G.money-=n*it.price;G.bag[id]=(G.bag[id]||0)+n;sfx('save');tp.innerHTML=shopTop(id,'사기');await say('네, 여기 있습니다! 감사합니다!',{name:'점원'});
-    if(id==='ball'&&n>=10){G.bag.great=(G.bag.great||0)+1;await say('캡슐을 많이 사 주셔서 은빛캡슐을 하나 덤으로 드릴게요!',{name:'점원'});}}}
+    if(id==='ball'&&n>=10){G.bag.great=(G.bag.great||0)+1;await say('캡슐을 많이 사 주셔서 분광 공명등을 하나 덤으로 드릴게요!',{name:'점원'});}}}
   finally{tp.remove();}}
 async function shopSell(){const tp=page(TOP,'');
   try{while(true){const ids=Object.keys(ITEMS).filter(k=>ITEMS[k].price&&G.bag[k]>0);
@@ -427,7 +427,7 @@ function fusionPool(stage){return Object.keys(SP).map(Number).filter(s=>SP[s].st
 function fusionResult(a,b){const pool=fusionPool(fusionStage(a,b)),types=[...new Set(pool.flatMap(s=>SP[s].t))];
   const t=types[rnd(types.length)],cand=pool.filter(s=>SP[s].t.includes(t));return cand[rnd(cand.length)];}
 function allMons(){return[...G.party.map((m,i)=>({m,where:'party',i})),...G.box.map((m,i)=>({m,where:'box',i}))];}
-// 합성 재료: 사람(붙잡은 트레이너·NPC)은 합성할 수 없다
+// 합성 재료: 사람(붙잡은 원정가·NPC)은 합성할 수 없다
 const fuseMons=()=>allMons().filter(x=>!SP[x.m.sid].human);
 /* 합성 재료 고르기 (파티 + 보관함) */
 async function pickFuseMon(excl,title){const c=fuseMons().filter(x=>!excl||x.m!==excl.m);if(!c.length)return null;

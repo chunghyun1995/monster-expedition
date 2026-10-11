@@ -3,8 +3,8 @@ extends Node
 
 const BOX_MIN := 10
 const STAGE_N := ["기본", "1진화", "최종진화"]
-const BADGES := [["반석 배지", "단단", Color(0.62, 0.55, 0.45)], ["물결 배지", "하라", Color(0.35, 0.6, 0.95)],
-	["불꽃 배지", "화련", Color(0.95, 0.42, 0.22)], ["번개 배지", "찌나", Color(0.98, 0.8, 0.2)], ["창공 배지", "하늬", Color(0.55, 0.82, 1.0)]]
+const BADGES := [["반석 관측 인증", "단단", Color(0.62, 0.55, 0.45)], ["물결 관측 인증", "하라", Color(0.35, 0.6, 0.95)],
+	["불꽃 관측 인증", "화련", Color(0.95, 0.42, 0.22)], ["번개 관측 인증", "찌나", Color(0.98, 0.8, 0.2)], ["창공 관측 인증", "하늬", Color(0.55, 0.82, 1.0)]]
 const REGION := {"town": ["새싹마을", 0.12, 0.85], "route1": ["1번 도로", 0.12, 0.55], "city": ["바위시티", 0.12, 0.22], "route2": ["2번 도로", 0.33, 0.22],
 	"town2": ["물결마을", 0.55, 0.22], "route3": ["3번 도로", 0.55, 0.55], "town3": ["붉은재마을", 0.55, 0.85], "route4": ["4번 도로", 0.72, 0.85],
 	"town4": ["번개도시", 0.88, 0.85], "route5": ["5번 도로", 0.88, 0.5], "town5": ["하늘봉마을", 0.88, 0.16]}
@@ -77,7 +77,7 @@ func main_menu(w: World) -> void:
 	while true:
 		var s := vs()
 		var bw := (s.x - 60) / 2.0
-		var defs := [["도감", Game.flag("dex"), Color(0.86, 0.36, 0.42)], ["몬스터", Game.g.party.size() > 0, Color(0.33, 0.62, 0.42)],
+		var defs := [["생태기록", Game.flag("dex"), Color(0.86, 0.36, 0.42)], ["몬스터", Game.g.party.size() > 0, Color(0.33, 0.62, 0.42)],
 			["가방", true, Color(0.86, 0.62, 0.25)], [str(Game.g.name), true, Color(0.36, 0.48, 0.72)],
 			["리포트", true, Color(0.5, 0.42, 0.75)], ["지도", Game.flag("pad"), Color(0.3, 0.6, 0.62)],
 			["설정", true, Color(0.42, 0.45, 0.52)], ["닫기", true, Color(0.3, 0.32, 0.38)]]
@@ -253,7 +253,7 @@ func _sum_render(ctx: Dictionary) -> void:
 		var types: Array = []
 		for t in sp.t:
 			types.append(Data.type_name(t))
-		lines = ["도감 No. %s" % ("—" if sp.has("human") else "%03d" % int(m.sid)), "종류: %s (%s 몬스터)" % [sp.n, sp.cat], "타입: %s" % "/".join(types),
+		lines = ["생태기록 No. %s" % ("—" if sp.has("human") else "%03d" % int(m.sid)), "종류: %s (%s 몬스터)" % [sp.n, sp.cat], "타입: %s" % "/".join(types),
 			"어버이: %s" % str(m.ot if m.get("ot") != null else Game.g.name), "성격: %s" % Data.D.natures[int(m.nat)][0],
 			("%s에서 Lv%d일 때 만났다." % [m.met.map, int(m.met.lv)]) if m.get("met") != null else "운명적으로 만났다.", "", str(sp.d)]
 	elif page == 1:
@@ -321,7 +321,7 @@ func bag_screen(mode: String) -> Dictionary:
 		var id: String = ids[r]
 		var it: Dictionary = Data.D.items[id]
 		if it.p == "key":
-			await Msg.say("원정패드는 메뉴의 지도에서 쓸 수 있다." if id == "pad" else "도감은 메뉴에서 볼 수 있다." if id == "dex" else "%s 신고 있는 것만으로 효과가 있다." % Game.josa(it.n, "은"))
+			await Msg.say("원정패드는 메뉴의 지도에서 쓸 수 있다." if id == "pad" else "생태기록은 메뉴에서 볼 수 있다." if id == "dex" else "%s 신고 있는 것만으로 효과가 있다." % Game.josa(it.n, "은"))
 			continue
 		if mode == "battle":
 			if it.has("ball"):
@@ -601,7 +601,7 @@ func evolve(m: Dictionary) -> void:
 
 
 # =====================================================================
-# 도감 · 트레이너 카드 · 지도
+# 생태기록 · 원정가 카드 · 지도
 # =====================================================================
 func dex_screen() -> void:
 	await Guides.show_once("dex")
@@ -618,7 +618,7 @@ func dex_screen() -> void:
 	for it in items:
 		if it.icon == null:
 			it.erase("icon")
-	await Msg.list(items, {"title": "몬스터 도감 · 발견 %d · 포획 %d" % [Game.g.seen.size(), Game.g.caught.size()], "top": 0.5,
+	await Msg.list(items, {"title": "몬스터 생태기록 · 발견 %d · 포획 %d" % [Game.g.seen.size(), Game.g.caught.size()], "top": 0.5,
 		"on_move": func(i: int) -> void: _dex_preview(ids[i])})
 
 
@@ -652,19 +652,13 @@ func _dex_preview(id: int) -> void:
 
 func badge_node(i: int, size := 40.0) -> Node2D:
 	var n := Node2D.new()
-	var col: Color = BADGES[i][2]
 	n.draw.connect(func() -> void:
-		var pts := PackedVector2Array()
-		for k in 8:
-			var a := k * TAU / 8 + PI / 8
-			pts.append(Vector2.from_angle(a) * size)
-		n.draw_colored_polygon(pts, col.darkened(0.35))
-		var pts2 := PackedVector2Array()
-		for k in 8:
-			var a := k * TAU / 8 + PI / 8
-			pts2.append(Vector2.from_angle(a) * size * 0.8)
-		n.draw_colored_polygon(pts2, col)
-		n.draw_circle(Vector2(-size * 0.25, -size * 0.25), size * 0.18, Color(1, 1, 1, 0.6)))
+		var c: Color = BADGES[i][2]
+		n.draw_rect(Rect2(-size, -size * 0.65, size * 2, size * 1.3), Color(0.08, 0.18, 0.22))
+		n.draw_rect(Rect2(-size, -size * 0.65, size * 2, size * 1.3), c, false, 3.0)
+		n.draw_line(Vector2(-size * 0.65, 0), Vector2(size * 0.65, 0), c, 3.0)
+		n.draw_circle(Vector2.ZERO, size * 0.18, c)
+		n.draw_line(Vector2(0, -size * 0.4), Vector2(0, size * 0.4), c, 3.0))
 	return n
 
 
@@ -701,10 +695,10 @@ func trainer_card() -> void:
 	bg.size = s
 	layer.add_child(bg)
 	var card := UI.panel(layer, Rect2(24, 80, s.x - 48, 560), Color(0.42, 0.66, 1.0), Color(0.12, 0.25, 0.48))
-	UI.label(card, "TRAINER CARD", Vector2(30, 20), 28, Color.WHITE)
+	UI.label(card, "FIELD RECORD", Vector2(30, 20), 28, Color.WHITE)
 	UI.label(card, "ID No.%s" % Game.g.id, Vector2(card.size.x - 220, 20), 26, Color.WHITE)
 	var start := Time.get_datetime_dict_from_unix_time(int(Game.g.start))
-	var info := UI.label(card, "이름   %s\n소지금   %s\n도감   %d마리\n플레이 시간   %s\n걸음 수   %d\n모험 시작   %d.%d.%d" % [Game.g.name, Game.money(Game.g.money),
+	var info := UI.label(card, "이름   %s\n소지금   %s\n생태기록   %d마리\n플레이 시간   %s\n걸음 수   %d\n모험 시작   %d.%d.%d" % [Game.g.name, Game.money(Game.g.money),
 		Game.g.caught.size(), Game.fmt_time(float(Game.g.play_ms)), int(Game.g.steps), start.year, start.month, start.day], Vector2(30, 80), 30, Color.WHITE)
 	info.add_theme_constant_override("line_spacing", 14)
 	var who := Node2D.new()
@@ -714,7 +708,7 @@ func trainer_card() -> void:
 	who.add_child(pup)
 	pup.setup_person("player", false, 260.0)
 	var case := UI.panel(layer, Rect2(24, 670, s.x - 48, 360), Color(0.36, 0.28, 0.22), Color(0.2, 0.15, 0.1))
-	UI.label(case, "배지 케이스", Vector2(26, 16), 28, Color(0.95, 0.86, 0.63))
+	UI.label(case, "관측망 복구 기록", Vector2(26, 16), 28, Color(0.95, 0.86, 0.63))
 	for i in 5:
 		var cx := 90 + (i % 3) * ((case.size.x - 120) / 3.0) if i < 3 else 170 + (i - 3) * ((case.size.x - 120) / 3.0)
 		var cy := 120 if i < 3 else 260
@@ -784,7 +778,7 @@ func map_screen(w: World) -> void:
 		tw.tween_property(dot, "scale", Vector2(1.4, 1.4), 0.4)
 		tw.tween_property(dot, "scale", Vector2.ONE, 0.4)
 		UI.label(layer, "현재 위치: %s" % w.m.name, Vector2(50, area.end.y + 30), 32)
-	UI.label(layer, "걸음 수 %d · 배지 %d개 · 도감 %d" % [int(Game.g.steps), Game.badge_count(), Game.g.caught.size()], Vector2(50, area.end.y + 80), 26)
+	UI.label(layer, "걸음 수 %d · 관측 인증 %d개 · 생태기록 %d" % [int(Game.g.steps), Game.badge_count(), Game.g.caught.size()], Vector2(50, area.end.y + 80), 26)
 	var back := UI.button(layer, "닫기", Rect2(s.x - 260, s.y - 130, 236, 100), Color(0.3, 0.32, 0.38), 30)
 	var done := [false]
 	back.pressed.connect(func() -> void: done[0] = true)
@@ -800,7 +794,7 @@ func map_screen(w: World) -> void:
 # 리포트 · 설정
 # =====================================================================
 func save_menu(w: World) -> bool:
-	var r := await Msg.ask("%s · 배지 %d · 도감 %d · %s\n지금까지의 모험을 리포트에 기록하시겠습니까?" % [w.m.name, Game.badge_count(), Game.g.caught.size(), Game.fmt_time(float(Game.g.play_ms))],
+	var r := await Msg.ask("%s · 관측 인증 %d · 생태기록 %d · %s\n지금까지의 모험을 리포트에 기록하시겠습니까?" % [w.m.name, Game.badge_count(), Game.g.caught.size(), Game.fmt_time(float(Game.g.play_ms))],
 		["리포트에 기록", "그만두기"])
 	if r != 0:
 		return false
@@ -876,6 +870,8 @@ func license_notice() -> void:
 	notice.add_theme_font_size_override("normal_font_size", 20)
 	notice.add_theme_color_override("default_color", Color(0.15, 0.19, 0.25))
 	notice.text = "Godot Engine\n" + Engine.get_license_text() + "\n\nThird-party components\n" + JSON.stringify(Engine.get_copyright_info(), "  ") + "\n" + JSON.stringify(Engine.get_license_info(), "  ") + "\n\nGalmuri\n" + FileAccess.get_file_as_string("res://fonts/OFL-Galmuri.txt")
+	for filename in ["Android-NOTICE.txt", "Apache-2.0.txt", "JSpecify-LICENSE.txt", "Kotlin-LICENSE.txt", "Coroutines-LICENSE.txt"]:
+		notice.text += "\n\n" + filename + "\n" + FileAccess.get_file_as_string("res://licenses/" + filename)
 	scroll.add_child(notice)
 	var close := UI.button(panel, "닫기", Rect2(24, panel.size.y - 90, panel.size.x - 48, 64), Color(0.3, 0.5, 0.75))
 	await close.pressed
@@ -949,7 +945,7 @@ func shop_buy() -> void:
 		await Msg.say("네, 여기 있습니다! 감사합니다!", "점원")
 		if id == "ball" and n >= 10:
 			Game.g.bag.great = int(Game.g.bag.get("great", 0)) + 1
-			await Msg.say("캡슐을 많이 사 주셔서 은빛캡슐을 하나 덤으로 드릴게요!", "점원")
+			await Msg.say("캡슐을 많이 사 주셔서 분광 공명등을 하나 덤으로 드릴게요!", "점원")
 
 
 func shop_sell() -> void:
@@ -1323,9 +1319,9 @@ func credits(w: World, final: bool) -> void:
 	hero.setup_person("player", false, 200.0)
 	hero.position = Vector2(x + 40, 0)
 	hero.p("walk", 1.0)
-	var lines := [["몬스터 원정대", ""], ["제작", "chunghyun1995"], ["프로그래밍 · 그림 · 모션", "Claude"],
+	var lines := [["벨로리아 생태기록", ""], ["제작", "chunghyun1995"], ["원본 제작", "Claude"], ["표현 개정 · 신규 에셋", "Codex · OpenAI 이미지 생성"],
 		["함께한 몬스터들", " · ".join(list.map(func(sid: int) -> String: return str(Game.sp(sid).n)))],
-		["관장들", "단단 · 하라 · 화련 · 찌나 · 하늬"], ["라이벌", Game.RIVAL], ["그리고 플레이해 준", "%s 님" % Game.g.name], ["", ""], ["THE END", "…그리고 원정은 계속된다!"]]
+		["현장 책임자들", "단단 · 하라 · 화련 · 찌나 · 하늬"], ["원정 동료", Game.RIVAL], ["그리고 플레이해 준", "%s 님" % Game.g.name], ["", ""], ["THE END", "…그리고 원정은 계속된다!"]]
 	var roll := VBoxContainer.new()
 	roll.position = Vector2(40, s.y)
 	roll.custom_minimum_size.x = s.x - 80
@@ -1370,5 +1366,5 @@ func credits(w: World, final: bool) -> void:
 	else:
 		w.enter_map("town2", Vector2i(19, 13), "down", {"quiet": true})
 	await Game.fade_to(0.0, 0.6)
-	await Msg.say("축하합니다! 다섯 개의 배지를 모으고 라이벌과의 마지막 승부까지 마쳐 몬스터 원정대를 클리어했습니다!" if final else "축하합니다! 두 번째 배지를 얻었습니다!")
-	await Msg.say("도감을 모두 채우거나, 몬스터를 더 강하게 키워 보세요. 원정은 계속됩니다!")
+	await Msg.say("다섯 관측소의 데이터가 연결되었습니다. 벨로리아의 기상 기록이 모두에게 공개됩니다!" if final else "축하합니다! 두 번째 관측 인증을 얻었습니다!")
+	await Msg.say("생태기록을 모두 채우거나, 몬스터를 더 강하게 키워 보세요. 원정은 계속됩니다!")

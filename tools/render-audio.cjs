@@ -60,7 +60,8 @@ function save(rel, samples, scale, q = 3) {
   const f = path.join(OUT, rel + '.ogg'), tmp = path.join(OUT, '_tmp.wav');
   fs.mkdirSync(path.dirname(f), { recursive: true });
   fs.writeFileSync(tmp, wav(samples.map(v => v * scale)));
-  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', tmp, '-c:a', 'libvorbis', '-q:a', String(q), f]);
+  if(process.env.AUDIO_PYTHON)execFileSync(process.env.AUDIO_PYTHON,[path.join(ROOT,'tools/encode-ogg.py'),tmp,f]);
+  else execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', tmp, '-c:a', 'libvorbis', '-q:a', String(q), f]);
   fs.unlinkSync(tmp);
 }
 const peak = d => d.reduce((m, v) => Math.max(m, Math.abs(v)), 0);
@@ -68,7 +69,7 @@ const peak = d => d.reduce((m, v) => Math.max(m, Math.abs(v)), 0);
 (async () => {
   const src = fs.readFileSync(path.join(ROOT, 'src/audio.js'), 'utf8').replace(/document\.addEventListener\([^\n]*\n/, '');
   const game = JSON.parse(fs.readFileSync(path.join(ROOT, 'godot/data/game.json'), 'utf8'));
-  const browser = await chromium.launch();
+  const browser = await chromium.launch(process.env.AUDIO_BROWSER ? {executablePath:process.env.AUDIO_BROWSER} : {});
   const page = await browser.newPage();
   await page.setContent('<html><body></body></html>');
   await page.addScriptTag({ content: PAGE + src + PAGE2 });

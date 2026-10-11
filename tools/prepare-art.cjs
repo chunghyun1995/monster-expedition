@@ -37,7 +37,15 @@ async function main(){const manifest={};
     key==='backs'&&i===8?{left:378,top:215,width:266,height:224}:
     (key==='monsters'||key==='backs')&&i===23?{left:975,top:640,width:279,height:208}:null; // 바위거북: 머리가 옆 칸까지 나와 있어 넓게
    const box=special||{left,top,width:Math.round((col+1)*meta.width/cols)-left,height:(bounds?bounds[row+1]:Math.round((row+1)*meta.height/rows))-top};
+   const revisedSpecies={12:0,21:1,32:2};
+   const revised=(key==='monsters'||key==='backs')&&revisedSpecies[i]!==undefined;
+   const replacement=path.join(root,'assets','generated','revision-2026-10-11','creature-pairs.png');
    let crop=sharp(source).extract(box);
+   if(revised&&fs.existsSync(replacement)){
+    const rm=await sharp(replacement).metadata(),column=key==='backs'?1:0,row=revisedSpecies[i];
+    const x=Math.round(column*rm.width/2),y=Math.round(row*rm.height/3);
+    crop=sharp(replacement).extract({left:x,top:y,width:Math.round((column+1)*rm.width/2)-x,height:Math.round((row+1)*rm.height/3)-y});
+   }
    const extracted=await crop.png().toBuffer();crop=sharp(alpha?await cleanCell(extracted):extracted);
    if(alpha)crop=crop.trim({background:'#00000000',threshold:12});
    const buffer=await crop.resize(cw-8,ch-8,{fit:alpha?'contain':'cover',position:alpha?'bottom':'centre',background:'#00000000'}).extend({top:4,bottom:4,left:4,right:4,background:'#00000000'}).png().toBuffer();

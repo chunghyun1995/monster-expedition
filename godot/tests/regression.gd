@@ -7,7 +7,7 @@ func check(ok: bool, message: String) -> void:
 		push_error(message)
 
 func _ready() -> void:
-	get_tree().create_timer(120).timeout.connect(func() -> void:
+	get_tree().create_timer(180).timeout.connect(func() -> void:
 		push_error("Regression timed out")
 		get_tree().quit(1))
 	await get_tree().process_frame
@@ -32,6 +32,7 @@ func _ready() -> void:
 		check(c.z_index == 0 and c.is_visible_in_tree(), "Starter capsule hidden or detached")
 		check(c.get_parent().get_child(0) is Sprite2D, "Capsule must draw after table sprite")
 	check(world.player.front.size.y == 90 and world.player.back.size.y == 90, "Player proportions must use NPC chibi atlas")
+	print("[regression] field layout, laboratory equipment and proportions")
 	for direction in ["down","up","left","right"]:
 		await world.player.step(world.player.position + Vector2(8,0), direction, 0.05, true, false)
 		check(is_zero_approx(float(world.player.cur().g("walk"))), "Walk animation did not stop")
@@ -40,7 +41,7 @@ func _ready() -> void:
 	await world.player.hop(world.player.position + Vector2(8,0), "down")
 	check(world.player.body.position == Vector2.ZERO, "Hop did not restore foot anchor")
 	world.enter_map("home", Vector2i(7,3), "down", {"quiet":true})
-	await Msg.say("일어났구나, 별아! 한결 박사님이 연구소로 와 달라고 하셨단다.", "엄마", {"nowait":true, "keep":true})
+	await Msg.say("별아! 한결 조사관이 다음 현장 기록을 기다리고 있단다.", "엄마", {"nowait":true, "keep":true})
 	await capture("dialogue")
 	Msg._waiting = true
 	world.pad._assign(98, "a_btn")
@@ -52,11 +53,11 @@ func _ready() -> void:
 	world.enter_map("lab", Vector2i(5,8), "up", {"quiet":true})
 	await capture("lab")
 	Game.g.flags["starter"] = true
-	Game.g.starter = 1
-	Game.g.rival_starter = 4
+	Game.g.starter = 10
+	Game.g.rival_starter = 15
 	world.enter_map("lab", Vector2i(5,8), "up", {"quiet":true})
 	await get_tree().process_frame
-	check(world.ents.find_children("StarterCapsule*", "", true, false).size() == 1, "Selected and rival starters should disappear on re-entry")
+	check(world.ents.find_children("StarterCapsule*", "", true, false).size() == 2, "Only selected survey partner should disappear on re-entry")
 	world.enter_map("town", Vector2i(8,8), "down", {"quiet":true})
 	await capture("proportions")
 	Menus.license_notice()
@@ -68,6 +69,9 @@ func _ready() -> void:
 	if not close.is_empty():
 		close[0].pressed.emit()
 	await get_tree().process_frame
+	for filename in ["Android-NOTICE.txt", "Apache-2.0.txt", "JSpecify-LICENSE.txt", "Kotlin-LICENSE.txt", "Coroutines-LICENSE.txt"]:
+		check(FileAccess.get_file_as_string("res://licenses/" + filename).length() > 100, "Bundled licence missing: " + filename)
+	await test_resonance(world)
 	await test_restored_features(world)
 	print("GODOT_REGRESSION_", "FAIL" if failed else "PASS")
 	for node in Sound.get_children():
@@ -85,6 +89,43 @@ func capture(label: String) -> void:
 	await RenderingServer.frame_post_draw
 	var err := get_viewport().get_texture().get_image().save_png("res://.godot/regression-%s.png" % label)
 	check(err == OK, "Could not save screenshot")
+
+func test_resonance(world: World) -> void:
+	var previous_party: Array = Game.g.party
+	world.pad.visible = false
+	world.menu_btn.visible = false
+	Game.g.party = [Game.make_mon(10, 12)]
+	var battle := Battle.new()
+	add_child(battle)
+	battle.w = world
+	battle.o = {"kind":"wild", "bg":"forest"}
+	battle.wild = true
+	battle.foe = [Game.make_mon(33, 12)]
+	battle.VS = Msg.vs()
+	battle.SH = battle.VS.y - 520.0
+	battle.ME_POS = Vector2(battle.VS.x * 0.26, battle.SH * 0.84)
+	battle.FOE_POS = Vector2(battle.VS.x * 0.74, battle.SH * 0.84)
+	battle._build()
+	battle.fp = battle._new_mon_pup(battle.fm(), false, battle.FOE_POS)
+	battle.pp = battle._new_mon_pup(battle.pm(), false, battle.ME_POS)
+	battle.make_hud("e")
+	battle.make_hud("p")
+	Msg.place("battle")
+	await get_tree().create_timer(0.4).timeout
+	await capture("battle-new-layout")
+	for grade in [0, 3]:
+		var cap := await battle._capsule_throw(battle.fp, "ball", grade)
+		check(battle.fp.visible and battle.fp.scale == Vector2.ONE, "Resonance must leave creature visible at full scale")
+		check(battle.stage.find_children("*", "ProgressBar", true, false).is_empty(), "Resonance meter not cleaned up")
+		if is_instance_valid(cap): cap.queue_free()
+	check(battle.resonance_probability(1, 100, 100, 1.5, 1.0) > battle.resonance_probability(100, 100, 100, 1.0, 1.0), "Resonance calm/gear effect missing")
+	battle.queue_free()
+	Game.g.party = previous_party
+	Msg.place("field")
+	world.pad.visible = true
+	world.menu_btn.visible = true
+	await get_tree().process_frame
+	print("[regression] resonance success/failure, visible creature and licence payload")
 
 func test_restored_features(world: World) -> void:
 	var previous_seen := Guides.seen.duplicate(true)

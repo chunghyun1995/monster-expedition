@@ -112,7 +112,7 @@ function monCanvas(sid,back=false,shiny=false){const key=sid+(back?'b':'f')+(shi
     const dark=gb(x,y-1)?-.78:gb(x,y+1)?-.55:-.66;
     x2.fillStyle=nb===6||nb===20?'#14141e':shade(COL[nb],dark);x2.fillRect(x,y,1,1);}
   return MONC[key]=c;}
-/* 사람(붙잡은 트레이너·NPC): 필드 인물 그림을 몬스터 칸(48x48, 발이 아래)에 맞춰 그린다. 뒷모습은 위쪽 방향 */
+/* 사람(붙잡은 원정가·NPC): 필드 인물 그림을 몬스터 칸(48x48, 발이 아래)에 맞춰 그린다. 뒷모습은 위쪽 방향 */
 function humanCanvas(look,back){const[cv,cg]=mkCanvas(36,44);cg.setTransform(2,0,0,2,2,2);personRaw(cg,0,0,back?'up':'down',0,LOOK[look]||LOOK.man);refineSprite(cv,cg);
   const[c,g]=mkCanvas(48,48);g.drawImage(cv,6,4);return c;}
 /* 실루엣/하양 버전 */

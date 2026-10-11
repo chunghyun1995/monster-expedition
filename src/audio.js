@@ -124,43 +124,235 @@ function buildSong(S){const bars=S.bars.flatMap(b=>b.split(' ').length>1?[b]:[b]
     const DR={fast:'soft',rock:'soft',beat:'soft',march:'none',swing:'none',soft:'none'};const D={march:'k-h-s-h-k-k-s-h-',beat:'k-h-s-h-k-h-s-hh',rock:'k-hks-hkk-hks-hs',soft:'k---h---s---h---',none:'----------------',fast:'kh-hskh-khkhskhs',swing:'k--hs--hk--hs-hh'}[DR[S.drum||'beat']||S.drum||'beat'];
     for(let s=0;s<16;s++)if(D[s]!=='-')drum.push({t:bi*16+s,k:D[s]});});
   return{bpm:Math.round(S.bpm*(S.bpm>150?.78:.86)),steps,mel:mel.ev,melLen:Math.max(mel.len,1),bass,arp,drum,loop:S.loop!==false,lead:S.lead||.25};}
+// Revised 2026-10-11: new scores, no external song references.
 const SONGS={
- title:{bpm:132,bars:['C','G','Am','Em','F','C','Dm','G','C','E','Am','F','Dm','G','C','G'],bass:'march',arp:'up',drum:'march',
-  mel:'G4.2 C5.2 E5.4 G5.6 E5.2 F5.2 E5.2 D5.4 B4.4 G4.4 A4.2 C5.2 E5.4 A5.6 G5.2 G5.4 E5.4 B4.8 A4.2 C5.2 F5.4 A5.6 G5.2 F5.2 E5.2 C5.4 G5.8 F5.4 E5.2 D5.2 A4.4 D5.4 B4.4 D5.4 G5.8 E5.6 G5.2 C6.8 B5.4 G#5.4 E5.4 B4.4 C6.6 B5.2 A5.4 E5.4 F5.4 A5.4 C6.8 D6.4 C6.2 A5.2 F5.4 D5.4 B5.4 A5.2 G5.2 F5.4 D5.4 E5.4 G5.4 C6.8 D5.2 E5.2 F5.2 G5.2 B5.4 -.4'},
- town:{bpm:100,bars:['F','C','Dm','Bb','F','C','Bb C','F','Dm','Am','Bb','F','Gm','C','Bb C','F'],bass:'walk',arp:'up',drum:'soft',lead:.5,
-  mel:'A4.4 C5.4 F5.6 E5.2 D5.4 C5.4 G4.8 A4.4 D5.4 F5.6 E5.2 D5.4 C5.2 Bb4.2 F4.8 C5.4 F5.4 A5.6 G5.2 F5.4 E5.2 D5.2 C5.8 D5.4 Bb4.4 C5.4 E5.4 F5.12 -.4 F5.4 E5.2 D5.2 A5.8 G5.4 E5.4 C5.8 D5.4 F5.4 Bb5.6 A5.2 G5.4 F5.4 C5.8 Bb4.4 D5.4 G5.6 F5.2 E5.4 G5.4 C6.8 Bb5.4 A5.4 G5.4 E5.4 F5.12 -.4'},
- route:{bpm:144,bars:['G','C','D','G','Em','C','Am','D','G','C','Am','D','C','Bm','Am D','G'],bass:'drive',arp:'off',drum:'beat',
-  mel:'D5.2 G5.2 B5.2 D6.4 B5.2 G5.2 A5.2 E5.2 G5.2 C6.4 B5.2 A5.2 G5.4 F#5.2 A5.2 D6.4 C6.2 B5.2 A5.4 B5.6 A5.2 G5.8 G5.2 B5.2 E6.4 D6.2 B5.2 G5.4 E5.2 G5.2 C6.4 B5.2 G5.2 E5.4 A5.4 C6.4 B5.2 A5.2 G5.4 F#5.4 A5.4 D5.8 G5.4 D5.2 G5.2 B5.4 A5.4 G5.4 E5.2 G5.2 C6.8 A5.4 E5.2 A5.2 C6.4 B5.4 A5.4 F#5.2 A5.2 D6.8 E6.4 D6.2 C6.2 B5.4 A5.4 B5.4 A5.2 G5.2 F#5.4 D5.4 E5.4 G5.4 A5.4 C6.4 B5.12 -.4'},
- city:{bpm:120,bars:['D','Bm','G','A','D','Bm','Em A','D'],bass:'walk',arp:'off',drum:'swing',lead:.5,
-  mel:'F#5.2 A5.2 -.2 A5.2 B5.2 A5.2 F#5.4 D5.2 F#5.2 -.2 F#5.2 A5.2 F#5.2 D5.4 B4.2 D5.2 G5.4 F#5.2 E5.2 D5.4 E5.2 F#5.2 E5.2 C#5.2 A4.8 F#5.2 A5.2 D6.4 C#6.2 B5.2 A5.4 B5.2 A5.2 F#5.4 D5.4 F#5.4 G5.4 F#5.2 E5.2 A5.4 C#6.4 D6.12 -.4'},
- center:{bpm:108,bars:['C','Am','F','G','C','Am','Dm G','C'],bass:'pulse',arp:'pad',drum:'soft',lead:.5,
-  mel:'E5.2 G5.2 C6.2 G5.2 E5.2 G5.2 C6.4 E5.2 A5.2 C6.2 A5.2 E5.2 A5.2 C6.4 F5.2 A5.2 C6.2 A5.2 D6.4 C6.4 B5.4 G5.4 D5.8 G5.2 E5.2 G5.2 C6.2 E6.4 D6.4 C6.2 A5.2 E5.2 A5.2 C6.4 B5.4 A5.4 F5.4 G5.4 B5.4 C6.12 -.4'},
- gym:{bpm:140,bars:['Am','F','G','Em','Am','F','G','E'],bass:'drive',arp:'trem',drum:'rock',
-  mel:'A4.2 A4.2 E5.2 A4.2 C5.4 B4.4 A4.2 A4.2 F5.2 A4.2 E5.4 D5.4 G4.2 G4.2 D5.2 G4.2 B4.4 D5.4 E5.6 D5.2 B4.8 C5.2 E5.2 A5.4 G5.2 E5.2 C5.4 F5.2 A5.2 C6.4 B5.2 A5.2 F5.4 G5.2 B5.2 D6.4 C6.2 B5.2 G5.4 G#5.4 B5.4 E6.8'},
- wild:{bpm:168,bars:['Em','C','D','B','Em','C','Am B','Em'],bass:'drive',arp:'fast',drum:'fast',
-  mel:'E5.2 -.2 E5.2 G5.2 B5.2 -.2 A5.2 G5.2 E5.2 -.2 E5.2 G5.2 C6.4 B5.4 F#5.2 -.2 F#5.2 A5.2 D6.2 -.2 C6.2 A5.2 B5.6 A5.2 F#5.4 D#5.4 G5.2 F#5.2 E5.2 B4.2 E5.4 G5.4 G5.2 A5.2 G5.2 E5.2 C5.4 E5.4 A5.4 C6.4 B5.4 D#6.4 E6.8 B5.4 G5.4'},
- trainer:{bpm:176,bars:['Dm','Bb','C','A','Dm','Bb','Gm A','Dm'],bass:'drive',arp:'fast',drum:'fast',
-  mel:'D5.2 F5.2 A5.2 D6.2 C6.2 A5.2 F5.4 D5.2 F5.2 Bb5.2 D6.2 C6.2 Bb5.2 F5.4 E5.2 G5.2 C6.2 E6.2 D6.2 C6.2 G5.4 C#6.6 A5.2 E5.4 C#5.4 F5.4 E5.2 D5.2 A5.4 D6.4 D6.4 C6.2 Bb5.2 F5.4 Bb5.4 G5.4 Bb5.4 A5.4 C#6.4 D6.8 A5.4 F5.4'},
- leader:{bpm:186,tr:2,bars:['Dm','Bb','C','A','Dm','Bb','Gm A','Dm'],bass:'drive',arp:'trem',drum:'rock',
-  mel:'D5.2 F5.2 A5.2 D6.2 C6.2 A5.2 F5.4 D5.2 F5.2 Bb5.2 D6.2 C6.2 Bb5.2 F5.4 E5.2 G5.2 C6.2 E6.2 D6.2 C6.2 G5.4 C#6.6 A5.2 E5.4 C#5.4 F5.4 E5.2 D5.2 A5.4 D6.4 D6.4 C6.2 Bb5.2 F5.4 Bb5.4 G5.4 Bb5.4 A5.4 C#6.4 D6.8 A5.4 F5.4'},
- rival:{bpm:150,bars:['C','Bb','F','G','C','Bb','F','G'],bass:'drive',arp:'off',drum:'beat',
-  mel:'C5.2 -.2 C5.2 E5.2 G5.2 Bb5.2 A5.2 G5.2 F5.2 -.2 F5.2 D5.2 Bb4.4 D5.4 A5.2 -.2 A5.2 C6.2 F6.4 E6.4 D6.4 B5.4 G5.4 F5.2 D5.2 C5.2 -.2 C5.2 E5.2 G5.2 Bb5.2 A5.2 G5.2 F5.2 -.2 F5.2 A5.2 Bb5.4 D6.4 C6.4 A5.4 F5.4 A5.4 G5.12 -.4'},
- victory:{bpm:132,bars:['G','C','D','G'],bass:'march',arp:'up',drum:'march',
-  mel:'D5.2 G5.2 B5.2 D6.2 B5.4 D6.4 E6.4 C6.4 G5.4 E5.4 F#5.2 A5.2 D6.2 F#6.2 E6.4 D6.4 G6.8 D6.4 B5.4'},
- evolve:{bpm:120,bars:['Am','F','C','G'],bass:'slow',arp:'pad',drum:'none',lead:.5,
-  mel:'A5.2 E5.2 C5.2 E5.2 A5.2 E5.2 C5.2 E5.2 A5.2 F5.2 C5.2 F5.2 A5.2 F5.2 C5.2 F5.2 G5.2 E5.2 C5.2 E5.2 G5.2 E5.2 C5.2 E5.2 G5.2 D5.2 B4.2 D5.2 G5.2 D5.2 B4.2 D5.2'},
- intro:{bpm:96,bars:['C','Am','F','G','C','Am','F','G'],bass:'slow',arp:'up',drum:'soft',lead:.5,
-  mel:'E5.6 D5.2 C5.4 G4.4 A4.6 B4.2 C5.4 E5.4 F5.6 E5.2 D5.4 C5.4 D5.12 -.4 E5.6 G5.2 C6.4 B5.4 A5.6 G5.2 E5.4 C5.4 F5.4 A5.4 G5.4 F5.4 G5.12 -.4'},
+ "title": {
+  "bpm": 118,
+  "bars": [
+   "E",
+   "Bm",
+   "A",
+   "F#m"
+  ],
+  "bass": "pulse",
+  "arp": "off",
+  "drum": "soft",
+  "mel": "F#5.3 A5.1 B5.4 -.2 E5.2 G#5.4 D6.2 B5.3 F#5.1 A5.4 E5.2 -.4 C#6.3 E6.1 B5.2 A5.2 F#5.4 E5.4 G#5.2 B5.2 F#5.3 E5.1 D5.2 E5.6"
+ },
+ "town": {
+  "bpm": 103,
+  "bars": [
+   "D",
+   "G",
+   "Bm",
+   "A"
+  ],
+  "bass": "pulse",
+  "arp": "off",
+  "drum": "soft",
+  "mel": "A4.3 D5.1 F#5.2 E5.2 -.4 B4.4 G5.2 D5.3 B4.1 E5.4 F#5.2 A5.4 F#5.3 B5.1 A5.2 D5.2 E5.4 F#5.4 B4.2 E5.2 C#5.3 A4.1 D5.2 E5.6"
+ },
+ "route": {
+  "bpm": 127,
+  "bars": [
+   "Am",
+   "D",
+   "G",
+   "Em"
+  ],
+  "bass": "pulse",
+  "arp": "off",
+  "drum": "soft",
+  "mel": "E5.2 A5.3 B5.1 D6.4 G5.2 -.4 F#5.3 E5.1 A5.2 D5.2 B5.4 A5.4 G5.3 B5.1 D6.2 E6.2 C6.4 B5.4 A5.2 F#5.2 B5.3 E5.1 G5.2 E5.6"
+ },
+ "city": {
+  "bpm": 109,
+  "bars": [
+   "Bb",
+   "Gm",
+   "Eb",
+   "F"
+  ],
+  "bass": "pulse",
+  "arp": "off",
+  "drum": "soft",
+  "mel": "D5.3 F5.1 A5.4 -.2 C6.2 Bb5.4 G5.2 D5.3 F5.1 Bb5.4 A5.2 G5.4 Eb5.3 G5.1 D6.2 C6.2 Bb5.4 F5.4 A5.2 C6.2 G5.3 F5.1 Eb5.2 F5.6"
+ },
+ "center": {
+  "bpm": 89,
+  "bars": [
+   "G",
+   "Em",
+   "C",
+   "D"
+  ],
+  "bass": "slow",
+  "arp": "pad",
+  "drum": "none",
+  "mel": "B4.3 E5.1 A5.4 -.2 G5.2 D5.4 F#5.2 G5.3 B5.1 E5.4 D5.2 -.4 E5.3 A5.1 G5.2 C5.2 D5.4 E5.4 F#5.2 B4.2 E5.3 D5.1 A4.2 G4.6"
+ },
+ "gym": {
+  "bpm": 116,
+  "bars": [
+   "F#m",
+   "D",
+   "E",
+   "Bm"
+  ],
+  "bass": "pulse",
+  "arp": "off",
+  "drum": "soft",
+  "mel": "C#5.3 F#5.1 A5.2 B5.2 -.4 E5.4 D6.2 A5.3 F#5.1 E5.4 G#5.2 A5.4 B5.3 E6.1 G#5.2 F#5.2 D5.4 E5.4 F#5.2 A5.2 C#5.3 B4.1 E5.2 F#5.6"
+ },
+ "wild": {
+  "bpm": 159,
+  "bars": [
+   "Em",
+   "C",
+   "Am",
+   "Bm"
+  ],
+  "bass": "pulse",
+  "arp": "off",
+  "drum": "soft",
+  "mel": "B5.1 E5.3 G5.2 A5.2 F#5.1 D5.3 E5.4 C6.2 G5.1 E5.3 A5.2 B5.2 D6.2 G5.4 A5.3 E5.1 B5.2 C6.2 G5.4 F#5.4 D6.2 B5.2 F#5.3 A5.1 E5.2 B5.6"
+ },
+ "trainer": {
+  "bpm": 151,
+  "bars": [
+   "Bm",
+   "G",
+   "D",
+   "A"
+  ],
+  "bass": "pulse",
+  "arp": "off",
+  "drum": "soft",
+  "mel": "F#5.3 B5.1 D6.2 E6.2 A5.4 G5.4 B5.2 G5.3 E5.1 F#5.4 D6.2 B5.4 A5.3 D6.1 F#6.2 E6.2 B5.4 A5.4 E6.2 C#6.2 G5.3 A5.1 F#5.2 B5.6"
+ },
+ "leader": {
+  "bpm": 166,
+  "bars": [
+   "Cm",
+   "Ab",
+   "Fm",
+   "Bb"
+  ],
+  "bass": "pulse",
+  "arp": "off",
+  "drum": "soft",
+  "mel": "G5.3 C6.1 Eb6.2 D6.2 Bb5.4 Ab5.4 C6.2 Ab5.3 F5.1 G5.4 Eb6.2 C6.4 F6.3 C6.1 G5.2 Ab5.2 Eb5.4 F5.4 D6.2 Bb5.2 F5.3 G5.1 Ab5.2 C6.6"
+ },
+ "rival": {
+  "bpm": 137,
+  "bars": [
+   "A",
+   "D",
+   "Bm",
+   "E"
+  ],
+  "bass": "pulse",
+  "arp": "off",
+  "drum": "soft",
+  "mel": "C#5.3 A5.1 F#5.2 E5.2 -.4 B5.4 A5.2 D6.3 F#5.1 G5.4 E5.2 D5.4 B5.3 F#5.1 A5.2 C#6.2 E6.4 D6.4 G#5.2 E5.2 B5.3 F#5.1 A5.2 E5.6"
+ },
+ "victory": {
+  "bpm": 121,
+  "bars": [
+   "F",
+   "Bb",
+   "Dm",
+   "C"
+  ],
+  "bass": "pulse",
+  "arp": "off",
+  "drum": "soft",
+  "mel": "A5.3 D6.1 C6.4 F5.2 G5.2 E5.4 D6.2 F6.3 C6.1 Bb5.4 A5.2 F5.4 A5.3 E6.1 D6.2 C6.2 F6.4 E6.4 G5.2 C6.2 F5.3 E5.1 A5.2 F5.6"
+ },
+ "evolve": {
+  "bpm": 92,
+  "bars": [
+   "Dm",
+   "G",
+   "Bb",
+   "A"
+  ],
+  "bass": "slow",
+  "arp": "off",
+  "drum": "none",
+  "mel": "A5.3 D6.1 F6.2 E6.2 B5.4 A5.4 G5.2 B5.3 D6.1 E6.4 F6.2 D6.4 F5.3 Bb5.1 A5.2 E6.2 D6.4 C6.4 E6.2 C#6.2 G5.3 A5.1 B5.2 D6.6"
+ },
+ "intro": {
+  "bpm": 94,
+  "bars": [
+   "F#m",
+   "E",
+   "D",
+   "A"
+  ],
+  "bass": "slow",
+  "arp": "pad",
+  "drum": "none",
+  "mel": "C#5.3 E5.1 B5.4 -.2 A5.2 F#5.4 G#5.2 B5.3 D6.1 A5.4 E5.2 -.4 F#5.3 A5.1 E6.2 D6.2 B5.4 A5.4 C#6.2 E6.2 B5.3 A5.1 F#5.2 E5.6"
+ }
 };
 const JINGLES={
- heal:{bpm:120,mel:'C5.2 E5.2 G5.2 C6.4 G5.2 E5.2 C6.8',chords:['C']},
- item:{bpm:150,mel:'G5.2 G5.2 G5.2 C6.6 -.2 E6.2 D6.2 C6.2 G6.8',chords:['C']},
- key:{bpm:140,mel:'C5.2 E5.2 G5.2 C6.4 B5.2 C6.2 E6.4 D6.4 C6.8',chords:['C']},
- level:{bpm:160,mel:'C6.1 E6.1 G6.1 C7.6',chords:['C']},
- caught:{bpm:140,mel:'G5.2 B5.2 D6.2 G6.6 F#6.2 G6.2 A6.2 B6.8',chords:['G']},
- badge:{bpm:126,mel:'C5.2 E5.2 G5.2 C6.4 G5.2 C6.2 E6.2 G6.4 E6.2 G6.2 C7.10',chords:['C']},
- evolved:{bpm:126,mel:'G5.2 C6.2 E6.2 G6.6 E6.2 F6.2 D6.2 C6.10',chords:['C']},
- save:{bpm:150,mel:'E6.2 C6.2 G5.2 C6.2 E6.2 G6.8',chords:['C']},
+ "heal": {
+  "bpm": 98,
+  "mel": "E5.3 A5.2 F#5.1 -.2 C#6.4 B5.3 D6.5",
+  "chords": [
+   "A"
+  ]
+ },
+ "item": {
+  "bpm": 123,
+  "mel": "A5.3 D6.1 F#5.2 B5.4 -.2 E6.6",
+  "chords": [
+   "D"
+  ]
+ },
+ "key": {
+  "bpm": 111,
+  "mel": "F#5.3 B5.1 E6.4 C#6.2 A5.2 D6.6",
+  "chords": [
+   "Bm"
+  ]
+ },
+ "level": {
+  "bpm": 136,
+  "mel": "D6.3 A5.1 C#6.2 E6.3 B5.1 F#6.6",
+  "chords": [
+   "A"
+  ]
+ },
+ "caught": {
+  "bpm": 107,
+  "mel": "B5.3 E6.1 A5.2 F#5.2 C#6.4 D6.2 E6.6",
+  "chords": [
+   "E"
+  ]
+ },
+ "badge": {
+  "bpm": 117,
+  "mel": "F5.3 Bb5.1 D6.2 C6.4 G5.2 A5.3 F6.5",
+  "chords": [
+   "Bb"
+  ]
+ },
+ "evolved": {
+  "bpm": 101,
+  "mel": "A5.3 D6.1 B5.2 G5.4 C#6.2 E6.3 D6.5",
+  "chords": [
+   "D"
+  ]
+ },
+ "save": {
+  "bpm": 104,
+  "mel": "F#5.3 B5.1 A5.2 D6.2 E6.3 C#6.5",
+  "chords": [
+   "Bm"
+  ]
+ }
 };
 const Music={cur:null,want:null,song:null,pos:0,next:0,timer:null,nodes:[],jingling:false,
   play(name,force){this.want=name;if(!AC)return;if(this.cur===name&&!force&&this.timer)return;this.stop(true);this.cur=name;if(!name||this.jingling)return;

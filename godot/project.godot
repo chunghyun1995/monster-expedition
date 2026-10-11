@@ -1,4 +1,4 @@
-; 몬스터 원정대 — Godot 4.7 판 (모션 미리보기)
+; 벨로리아 생태기록 — Godot 4.7 판 (모션 미리보기)
 ; 기존 웹 게임(index.html)의 데이터와 2.5D 그림을 그대로 쓰고, 메시 변형·파티클·트윈으로 동작을 새로 만든다.
 
 config_version=5
@@ -7,7 +7,9 @@ config_version=5
 
 config/quit_on_go_back=false
 
-config/name="몬스터 원정대"
+config/name="벨로리아 생태기록"
+config/use_custom_user_dir=true
+config/custom_user_dir_name="Godot/app_userdata/몬스터 원정대"
 config/description="2.5D 몬스터 RPG — Godot 모션 미리보기"
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
