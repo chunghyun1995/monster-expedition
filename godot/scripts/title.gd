@@ -70,7 +70,7 @@ func _menu() -> void:
 	var sv := Game.read_save()
 	while true:
 		var btns: Array = [
-			{"text": ("이어하기\n%s · 관측 인증 %d · 생태기록 %d · %s" % [sv.name, _badges(sv), sv.caught.size(), Game.fmt_time(float(sv.get("play_ms", 0)))]) if not sv.is_empty() else "이어하기\n저장된 일지 없음",
+			{"text": ("이어하기\n%s · 복구 기록 %d · 생태기록 %d · %s" % [sv.name, _badges(sv), sv.caught.size(), Game.fmt_time(float(sv.get("play_ms", 0)))]) if not sv.is_empty() else "이어하기\n저장된 일지 없음",
 				"rect": Rect2(60, vs.y - 520, vs.x - 120, 130), "color": Color(0.3, 0.5, 0.8), "disabled": sv.is_empty(), "size": 30},
 			{"text": "처음부터 시작", "rect": Rect2(60, vs.y - 375, vs.x - 120, 100), "color": Color(0.86, 0.36, 0.42), "size": 34},
 			{"text": "설정", "rect": Rect2(60, vs.y - 260, vs.x - 120, 90), "color": Color(0.42, 0.45, 0.52), "size": 30},
@@ -161,7 +161,7 @@ func _import_code(sv: Dictionary) -> bool:
 	layer.queue_free()
 	if result.is_empty():
 		return false
-	var info := "%s · 관측 인증 %d · 생태기록 %d · %s" % [result.name, _badges(result), result.caught.size(), Game.fmt_time(float(result.play_ms))]
+	var info := "%s · 복구 기록 %d · 생태기록 %d · %s" % [result.name, _badges(result), result.caught.size(), Game.fmt_time(float(result.play_ms))]
 	var q := "%s\n이 모험을 불러올까요?" % info
 	if not sv.is_empty():
 		q = "%s\n이 기기의 현장 일지(%s)는 코드의 내용으로 바뀌어요. 불러올까요?" % [info, sv.name]

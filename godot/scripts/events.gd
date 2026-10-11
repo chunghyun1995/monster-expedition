@@ -281,19 +281,19 @@ func trig_city_0() -> void:
 	var g := w.npc_by_id("c_guard")
 	await g.face("down")
 	await w.emote(g, "!")
-	await say("잠깐! 이 앞 이끼숲길은 아주 위험해.", "경비원")
-	await say("돌기둥마을 관측소의 관측 인증을 얻은 원정가만 지나갈 수 있단다.", "경비원")
+	await say("잠깐! 이끼숲길은 폭풍으로 지반이 약해져 안전 점검 중이야.", "경비원")
+	await say("지반 센서가 복구되어 길의 안전이 확인되면 모두에게 개방할 거야. 현장 책임자 단단에게 복구 상황을 물어보렴.", "경비원")
 	await w.walk_player(["left"])
 
 
 func talk_granny(_n: NPC) -> void:
 	var o := "할머니"
 	if not F("badge0"):
-		await say("젊은이, 관측소에 도전하려고? 현장 책임자 단단은 내 손자란다.", o)
-		await say("관측 인증을 얻어 오면 좋은 걸 주마. 호호.", o)
+		await say("젊은이, 지반 센서 복구를 도우러 왔니? 현장 책임자 단단은 내 손자란다.", o)
+		await say("센서 복구를 도와 길이 다시 열리면 보급품을 나눠 주마. 호호.", o)
 		return
 	if not F("gift2"):
-		await say("어머나, 단단을 이겼구나! 약속대로 이걸 주마.", o)
+		await say("어머나, 이끼숲길 안전 점검이 끝났구나! 복구를 도와줘서 고맙다. 이 보급품을 가져가렴.", o)
 		await w.give_item("great", 3)
 		Game.set_flag("gift2")
 		return
@@ -303,7 +303,7 @@ func talk_granny(_n: NPC) -> void:
 func statue(i: int) -> void:
 	var L: Array = STATUES[i]
 	await say("%s · %s" % [L[0], L[1]])
-	await say("인증 원정가: %s" % nm() if int(Game.g.badges[i]) else "인증 원정가: 아직 없음")
+	await say("복구 지원: %s" % nm() if int(Game.g.badges[i]) else "복구 지원: 아직 없음")
 
 
 func badge(i: int, leader: String, badge_name: String) -> void:
@@ -312,7 +312,7 @@ func badge(i: int, leader: String, badge_name: String) -> void:
 	Game.set_flag("station_online%d" % i)
 	w.sparkle_player()
 	await Menus.badge_fx(w, i)
-	await Msg.notice("관측 인증 · %s  (현장 책임자 %s)" % [badge_name, leader])
+	await Msg.notice("안전 점검 완료 · %s  (현장 책임자 %s)" % [badge_name, leader])
 
 
 func talk_leader1(_n: NPC) -> void:
@@ -327,10 +327,10 @@ func talk_leader1(_n: NPC) -> void:
 		"lose": "훌륭하다... 너의 의지는 바위보다 단단하구나!"})
 	if r != "win":
 		return
-	await say("기준값이 안정됐다. 지반 관측소를 다시 연결하고 네 현장 기록을 인증하마.", o)
-	await badge(0, "단단", "반석 관측 인증")
-	await say("반석 관측 인증은 원정가 카드에서 볼 수 있다. 이제 동쪽 이끼숲길로 갈 수 있을 거다.", o)
-	await say("물결마을의 하라는 나보다 훨씬 까다로운 상대다. 생물을 잘 키워 두도록!", o)
+	await say("기준값이 안정됐다. 지반 센서를 복구했고 이끼숲길의 안전 점검도 마쳤다. 경비원에게 길을 개방하도록 연락하마.", o)
+	await badge(0, "단단", "지반 센서 복구")
+	await say("지반 센서 복구 기록을 현장 일지에 남겼다. 이제 동쪽 이끼숲길은 누구나 지나갈 수 있다.", o)
+	await say("물결마을의 하라는 수변 센서를 점검 중이다. 동료와 함께 다음 현장도 도와주겠나?", o)
 
 
 # =====================================================================
@@ -408,9 +408,9 @@ func talk_leader2(_n: NPC) -> void:
 		"lose": "멋져... 너희의 물결이 내 물결보다 더 높았어."})
 	if r != "win":
 		return
-	await say("수변 센서가 다시 신호를 보내고 있어. 이번 관측 기록을 인증할게.", o)
-	await badge(1, "하라", "물결 관측 인증")
-	await say("두 개의 관측 인증을 모은 너는 이제 어엿한 원정대원이야. 축하해!", o)
+	await say("수변 센서가 정상 신호를 보내고 있어. 수위가 안정되어 잿빛 화산길의 안전 점검도 끝났어. 경비원에게 개방을 요청할게.", o)
+	await badge(1, "하라", "수변 센서 복구")
+	await say("두 지역의 센서가 다시 연결됐어. 주민들이 안심하고 오갈 수 있게 도와줘서 고마워!", o)
 	await say("남쪽에서 먹구름상회가 관측 장비를 가져가고 있대. 기상 자료를 독점하려는 것 같아.", o)
 	await say("마을 남쪽 잿빛 화산길은 이제 지나갈 수 있을 거야. 붉은재마을 현장 책임자 화련에게도 소식을 전해 주겠니?", o)
 
@@ -455,8 +455,8 @@ func talk_leader3(_n: NPC) -> void:
 		"lose": "크하하! 완전히 불타 버렸어! 네 열정이 더 뜨거웠다!"})
 	if r != "win":
 		return
-	await say("과열 구간의 값이 보정됐어. 열원 관측소 복구 기록을 전송할게.", o)
-	await badge(2, "화련", "불꽃 관측 인증")
+	await say("과열 구간이 안정됐어. 열원 센서 복구와 갈대 들길 안전 점검을 마쳤으니 경비원에게 개방을 요청할게.", o)
+	await badge(2, "화련", "열원 센서 복구")
 	await say("이제 동쪽 갈대 들길로 갈 수 있을 거야. 그 너머 철탑마을 발전소를 먹구름상회가 점령했다는 소문이 있다.", o)
 	await say("도시 전체가 정전이라 관측소도 문을 닫았다더군. 네가 가서 해결해 주지 않겠어?", o)
 
@@ -524,8 +524,8 @@ func talk_leader4(_n: NPC) -> void:
 		"lose": "와... 번개보다 빨랐어!"})
 	if r != "win":
 		return
-	await say("통신 신호가 선명해졌어. 철탑마을 관측소 복구 완료!", o)
-	await badge(3, "찌나", "번개 관측 인증")
+	await say("통신 신호가 선명해졌어. 구름 능선길의 기상 정보를 확인했고 안전 점검도 끝났어. 경비원에게 길을 열도록 연락할게.", o)
+	await badge(3, "찌나", "통신 센서 복구")
 	await say("이제 북쪽 구름 능선길을 지나갈 수 있어. 산 정상의 하늘봉마을에 마지막 현장 책임자 하늬가 기다리고 있어!", o)
 
 
@@ -560,9 +560,9 @@ func talk_leader5(_n: NPC) -> void:
 		"lose": "...아름다운 비행이었어. 너희는 진짜 하늘을 날았구나."})
 	if r != "win":
 		return
-	await say("고도 기록도 정상으로 돌아왔어. 다섯 관측소가 다시 연결됐구나!", o)
-	await badge(4, "하늬", "창공 관측 인증")
-	await say("다섯 개의 관측 인증을 모두 모았구나! 이제 하늘봉 정상에 오를 수 있어.", o)
+	await say("고도 센서가 정상으로 돌아왔어. 강풍이 잦아들어 정상 진입로의 안전 점검도 끝났어. 이제 통제를 해제할게.", o)
+	await badge(4, "하늬", "고도 센서 복구")
+	await say("다섯 관측소가 다시 연결됐어. 하늘봉 정상으로 가는 길이 모두에게 열렸어.", o)
 	await say("정상에서 누군가 너를 기다리고 있는 것 같던데?", o)
 
 
@@ -571,7 +571,7 @@ func talk_t5_summit(_n: NPC) -> void:
 		return
 	var r := w.npc_by_id("t5_summit")
 	Sound.music("rival")
-	await say("왔구나, %s. 나도 다섯 번째 관측 인증을 따고 여기서 기다리고 있었어." % nm(), R)
+	await say("왔구나, %s. 정상 진입로가 안전해졌다는 연락을 받고 여기서 기다리고 있었어." % nm(), R)
 	await say("폭풍 이후 흩어진 기록을 우리가 함께 모았네. 마지막으로 동료들의 대응 기록을 맞춰 보자.", R)
 	await say("이곳의 고도 자료와 각 지역의 신호를 함께 전송하면 관측망 복구가 끝나!", R)
 	var res := await w.battle({"kind": "trainer", "cls": "rival", "name": R, "team": Game.rival_team(5), "look": "rival", "bg": "grass",

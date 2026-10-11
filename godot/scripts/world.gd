@@ -81,6 +81,7 @@ func enter_map(id: String, at: Vector2i, d: String, opts := {}) -> void:
 	grass.clear()
 	heal_balls.clear()
 	m = Data.map(id)
+	Game.update_recovery(id)
 	rows = m.rows
 	H = rows.size()
 	W = rows[0].length()
@@ -124,6 +125,9 @@ func enter_map(id: String, at: Vector2i, d: String, opts := {}) -> void:
 	refresh_npcs()
 	player = Player.new()
 	ents.add_child(player)
+	# 축소 이전 관측소 안에 저장한 일지는 새 입구의 안전한 위치로 옮긴다.
+	if m.has("entry") and (not passable(at, d) or npc_at(at) != null):
+		at = Vector2i(int(m.entry[0]), int(m.entry[1]))
 	P = at
 	player.position = _pos(at)
 	player.show_frame(d, "idle", true)
@@ -979,7 +983,7 @@ func battle(o: Dictionary) -> String:
 	Msg.place("field")
 	if r == "lose" and not o.get("no_lose", false):
 		Game.heal_party()
-		var hp: Dictionary = Game.g.heal
+		var hp: Dictionary = Game.recovery_point()
 		enter_map(str(hp.map), Vector2i(int(hp.x), int(hp.y)), "up", {"quiet": true})
 		await Game.fade_to(0.0, 0.4)
 		pad.visible = true
@@ -990,7 +994,7 @@ func battle(o: Dictionary) -> String:
 			else:
 				await say("%s! 무사했구나... 푹 쉬었으니 이제 괜찮을 거야." % Game.g.name, "엄마")
 		else:
-			await say("치료가 끝났어요. 모두 기운을 되찾았어요.", "캠프 의무원")
+			await say("치료가 끝났어요. 모두 기운을 되찾았어요.", "병원 의무원" if str(hp.map).begins_with("center") else "한결 조사관")
 		await say("생물들이 기운을 되찾았다! 무리하지 말고 다시 원정을 떠나자.")
 		busy = was_busy
 		return r

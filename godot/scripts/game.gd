@@ -1,6 +1,6 @@
 extends Node
 ## 게임 상태(리포트)와 생물 계산. 기존 웹 게임(mon.js·world.js·menus.js)과 같은 공식·같은 데이터 구조.
-## g: 저장되는 모든 것 (이름·돈·파티·보관함·가방·깃발·생태기록·관측 인증·회복 지점·위치 …)
+## g: 저장되는 모든 것 (이름·돈·파티·보관함·가방·깃발·생태기록·복구 기록·회복 지점·위치 …)
 
 const SAVE_PATH := "user://report.save"
 const SETTINGS_PATH := "user://settings.cfg"
@@ -99,8 +99,54 @@ func read_save() -> Dictionary:
 
 func load_save(s: Dictionary) -> void:
 	g = s
+	update_recovery(str(g.map))
 	for m in g.party + g.box:
 		m.hp = mini(int(m.hp), max_hp(m))
+
+
+## 마을 도착만으로 병원 복귀를 등록한다. 기존 일지의 집/연구소 지점도 보정한다.
+func update_recovery(map_id: String) -> void:
+	if map_id in ["towerLobby", "towerFloor"]:
+		# 어디서든 탑에 빠르게 다녀올 수 있다. 방문하지 않은 하늘봉 병원을 등록하지 않는다.
+		if _valid_hospital(str(g.get("hospital_map", ""))):
+			return
+		var back: Dictionary = g.get("towerRet", {})
+		if not back.is_empty() and str(back.map) not in ["towerLobby", "towerFloor"]:
+			map_id = str(back.map)
+	var mp: Dictionary = Data.map(map_id)
+	var hospital := str(mp.get("hospital", ""))
+	if hospital == "":
+		return
+	# 길에서는 마지막으로 방문한 마을을 유지한다. 옛 일지에는 지역 병원을 사용한다.
+	if map_id.begins_with("route") and _valid_hospital(str(g.get("hospital_map", ""))):
+		hospital = str(g.hospital_map)
+	if _valid_hospital(hospital):
+		g.hospital_map = hospital
+		g.heal = _hospital_point(hospital)
+
+
+func _valid_hospital(map_id: String) -> bool:
+	return Data.D.maps.has(map_id) and Data.map(map_id).get("hospital", "") == map_id
+
+
+func _hospital_point(map_id: String) -> Dictionary:
+	var xy: Array = Data.map(map_id).recovery
+	return {"map": map_id, "x": int(xy[0]), "y": int(xy[1])}
+
+
+func recovery_point() -> Dictionary:
+	update_recovery(str(g.map))
+	var hospital := str(g.get("hospital_map", ""))
+	if not _valid_hospital(hospital):
+		# 옛 일지가 초기 마을에 있어도 복구 기록을 이미 얻었다면 병원으로 복귀한다.
+		for i in range(4, -1, -1):
+			if int(g.badges[i]):
+				hospital = "center%d" % (i + 1)
+				break
+	if _valid_hospital(hospital):
+		g.hospital_map = hospital
+		g.heal = _hospital_point(hospital)
+	return g.heal.duplicate()
 
 
 func _load_settings() -> void:
