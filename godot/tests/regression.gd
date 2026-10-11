@@ -185,7 +185,7 @@ func test_restored_features(world: World) -> void:
 	await get_tree().process_frame
 	for item in ["ball","dex"]:
 		var rows := [{"text":Data.D.items[item].n}]
-		Msg.list(rows,{"title":"가방 · 중요한 물건 · 3,186원","buttons":[["◀",-10],["중요한 물건",-12],["▶",-11],["닫기",-1]],"button_weights":[1.0,3.0,1.0,1.4],"on_move":func(_i: int) -> void: Menus._item_preview(item)})
+		Msg.list(rows,{"title":"가방 · 조사 도구 · 3,186원","buttons":[["◀",-10],["조사 도구",-12],["▶",-11],["닫기",-1]],"button_weights":[1.0,3.0,1.0,1.4],"on_move":func(_i: int) -> void: Menus._item_preview(item)})
 		await get_tree().process_frame
 		await get_tree().process_frame
 		var labels: Array = Msg._picker.get_meta("preview").find_children("WrappedDescription","Label",true,false)
@@ -210,8 +210,8 @@ func test_restored_features(world: World) -> void:
 	fighter.moves[0].pp = 0
 	check(Auto.move_index(fighter,foe) == "struggle", "Auto battle exhaustion fallback missing")
 	Auto.mode = "climb"
-	check(Auto.answer("교체하겠습니까?",["예","아니오"]) == 1, "Auto must preserve existing party")
-	check(Auto.answer("몬스터를 합성할까요?",["예","아니오"]) == null, "Auto must not approve destructive unknown choices")
+	check(Auto.answer("동료를 바꿀까?",["예","아니오"]) == 1, "Auto must preserve existing party")
+	check(Auto.answer("생물을 합성할까요?",["예","아니오"]) == null, "Auto must not approve destructive unknown choices")
 	Auto.stop()
 	check(not Auto.talk_enabled(), "Stopping auto must restore manual dialogue")
 	check(not Game.auto_text, "Production automation must not enable development bypass")

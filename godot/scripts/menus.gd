@@ -2,12 +2,12 @@ extends Node
 ## 메뉴와 시설: 기존 menus.js · battle.js(진화·레벨업)·world.js(엔딩)를 옮긴 것.
 
 const BOX_MIN := 10
-const STAGE_N := ["기본", "1진화", "최종진화"]
+const STAGE_N := ["기본", "1단계", "완전체"]
 const BADGES := [["반석 관측 인증", "단단", Color(0.62, 0.55, 0.45)], ["물결 관측 인증", "하라", Color(0.35, 0.6, 0.95)],
 	["불꽃 관측 인증", "화련", Color(0.95, 0.42, 0.22)], ["번개 관측 인증", "찌나", Color(0.98, 0.8, 0.2)], ["창공 관측 인증", "하늬", Color(0.55, 0.82, 1.0)]]
-const REGION := {"town": ["새싹마을", 0.12, 0.85], "route1": ["1번 도로", 0.12, 0.55], "city": ["바위시티", 0.12, 0.22], "route2": ["2번 도로", 0.33, 0.22],
-	"town2": ["물결마을", 0.55, 0.22], "route3": ["3번 도로", 0.55, 0.55], "town3": ["붉은재마을", 0.55, 0.85], "route4": ["4번 도로", 0.72, 0.85],
-	"town4": ["번개도시", 0.88, 0.85], "route5": ["5번 도로", 0.88, 0.5], "town5": ["하늘봉마을", 0.88, 0.16]}
+const REGION := {"town": ["새싹마을", 0.12, 0.85], "route1": ["솔바람길", 0.12, 0.55], "city": ["돌기둥마을", 0.12, 0.22], "route2": ["이끼숲길", 0.33, 0.22],
+	"town2": ["물결마을", 0.55, 0.22], "route3": ["잿빛 화산길", 0.55, 0.55], "town3": ["붉은재마을", 0.55, 0.85], "route4": ["갈대 들길", 0.72, 0.85],
+	"town4": ["철탑마을", 0.88, 0.85], "route5": ["구름 능선길", 0.88, 0.5], "town5": ["하늘봉마을", 0.88, 0.16]}
 const REGION_PATH := ["town", "city", "town2", "town3", "town4", "town5"]
 const PRIVACY_URL := "https://chunghyun1995.github.io/monster-expedition/privacy.html"
 
@@ -30,7 +30,7 @@ func hp_text(m: Dictionary) -> String:
 	return "%d/%d" % [int(m.hp), Game.max_hp(m)]
 
 
-## 미리보기 칸에 몬스터 정보 (그림이 숨 쉬는 퍼펫)
+## 미리보기 칸에 생물 정보 (그림이 숨 쉬는 퍼펫)
 func mon_preview(m: Dictionary, title := "") -> void:
 	var p := Msg.preview()
 	if p == null:
@@ -53,10 +53,10 @@ func mon_preview(m: Dictionary, title := "") -> void:
 	var x0 := 300.0
 	UI.label(pn, "%s%s" % [Game.name_of(m), " ★" if m.get("shiny", false) else ""], Vector2(x0, 18), 34)
 	UI.label(pn, "Lv%d · %s" % [int(m.lv), "/".join(types)], Vector2(x0, 66), 26, Color(0.3, 0.35, 0.45))
-	UI.label(pn, "HP %s" % hp_text(m), Vector2(x0, 106), 28)
+	UI.label(pn, "체력 %s" % hp_text(m), Vector2(x0, 106), 28)
 	var st: String = m.get("st", "")
 	UI.label(pn, "상태: %s" % (Data.D.status[st].n if st != "" else "건강"), Vector2(x0, 146), 26, Color(0.3, 0.35, 0.45))
-	UI.label(pn, "%s 성격" % Data.D.natures[int(m.nat)][0], Vector2(x0, 184), 24, Color(0.4, 0.45, 0.55))
+	UI.label(pn, "%s 기질" % Data.D.natures[int(m.nat)][0], Vector2(x0, 184), 24, Color(0.4, 0.45, 0.55))
 	var mv: Array = []
 	for x in m.moves:
 		mv.append(Data.move(x.id).n)
@@ -77,9 +77,9 @@ func main_menu(w: World) -> void:
 	while true:
 		var s := vs()
 		var bw := (s.x - 60) / 2.0
-		var defs := [["생태기록", Game.flag("dex"), Color(0.86, 0.36, 0.42)], ["몬스터", Game.g.party.size() > 0, Color(0.33, 0.62, 0.42)],
+		var defs := [["생태기록", Game.flag("dex"), Color(0.86, 0.36, 0.42)], ["동료", Game.g.party.size() > 0, Color(0.33, 0.62, 0.42)],
 			["가방", true, Color(0.86, 0.62, 0.25)], [str(Game.g.name), true, Color(0.36, 0.48, 0.72)],
-			["리포트", true, Color(0.5, 0.42, 0.75)], ["지도", Game.flag("pad"), Color(0.3, 0.6, 0.62)],
+			["일지 저장", true, Color(0.5, 0.42, 0.75)], ["지도", Game.flag("pad"), Color(0.3, 0.6, 0.62)],
 			["설정", true, Color(0.42, 0.45, 0.52)], ["닫기", true, Color(0.3, 0.32, 0.38)]]
 		var btns: Array = []
 		for i in defs.size():
@@ -145,9 +145,9 @@ func party_screen(mode: String, opts := {}) -> int:
 	while true:
 		var items: Array = []
 		for m in Game.g.party:
-			items.append({"text": Game.name_of(m), "right": "Lv%d  HP %s%s" % [int(m.lv), hp_text(m), "  " + Data.D.status[m.st].n if str(m.get("st", "")) != "" else ""],
+			items.append({"text": Game.name_of(m), "right": "Lv%d  체력 %s%s" % [int(m.lv), hp_text(m), "  " + Data.D.status[m.st].n if str(m.get("st", "")) != "" else ""],
 				"icon": mon_icon(m), "color": Color(0.85, 0.85, 0.88) if m.hp <= 0 else Color(0.93, 0.95, 0.99)})
-		var title: String = {"field": "몬스터", "battle": "교체할 몬스터", "forced": "다음에 내보낼 몬스터", "item": opts.get("tip", "누구에게 사용할까요?"), "deposit": "맡길 몬스터"}[mode]
+		var title: String = {"field": "동료", "battle": "교체할 동료", "forced": "다음에 내보낼 동료", "item": opts.get("tip", "누구에게 사용할까요?"), "deposit": "맡길 생물"}[mode]
 		var i := await Msg.list(items, {"title": title, "start": at, "cancel": mode != "forced",
 			"on_move": func(k: int) -> void: mon_preview(Game.g.party[k], title)})
 		if i < 0:
@@ -192,7 +192,7 @@ func party_screen(mode: String, opts := {}) -> int:
 	return -1
 
 
-## 요약: 몬스터 정보 · 능력치 · 기술
+## 요약: 생물 정보 · 능력치 · 기술
 func summary(lst: Array, idx: int) -> void:
 	await Guides.show_once("summary")
 	var layer := CanvasLayer.new()
@@ -253,20 +253,20 @@ func _sum_render(ctx: Dictionary) -> void:
 		var types: Array = []
 		for t in sp.t:
 			types.append(Data.type_name(t))
-		lines = ["생태기록 No. %s" % ("—" if sp.has("human") else "%03d" % int(m.sid)), "종류: %s (%s 몬스터)" % [sp.n, sp.cat], "타입: %s" % "/".join(types),
-			"어버이: %s" % str(m.ot if m.get("ot") != null else Game.g.name), "성격: %s" % Data.D.natures[int(m.nat)][0],
+		lines = ["생태기록 No. %s" % ("—" if sp.has("human") else "%03d" % int(m.sid)), "종류: %s (%s 생물)" % [sp.n, sp.cat], "속성: %s" % "/".join(types),
+			"어버이: %s" % str(m.ot if m.get("ot") != null else Game.g.name), "기질: %s" % Data.D.natures[int(m.nat)][0],
 			("%s에서 Lv%d일 때 만났다." % [m.met.map, int(m.met.lv)]) if m.get("met") != null else "운명적으로 만났다.", "", str(sp.d)]
 	elif page == 1:
 		var nat: Array = Data.D.natures[int(m.nat)]
-		lines = ["HP  %d / %d" % [int(m.hp), st[0]]]
+		lines = ["체력  %d / %d" % [int(m.hp), st[0]]]
 		for i in range(1, 6):
 			var mark := " ▲" if int(nat[1]) == i and int(nat[2]) != i else " ▼" if int(nat[2]) == i and int(nat[1]) != i else ""
 			lines.append("%s  %d%s" % [Data.D.stn[i], st[i], mark])
-		lines.append("경험치 %d · 다음 레벨까지 %d" % [int(m.exp), 0 if int(m.lv) >= 100 else Game.exp_for(int(m.lv) + 1) - int(m.exp)])
+		lines.append("성장치 %d · 다음 레벨까지 %d" % [int(m.exp), 0 if int(m.lv) >= 100 else Game.exp_for(int(m.lv) + 1) - int(m.exp)])
 	else:
 		for x in m.moves:
 			var d: Dictionary = Data.move(x.id)
-			lines.append("%s [%s·%s] PP %d/%d  위력 %s 명중 %s" % [d.n, Data.type_name(d.t), Data.D.catn[d.c], int(x.pp), int(d.pp), str(d.p) if int(d.p) else "-", str(d.a) if int(d.a) else "-"])
+			lines.append("%s [%s·%s] 횟수 %d/%d  위력 %s 명중 %s" % [d.n, Data.type_name(d.t), Data.D.catn[d.c], int(x.pp), int(d.pp), str(d.p) if int(d.p) else "-", str(d.a) if int(d.a) else "-"])
 			lines.append("   " + str(d.d))
 	UI.scroll_text(info, "\n".join(lines), Rect2(26, 20, info.size.x - 52, info.size.y - 40))
 	var tabs := ["정보", "능력치", "기술"]
@@ -357,7 +357,7 @@ func _item_preview(id: String) -> void:
 	var it: Dictionary = Data.D.items[id]
 	var pn := UI.panel(p, Rect2(12, 110, p.size.x - 24, p.size.y - 120), Color(1.0, 0.97, 0.9))
 	UI.label(pn, it.n, Vector2(30, 24), 38)
-	UI.label(pn, "중요한 물건" if it.p == "key" else "보유 %d개" % int(Game.g.bag.get(id, 0)), Vector2(30, 80), 26, Color(0.4, 0.42, 0.5))
+	UI.label(pn, "조사 도구" if it.p == "key" else "보유 %d개" % int(Game.g.bag.get(id, 0)), Vector2(30, 80), 26, Color(0.4, 0.42, 0.5))
 	UI.scroll_text(pn, str(it.d), Rect2(30, 130, pn.size.x - 60, pn.size.y - 150))
 
 
@@ -386,7 +386,7 @@ func apply_item(id: String, m: Dictionary) -> void:
 		var e = Game.sp(m.sid).get("ev")
 		if e and int(m.lv) >= int(e[0]) and m.hp > 0 and not pending_evo.has(m):
 			pending_evo.append(m)
-			await Msg.say("어라...? %s의 몸이 빛나기 시작했다! (메뉴를 닫으면 진화가 시작된다)" % Game.name_of(m))
+			await Msg.say("%s의 몸이 은은하게 빛난다. (메뉴를 닫으면 탈바꿈이 시작된다)" % Game.name_of(m))
 		return
 	if it.has("revive"):
 		m.hp = maxi(1, int(Game.max_hp(m) * float(it.revive)))
@@ -398,7 +398,7 @@ func apply_item(id: String, m: Dictionary) -> void:
 		var b0: int = int(m.hp)
 		m.hp = mini(Game.max_hp(m), int(m.hp) + int(it.heal))
 		Sound.sfx("heal")
-		await Msg.say("%s의 HP가 %d 회복되었다!" % [Game.name_of(m), int(m.hp) - b0])
+		await Msg.say("%s의 체력이 %d 회복되었다!" % [Game.name_of(m), int(m.hp) - b0])
 		return
 	if it.has("cure"):
 		m.st = ""
@@ -416,7 +416,7 @@ func level_up(m: Dictionary, show_box := true) -> void:
 	var n := Game.calc(m)
 	m.hp = mini(n[0], int(m.hp) + n[0] - o[0])
 	Sound.jingle("level")
-	await Msg.say("%s 레벨 %s 올랐다!" % [Game.josa(Game.name_of(m), "은"), Game.josa(int(m.lv), "로")], "", {"keep": true})
+	await Msg.say("%s 레벨 %d 달성!" % [Game.josa(Game.name_of(m), "은"), int(m.lv)], "", {"keep": true})
 	if show_box:
 		var s := vs()
 		var layer := CanvasLayer.new()
@@ -466,29 +466,28 @@ func learn_move(m: Dictionary, id: String) -> void:
 	if m.moves.size() < 4:
 		m.moves.append({"id": id, "pp": int(d.pp)})
 		Sound.jingle("level")
-		await Msg.say("%s 새로 %s 배웠다!" % [Game.josa(n, "은"), Game.josa(nmv, "을")])
+		await Msg.say("%s 새로 %s 익혔다!" % [Game.josa(n, "은"), Game.josa(nmv, "을")])
 		return
-	await Msg.say("%s 새로 %s 배우고 싶다..." % [Game.josa(n, "은"), Game.josa(nmv, "을")])
-	await Msg.say("하지만 %s 기술을 4개까지만 기억할 수 있다!" % Game.josa(n, "은"))
+	await Msg.say("%s %s 익히려 한다." % [Game.josa(n, "은"), Game.josa(nmv, "을")])
+	await Msg.say("하지만 %s 기술 칸이 가득 찼다." % Game.josa(n, "은"))
 	while true:
-		var r := await Msg.ask("다른 기술을 잊게 하고 %s 배우게 하겠습니까?" % Game.josa(nmv, "을"), ["예", "아니오"])
+		var r := await Msg.ask("기존 기술 하나를 내려놓고 %s 익힐까?" % Game.josa(nmv, "을"), ["예", "아니오"])
 		if r == 0:
 			var items: Array = []
 			for x in m.moves:
 				var dd: Dictionary = Data.move(x.id)
-				items.append({"text": dd.n, "right": "%s · PP %d/%d" % [Data.type_name(dd.t), int(x.pp), int(dd.pp)], "color": Data.type_color(dd.t).lerp(Color.WHITE, 0.6)})
-			var i := await Msg.list(items, {"title": "어느 기술을 잊게 할까요? (새 기술: %s · 위력 %s)" % [nmv, str(d.p) if int(d.p) else "-"]})
+				items.append({"text": dd.n, "right": "%s · 횟수 %d/%d" % [Data.type_name(dd.t), int(x.pp), int(dd.pp)], "color": Data.type_color(dd.t).lerp(Color.WHITE, 0.6)})
+			var i := await Msg.list(items, {"title": "어느 기술을 내려놓을까요? (새 기술: %s · 위력 %s)" % [nmv, str(d.p) if int(d.p) else "-"]})
 			if i >= 0:
 				var old: String = Data.move(m.moves[i].id).n
 				m.moves[i] = {"id": id, "pp": int(d.pp)}
-				await Msg.say("하나, 둘... 뿅!")
-				await Msg.say("%s %s 깨끗이 잊었다!" % [Game.josa(n, "은"), Game.josa(old, "을")])
+				await Msg.say("%s %s 내려놓았다." % [Game.josa(n, "은"), Game.josa(old, "을")])
 				Sound.jingle("level")
-				await Msg.say("그리고... %s 새로 %s 배웠다!" % [Game.josa(n, "은"), Game.josa(nmv, "을")])
+				await Msg.say("대신 %s 새로 %s 익혔다!" % [Game.josa(n, "은"), Game.josa(nmv, "을")])
 				return
-		var q := await Msg.ask("그럼... %s 배우는 것을 포기하겠습니까?" % Game.josa(nmv, "을"), ["예", "아니오"])
+		var q := await Msg.ask("%s 익히지 않고 넘어갈까?" % Game.josa(nmv, "을"), ["예", "아니오"])
 		if q == 0:
-			await Msg.say("%s 결국 %s 배우지 않았다!" % [Game.josa(n, "은"), Game.josa(nmv, "을")])
+			await Msg.say("%s %s 익히지 않았다." % [Game.josa(n, "은"), Game.josa(nmv, "을")])
 			return
 
 
@@ -531,7 +530,7 @@ func evolve(m: Dictionary) -> void:
 	Msg.place("field")
 	Sound.music("evolve")
 	await Game.fade_to(0.0, 0.3)
-	await Msg.say("어...? %s의 모습이...!" % old_name, "", {"keep": true})
+	await Msg.say("%s의 몸에 빛이 번지기 시작했다..." % old_name, "", {"keep": true})
 	await Sound.cry(from)
 	a.p("glow_color", Color.WHITE)
 	b.p("glow_color", Color.WHITE)
@@ -539,25 +538,26 @@ func evolve(m: Dictionary) -> void:
 	a.tp(tw, "glow", 1.4, 0.7)
 	await tw.finished
 	b.p("glow", 1.4)
-	Msg.toast("B 버튼을 누르면 진화를 멈출 수 있어요")
+	Msg.toast("B 버튼을 누르면 탈바꿈을 미룰 수 있어요")
 	var cancel := false
-	for i in 16:
+	# 빛 속에서 새 모습이 천천히 겹쳐 떠오른다 (B로 미루기)
+	b.visible = true
+	b.modulate.a = 0.0
+	for i in 24:
 		if Input.is_action_pressed("b_btn"):
 			cancel = true
 			break
-		var d := maxf(0.07, 0.42 - i * 0.024)
-		var show_b := i % 2 == 1
-		a.visible = not show_b
-		b.visible = show_b
-		var cur := b if show_b else a
-		Sound.sfx("cur")
-		cur.scale = Vector2(0.92, 0.92)
-		var t2 := create_tween()
-		t2.tween_property(cur, "scale", Vector2(1.08, 1.08), d * 0.5)
-		t2.tween_property(cur, "scale", Vector2.ONE, d * 0.5)
-		if i % 3 == 0:
-			FX.burst(stage, Vector2(randf_range(-200, 200), randf_range(-300, 0)), Color(1, 1, 0.8), Color(1, 0.85, 0.3, 0), 10, 120.0, Vector2.ZERO, 0.6, 0.8, 180.0)
-		await t2.finished
+		var k := float(i + 1) / 24.0
+		a.modulate.a = 1.0 - k
+		b.modulate.a = k
+		stage.scale = Vector2.ONE * (1.0 + 0.04 * sin(k * PI))
+		if i % 4 == 0:
+			Sound.sfx("sparkle")
+			FX.burst(stage, Vector2(randf_range(-160, 160), randf_range(-280, -20)), Color(0.8, 1, 0.95), Color(0.5, 0.85, 1.0, 0), 8, 90.0, Vector2(0, -120), 0.7, 0.8, 180.0)
+		await get_tree().create_timer(0.12).timeout
+	stage.scale = Vector2.ONE
+	a.modulate.a = 1.0
+	b.modulate.a = 1.0
 	if cancel:
 		a.visible = true
 		b.visible = false
@@ -565,7 +565,7 @@ func evolve(m: Dictionary) -> void:
 		a.tp(t3, "glow", 0.0, 0.4)
 		await t3.finished
 		await Sound.cry(from)
-		await Msg.say("어라...? %s의 변화가 멈췄다!" % old_name)
+		await Msg.say("빛이 잦아들었다. %s 지금 모습을 지키기로 했다." % Game.josa(old_name, "은"))
 	else:
 		a.visible = false
 		b.visible = true
@@ -592,7 +592,7 @@ func evolve(m: Dictionary) -> void:
 		b.tp(t6, "squash", 0.0, 0.5).set_trans(Tween.TRANS_ELASTIC)
 		Sound.cry(to)
 		await Sound.jingle("evolved")
-		await Msg.say("축하합니다! %s %s 진화했다!" % [Game.josa(old_name, "은"), Game.josa(Game.sp(to).n, "로")])
+		await Msg.say("%s %s 탈바꿈했다!" % [Game.josa(old_name, "은"), Game.josa(Game.sp(to).n, "로")])
 		await learn_moves(m)
 	await Game.fade_to(1.0, 0.3)
 	layer.queue_free()
@@ -618,7 +618,7 @@ func dex_screen() -> void:
 	for it in items:
 		if it.icon == null:
 			it.erase("icon")
-	await Msg.list(items, {"title": "몬스터 생태기록 · 발견 %d · 포획 %d" % [Game.g.seen.size(), Game.g.caught.size()], "top": 0.5,
+	await Msg.list(items, {"title": "생태 관찰 일지 · 발견 %d · 동행 %d" % [Game.g.seen.size(), Game.g.caught.size()], "top": 0.5,
 		"on_move": func(i: int) -> void: _dex_preview(ids[i])})
 
 
@@ -645,9 +645,9 @@ func _dex_preview(id: int) -> void:
 		var types: Array = []
 		for t in sp.t:
 			types.append(Data.type_name(t))
-		UI.label(pn, "%s 몬스터 · %s" % [sp.cat, "/".join(types)], Vector2(300, 112), 26)
+		UI.label(pn, "%s 생물 · %s" % [sp.cat, "/".join(types)], Vector2(300, 112), 26)
 	UI.label(pn, ("키 %.1f m · %.1f kg" % [float(sp.h), float(sp.w)]) if cg else "키 ??? · 몸무게 ???", Vector2(300, 152), 26, Color(0.35, 0.38, 0.46))
-	UI.scroll_text(pn, sp.d if cg else "붙잡으면 자세한 데이터가 기록된다." if seen else "아직 만나지 못한 몬스터.", Rect2(300,200,pn.size.x-320,maxf(40,pn.size.y-220)),24)
+	UI.scroll_text(pn, sp.d if cg else "동행하면 자세한 기록이 채워진다." if seen else "아직 만나지 못한 생물.", Rect2(300,200,pn.size.x-320,maxf(40,pn.size.y-220)),24)
 
 
 func badge_node(i: int, size := 40.0) -> Node2D:
@@ -794,19 +794,19 @@ func map_screen(w: World) -> void:
 # 리포트 · 설정
 # =====================================================================
 func save_menu(w: World) -> bool:
-	var r := await Msg.ask("%s · 관측 인증 %d · 생태기록 %d · %s\n지금까지의 모험을 리포트에 기록하시겠습니까?" % [w.m.name, Game.badge_count(), Game.g.caught.size(), Game.fmt_time(float(Game.g.play_ms))],
-		["리포트에 기록", "그만두기"])
+	var r := await Msg.ask("%s · 관측 인증 %d · 생태기록 %d · %s\n지금까지의 조사를 현장 일지에 저장할까요?" % [w.m.name, Game.badge_count(), Game.g.caught.size(), Game.fmt_time(float(Game.g.play_ms))],
+		["일지 저장", "그만두기"])
 	if r != 0:
 		return false
 	Game.g.x = w.P.x
 	Game.g.y = w.P.y
 	Game.g.dir = w.player.dir
-	await Msg.say("리포트를 기록하고 있습니다...\n전원을 끄지 마세요.", "", {"auto": 0.8})
+	await Msg.say("현장 일지를 저장하는 중...", "", {"auto": 0.8})
 	if Game.save_game():
 		Sound.jingle("save")
-		await Msg.say("%s 리포트에 제대로 기록했다!" % Game.josa(Game.g.name, "은"))
+		await Msg.say("%s 현장 일지를 저장했다!" % Game.josa(Game.g.name, "은"))
 		return true
-	await Msg.say("리포트를 기록하지 못했습니다...")
+	await Msg.say("현장 일지를 저장하지 못했습니다...")
 	return false
 
 
@@ -879,7 +879,7 @@ func license_notice() -> void:
 
 
 # =====================================================================
-# 시설: 상점 · 몬스터 쉼터 · PC · 합성
+# 시설: 상점 · 관측 캠프 · PC · 합성
 # =====================================================================
 func shop_stock() -> Array:
 	var s := ["ball", "lvup", "potion", "antidote", "burnheal", "parheal", "awake"]
@@ -902,7 +902,7 @@ func shop_stock() -> Array:
 
 func shop(_w: World) -> void:
 	await Guides.show_once("shop")
-	var o := "점원"
+	var o := "보급 담당"
 	var first := true
 	while true:
 		var c := await Msg.ask("어서 오세요! 무엇을 도와드릴까요?" if first else "그 밖에 필요하신 건 없으세요?", ["사러 왔어요", "팔러 왔어요", "괜찮아요"], o)
@@ -923,7 +923,7 @@ func shop_buy() -> void:
 		var items: Array = []
 		for k in st:
 			items.append({"text": Data.D.items[k].n, "right": Game.money(Data.D.items[k].price)})
-		var r := await Msg.list(items, {"title": "몬스터 상점 · 사기 · %s" % Game.money(Game.g.money), "start": at, "buttons": [["그만두기", -1]],
+		var r := await Msg.list(items, {"title": "보급소 · 사기 · %s" % Game.money(Game.g.money), "start": at, "buttons": [["그만두기", -1]],
 			"on_move": func(i: int) -> void: _item_preview(st[i])})
 		if r < 0:
 			break
@@ -932,20 +932,17 @@ func shop_buy() -> void:
 		var it: Dictionary = Data.D.items[id]
 		var mx := mini(99, int(Game.g.money) / int(it.price))
 		if mx < 1:
-			await Msg.say("돈이 부족하신 것 같아요.", "점원")
+			await Msg.say("돈이 부족하신 것 같아요.", "보급 담당")
 			continue
 		var n := await Msg.number(mx, int(it.price), "%s 몇 개 사시겠어요?" % Game.josa(it.n, "을"))
 		if n <= 0:
 			continue
-		var ok := await Msg.ask("%s %d개, 총 %s입니다. 괜찮으시겠어요?" % [it.n, n, Game.money(n * int(it.price))], ["예", "아니오"], "점원")
+		var ok := await Msg.ask("%s %d개, 총 %s입니다. 괜찮으시겠어요?" % [it.n, n, Game.money(n * int(it.price))], ["예", "아니오"], "보급 담당")
 		if ok != 0:
 			continue
 		Game.g.money = int(Game.g.money) - n * int(it.price)
 		Game.g.bag[id] = int(Game.g.bag.get(id, 0)) + n
-		await Msg.say("네, 여기 있습니다! 감사합니다!", "점원")
-		if id == "ball" and n >= 10:
-			Game.g.bag.great = int(Game.g.bag.get("great", 0)) + 1
-			await Msg.say("캡슐을 많이 사 주셔서 분광 공명등을 하나 덤으로 드릴게요!", "점원")
+		await Msg.say("네, 여기 있습니다! 감사합니다!", "보급 담당")
 
 
 func shop_sell() -> void:
@@ -955,12 +952,12 @@ func shop_sell() -> void:
 			if Data.D.items[k].has("price") and int(Game.g.bag.get(k, 0)) > 0:
 				ids.append(k)
 		if ids.is_empty():
-			await Msg.say("팔 수 있는 물건이 없는 것 같네요.", "점원")
+			await Msg.say("팔 수 있는 물건이 없는 것 같네요.", "보급 담당")
 			return
 		var items: Array = []
 		for k in ids:
 			items.append({"text": Data.D.items[k].n, "right": "× %d · %s" % [int(Game.g.bag[k]), Game.money(int(Data.D.items[k].price) / 2)]})
-		var r := await Msg.list(items, {"title": "몬스터 상점 · 팔기", "buttons": [["그만두기", -1]], "on_move": func(i: int) -> void: _item_preview(ids[i])})
+		var r := await Msg.list(items, {"title": "보급소 · 팔기", "buttons": [["그만두기", -1]], "on_move": func(i: int) -> void: _item_preview(ids[i])})
 		if r < 0:
 			return
 		var id: String = ids[r]
@@ -968,7 +965,7 @@ func shop_sell() -> void:
 		var n := await Msg.number(int(Game.g.bag[id]), int(it.price) / 2, it.n)
 		if n <= 0:
 			continue
-		var ok := await Msg.ask("%s %d개를 %s에 사겠습니다. 괜찮으세요?" % [it.n, n, Game.money(n * int(it.price) / 2)], ["예", "아니오"], "점원")
+		var ok := await Msg.ask("%s %d개를 %s에 사겠습니다. 괜찮으세요?" % [it.n, n, Game.money(n * int(it.price) / 2)], ["예", "아니오"], "보급 담당")
 		if ok != 0:
 			continue
 		Game.g.bag[id] = int(Game.g.bag[id]) - n
@@ -977,13 +974,13 @@ func shop_sell() -> void:
 
 
 func nurse(w: World, n: NPC) -> void:
-	var o := "간호사"
-	await Msg.say("어서 오세요! 몬스터 쉼터입니다.", o)
-	var r := await Msg.ask("몬스터의 체력을 회복시켜 드릴까요?", ["예", "아니오"], o)
+	var o := "캠프 의무원"
+	await Msg.say("관측 캠프 의무실입니다. 동료들 상태를 볼까요?", o)
+	var r := await Msg.ask("치료를 진행할까요?", ["예", "아니오"], o)
 	if r != 0:
-		await Msg.say("또 들러 주세요!", o)
+		await Msg.say("무리하지 말고 다녀오세요!", o)
 		return
-	await Msg.say("그럼 몬스터를 잠시 맡아 두겠습니다.", o)
+	await Msg.say("잠시 쉬게 하고 상태를 확인할게요.", o)
 	await n.face("left")
 	await w.heal_anim()
 	Game.heal_party()
@@ -992,16 +989,16 @@ func nurse(w: World, n: NPC) -> void:
 	var wp: Array = w.m.warps.get("6,9", [])
 	if wp.size():
 		Game.g.heal = {"map": wp[0], "x": int(wp[1]), "y": int(wp[2])}
-	await Msg.say("기다리셨습니다! 맡겨 주신 몬스터는 모두 건강해졌어요.", o)
+	await Msg.say("치료가 끝났어요. 모두 기운을 되찾았어요.", o)
 	await n.bow()
-	await Msg.say("또 들러 주세요!", o)
+	await Msg.say("무리하지 말고 다녀오세요!", o)
 
 
 func box_cap() -> int:
 	return maxi(5, Game.top_level())
 
 
-## 보관함 몬스터는 실제 시간이 흐른 만큼 자란다: 10분마다 레벨 1 (파티 최고 레벨까지)
+## 보관함 생물은 실제 시간이 흐른 만큼 자란다: 10분마다 레벨 1 (파티 최고 레벨까지)
 func box_grow() -> Array:
 	var now := Time.get_unix_time_from_system()
 	var cap := box_cap()
@@ -1040,11 +1037,11 @@ func box_grow() -> Array:
 func pc_menu(_w: World) -> void:
 	await Guides.show_once("pc")
 	Sound.sfx("menu")
-	await Msg.say("%s PC의 전원을 켰다!" % Game.josa(Game.g.name, "은"))
+	await Msg.say("%s 보관 단말에 접속했다." % Game.josa(Game.g.name, "은"))
 	var grown := box_grow()
 	if grown.size():
 		Sound.jingle("level")
-		await Msg.say("보관함에 맡겨 둔 몬스터들이 그동안 훈련을 했다!")
+		await Msg.say("보관함에 맡겨 둔 생물들이 그동안 훈련을 했다!")
 		for r in grown:
 			var t := "%s Lv%d → %s 자랐다!" % [Game.josa(Game.name_of(r.m), "은"), int(r.from), Game.josa("Lv%d" % int(r.to), "로")]
 			if r.learned.size():
@@ -1053,7 +1050,7 @@ func pc_menu(_w: World) -> void:
 			if r.full.size():
 				await Msg.say("(%s도 배울 수 있었지만 기술 칸이 가득 차 있었다.)" % ", ".join(r.full))
 	while true:
-		var c := await Msg.ask("무엇을 할까?", ["몬스터 맡기기", "몬스터 데려오기", "그만두기"])
+		var c := await Msg.ask("무엇을 할까?", ["동료 맡기기", "동료 데려오기", "그만두기"])
 		if c == 0:
 			if Game.g.party.size() <= 1:
 				await Msg.say("마지막 한 마리는 맡길 수 없습니다!")
@@ -1076,7 +1073,7 @@ func pc_menu(_w: World) -> void:
 				await Msg.say("%s 이미 파티 최고 레벨이라 보관함에서는 더 자라지 않는다." % Game.josa(Game.name_of(m), "은"))
 		elif c == 1:
 			if Game.g.box.is_empty():
-				await Msg.say("보관함에 몬스터가 없습니다.")
+				await Msg.say("보관함에 생물이 없습니다.")
 				continue
 			var items: Array = []
 			for m in Game.g.box:
@@ -1085,7 +1082,7 @@ func pc_menu(_w: World) -> void:
 			if r < 0:
 				continue
 			if Game.g.party.size() >= 6:
-				await Msg.say("파티가 가득 찼습니다! 먼저 몬스터를 맡겨 주세요.")
+				await Msg.say("파티가 가득 찼습니다! 먼저 생물을 맡겨 주세요.")
 				continue
 			var m2: Dictionary = Game.g.box[r]
 			Game.g.box.remove_at(r)
@@ -1098,7 +1095,7 @@ func pc_menu(_w: World) -> void:
 				pending_evo.append(m2)
 		else:
 			break
-	await Msg.say("PC의 전원을 껐다.")
+	await Msg.say("보관 단말 접속을 마쳤다.")
 	await run_pending_evo()
 
 
@@ -1151,7 +1148,7 @@ func fusion_flow(_w, first = null) -> bool:
 		await Msg.say("%s 사람이라서 합성할 수 없어요!" % Game.josa(Game.name_of(first.m), "은"))
 		return false
 	if fuse_mons().size() < 2:
-		await Msg.say("합성하려면 몬스터가 두 마리 이상 있어야 해요.")
+		await Msg.say("합성하려면 생물이 두 마리 이상 있어야 해요.")
 		return false
 	var a: Dictionary = first if first != null else await pick_fuse_mon(null, "첫 번째 재료")
 	if a.is_empty():
@@ -1181,8 +1178,8 @@ func fusion_flow(_w, first = null) -> bool:
 	var types: Array = []
 	for t in Game.sp(to).t:
 		types.append(Data.type_name(t))
-	await Msg.say("합성 성공! %s 타입 %s 태어났다! (Lv%d)" % ["·".join(types), Game.josa(Game.sp(to).n, "이"), lv])
-	var r := await Msg.ask("%s에게 이름을 붙여 주시겠습니까?" % Game.sp(to).n, ["예", "아니오"])
+	await Msg.say("합성 성공! %s 속성 %s 태어났다! (Lv%d)" % ["·".join(types), Game.josa(Game.sp(to).n, "이"), lv])
+	var r := await Msg.ask("%s에게 애칭을 지어 줄까?" % Game.sp(to).n, ["예", "아니오"])
 	if r == 0:
 		var v := await Msg.name_input("%s의 이름은?" % Game.sp(to).n, "", 6, [], true)
 		if v != "":
@@ -1202,7 +1199,7 @@ func _fx_layer_free() -> void:
 		_fx_layer = null
 
 
-## 합성 연출: 두 몬스터가 빛이 되어 가운데로 빨려 들어가 하나로 터져 나온다
+## 합성 연출: 두 생물이 빛이 되어 가운데로 빨려 들어가 하나로 터져 나온다
 func _fusion_fx(sa: int, sb: int, to: int) -> void:
 	var s := vs()
 	_fx_layer = CanvasLayer.new()
@@ -1257,12 +1254,12 @@ func fusion_lab(_w: World) -> void:
 	var o := "합성 연구원"
 	if not Game.flag("fuseIntro2"):
 		Game.set_flag("fuseIntro2")
-		await Msg.say("어서 오세요! 여기는 몬스터 합성 연구실이에요.", o)
-		await Msg.say("아무 몬스터나 두 마리를 맡겨 주시면, 하나로 합쳐서 한 단계 위 등급의 몬스터로 만들어 드려요.", o)
-		await Msg.say("어떤 타입이 나올지는 저도 몰라요! 레벨은 두 마리 중 높은 쪽보다 2 올라간답니다.", o)
-		await Msg.say("참, 메뉴 → 몬스터 화면에서도 합성 장치를 쓸 수 있게 해 뒀어요!", o)
+		await Msg.say("어서 오세요! 여기는 생물 합성 연구실이에요.", o)
+		await Msg.say("아무 생물나 두 마리를 맡겨 주시면, 하나로 합쳐서 한 단계 위 등급의 생물로 만들어 드려요.", o)
+		await Msg.say("어떤 속성이 나올지는 저도 몰라요! 레벨은 두 마리 중 높은 쪽보다 2 올라간답니다.", o)
+		await Msg.say("참, 메뉴 → 생물 화면에서도 합성 장치를 쓸 수 있게 해 뒀어요!", o)
 	if fuse_mons().size() < 2:
-		await Msg.say("지금은 몬스터가 한 마리뿐이네요. 동료를 더 모아서 다시 와 주세요!", o)
+		await Msg.say("지금은 생물이 한 마리뿐이네요. 동료를 더 모아서 다시 와 주세요!", o)
 		return
 	if await Msg.ask("합성을 해 볼까요?", ["합성한다", "그만둔다"], o) != 0:
 		await Msg.say("또 오세요!", o)
@@ -1274,7 +1271,7 @@ func fusion_lab(_w: World) -> void:
 
 
 # =====================================================================
-# 엔딩 크레딧: 붙잡은 몬스터들이 줄지어 걸어가고, 그 뒤를 주인공이 따라간다
+# 엔딩 크레딧: 붙잡은 생물들이 줄지어 걸어가고, 그 뒤를 주인공이 따라간다
 # =====================================================================
 func credits(w: World, final: bool) -> void:
 	var s := vs()
@@ -1320,7 +1317,7 @@ func credits(w: World, final: bool) -> void:
 	hero.position = Vector2(x + 40, 0)
 	hero.p("walk", 1.0)
 	var lines := [["벨로리아 생태기록", ""], ["제작", "chunghyun1995"], ["원본 제작", "Claude"], ["표현 개정 · 신규 에셋", "Codex · OpenAI 이미지 생성"],
-		["함께한 몬스터들", " · ".join(list.map(func(sid: int) -> String: return str(Game.sp(sid).n)))],
+		["함께한 생물들", " · ".join(list.map(func(sid: int) -> String: return str(Game.sp(sid).n)))],
 		["현장 책임자들", "단단 · 하라 · 화련 · 찌나 · 하늬"], ["원정 동료", Game.RIVAL], ["그리고 플레이해 준", "%s 님" % Game.g.name], ["", ""], ["THE END", "…그리고 원정은 계속된다!"]]
 	var roll := VBoxContainer.new()
 	roll.position = Vector2(40, s.y)
@@ -1367,4 +1364,4 @@ func credits(w: World, final: bool) -> void:
 		w.enter_map("town2", Vector2i(19, 13), "down", {"quiet": true})
 	await Game.fade_to(0.0, 0.6)
 	await Msg.say("다섯 관측소의 데이터가 연결되었습니다. 벨로리아의 기상 기록이 모두에게 공개됩니다!" if final else "축하합니다! 두 번째 관측 인증을 얻었습니다!")
-	await Msg.say("생태기록을 모두 채우거나, 몬스터를 더 강하게 키워 보세요. 원정은 계속됩니다!")
+	await Msg.say("생태기록을 모두 채우거나, 생물을 더 강하게 키워 보세요. 원정은 계속됩니다!")

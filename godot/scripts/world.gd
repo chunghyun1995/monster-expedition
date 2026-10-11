@@ -1,6 +1,6 @@
 class_name World
 extends Node2D
-## 필드: 40개 지도(바깥·건물 안)를 같은 규칙으로 그리고, 이동·조사·문·연결·원정가 시선·야생 몬스터를 처리한다.
+## 필드: 40개 지도(바깥·건물 안)를 같은 규칙으로 그리고, 이동·조사·문·연결·원정가 시선·야생 생물을 처리한다.
 ## 이야기 이벤트는 events.gd 가 이 파일의 도우미(say, battle, walk_npc …)를 불러 진행한다.
 
 const T := 64
@@ -671,7 +671,7 @@ func _sight_check() -> NPC:
 func _trainer_spot(n: NPC) -> void:
 	var tr = n.info.get("trainer")
 	Sound.music(("rival" if tr.cls in ["lass", "girl"] else "trainer") if tr != null else "rival")
-	await n.emote("!", 0.6)
+	await n.emote("?", 0.6)
 	while absi(P.x - n.cell.x) + absi(P.y - n.cell.y) > 1:
 		await n.walk_to(n.cell + DV[n.dir], n.dir, 0.24)
 	await player.turn(OPP[n.dir])
@@ -877,7 +877,7 @@ func fade(a: float, dur := 0.35) -> void:
 
 func nickname_prompt(mon: Dictionary) -> void:
 	var s: Dictionary = Game.sp(mon.sid)
-	var r := await ask("%s에게 이름을 붙여 주시겠습니까?" % s.n, ["예", "아니오"])
+	var r := await ask("%s에게 애칭을 지어 줄까?" % s.n, ["예", "아니오"])
 	if r != 0:
 		return
 	var v := await Msg.name_input("%s의 이름은?" % s.n, "", 6, [], true)
@@ -901,18 +901,10 @@ func banner(t: String) -> void:
 
 
 func heal_anim() -> void:
-	for i in Game.g.party.size():
-		_make_heal_balls(i + 1)
-		var b: Node2D = heal_balls[i]
-		Sound.sfx("click")
-		b.scale = Vector2(0.2, 0.2)
-		b.create_tween().tween_property(b, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK)
-		await sleep(0.26)
-	for k in 6:
-		for b in heal_balls:
-			b.modulate = Color(1.6, 1.6, 1.2) if k % 2 == 0 else Color.WHITE
-		await sleep(0.14)
-	_make_heal_balls(0)
+	await fade(0.55, 0.3)
+	FX.burst(ents, player.position + Vector2(0, -50), Color(0.85, 1, 0.9), Color(0.4, 0.9, 0.7, 0), 18, 120.0, Vector2(0, -160), 0.9, 0.9, 180.0)
+	await sleep(0.7)
+	await fade(0.0, 0.3)
 
 
 # ---------------- 전투 ----------------
@@ -949,8 +941,8 @@ func battle(o: Dictionary) -> String:
 			else:
 				await say("%s! 무사했구나... 푹 쉬었으니 이제 괜찮을 거야." % Game.g.name, "엄마")
 		else:
-			await say("기다리셨습니다! 맡겨 주신 몬스터는 모두 건강해졌어요.", "간호사")
-		await say("몬스터들이 기운을 되찾았다! 무리하지 말고 다시 원정을 떠나자.")
+			await say("치료가 끝났어요. 모두 기운을 되찾았어요.", "캠프 의무원")
+		await say("생물들이 기운을 되찾았다! 무리하지 말고 다시 원정을 떠나자.")
 		busy = was_busy
 		return r
 	if r == "lose":
@@ -970,16 +962,13 @@ func battle(o: Dictionary) -> String:
 func _encounter_flash(o: Dictionary) -> void:
 	var fl := ColorRect.new()
 	fl.set_anchors_preset(Control.PRESET_FULL_RECT)
-	fl.color = Color(1, 1, 1, 0)
+	fl.color = Color(0.05, 0.08, 0.12, 0)
 	fl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui.add_child(fl)
 	var tw := create_tween()
-	for i in 2:
-		tw.tween_property(fl, "color:a", 0.85, 0.07)
-		tw.tween_property(fl, "color:a", 0.0, 0.1)
+	tw.tween_property(fl, "color:a", 0.45, 0.18)
 	var big: bool = o.get("cls", "") in ["leader", "rival", "boss"]
 	tw.parallel().tween_property(cam, "zoom", Vector2(1.35, 1.35), 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tw.parallel().tween_property(cam, "rotation", 0.25 if o.kind == "wild" else -0.15, 0.35)
 	await tw.finished
 	if big:
 		# 현장 책임자·원정 동료: 이름 띠가 가로질러 지나간다

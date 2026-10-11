@@ -4,12 +4,12 @@ extends RefCounted
 ## World(w)의 도우미로 대사·선택지·전투·걷기를 진행한다. 이름 규칙:
 ##   talk_<npc id>(n) · cond_<npc id>() · obj_<map>_<x>_<y>() · trig_<map>_<번호>() / trig_cond_<map>_<번호>()
 
-const LEGENDS := [{"sid": 31, "map": "crater", "where": "붉은재 화산길(3번 도로)의 절벽 동굴"},
-	{"sid": 32, "map": "spring", "where": "4번 도로 강물이 시작되는 수원 동굴"},
-	{"sid": 33, "map": "storm", "where": "5번 산길의 폭풍 봉우리 동굴"}]
+const LEGENDS := [{"sid": 31, "map": "crater", "where": "잿빛 화산길의 절벽 동굴"},
+	{"sid": 32, "map": "spring", "where": "갈대 들길의 강물이 시작되는 수원 동굴"},
+	{"sid": 33, "map": "storm", "where": "구름 능선길의 폭풍 봉우리 동굴"}]
 const TOWER_LOOKS := ["man", "hiker", "camper", "lady", "swim", "fisher", "girl", "kid", "bug", "villain"]
-const STATUES := [["바위시티 관측소", "현장 책임자: 단단"], ["물결마을 관측소", "현장 책임자: 하라"], ["붉은재마을 관측소", "현장 책임자: 화련"],
-	["번개도시 관측소", "현장 책임자: 찌나"], ["하늘봉마을 관측소", "현장 책임자: 하늬"]]
+const STATUES := [["돌기둥마을 관측소", "현장 책임자: 단단"], ["물결마을 관측소", "현장 책임자: 하라"], ["붉은재마을 관측소", "현장 책임자: 화련"],
+	["철탑마을 관측소", "현장 책임자: 찌나"], ["하늘봉마을 관측소", "현장 책임자: 하늬"]]
 
 var w: World
 var R := Game.RIVAL
@@ -101,7 +101,7 @@ func trig_cond_town_0() -> bool:
 
 func trig_town_0() -> void:
 	await say("앗, 풀숲에서 무언가 바스락거린다...")
-	await say("몬스터 없이 가는 건 위험할 것 같다. 먼저 연구소에 들르자!")
+	await say("생물 없이 가는 건 위험할 것 같다. 먼저 연구소에 들르자!")
 	await w.walk_player(["down"])
 
 
@@ -117,7 +117,7 @@ func talk_mom(_n: NPC) -> void:
 	await Sound.jingle("heal")
 	await w.fade(0.0)
 	Game.g.heal = {"map": "home", "x": 4, "y": 6}
-	await say("몬스터들이 기운을 되찾았다!")
+	await say("생물들이 기운을 되찾았다!")
 	await say("힘내렴! 엄마는 언제나 응원할게.", o)
 
 
@@ -127,7 +127,7 @@ func talk_sister(_n: NPC) -> void:
 		await say("%s는 벌써 연구소에 갔어! 성격이 급하다니까." % R, o)
 		return
 	if not F("gift1"):
-		await say("%s도 몬스터를 받았구나! 이거 가져가. 모험에 꼭 필요할 거야." % nm(), o)
+		await say("%s도 생물을 받았구나! 이거 가져가. 모험에 꼭 필요할 거야." % nm(), o)
 		await w.give_item("potion", 3)
 		Game.set_flag("gift1")
 		return
@@ -177,7 +177,7 @@ func obj_lab_6_4() -> void:
 	await pick_starter(2)
 
 
-## 몬스터를 크게 보여 주는 카드 (스타터 고르기·생태기록 등록)
+## 생물을 크게 보여 주는 카드 (스타터 고르기·생태기록 등록)
 func mon_card(sid: int) -> Control:
 	var s: Dictionary = Game.sp(sid)
 	var vs := w.get_viewport().get_visible_rect().size
@@ -203,7 +203,7 @@ func mon_card(sid: int) -> Control:
 	var types: Array = []
 	for t in s.t:
 		types.append(Data.type_name(t))
-	UI.label(card, "%s  ·  %s 타입  ·  %s 몬스터" % [s.n, "/".join(types), s.cat], Vector2(28, 360), 30)
+	UI.label(card, "%s  ·  %s 속성  ·  %s 생물" % [s.n, "/".join(types), s.cat], Vector2(28, 360), 30)
 	var d := UI.label(card, s.d, Vector2(28, 410), 26, Color(0.3, 0.33, 0.42))
 	d.size.x = card.size.x - 56
 	d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -257,7 +257,7 @@ func give_starter(sid: int, _secret: bool) -> void:
 	Game.set_flag("shoes")
 	await w.give_item("ball", 5)
 	await say("공명등은 생물을 가두는 장비가 아니야. 가까이 놓고 주파수를 맞추면 함께 조사할 연결이 생겨.", o)
-	await say("첫 의뢰는 바위시티의 지반 센서 점검이다. 책임자 단단에게 현장 조건을 확인해 보렴. B를 누른 채 이동하면 달릴 수 있어.", o)
+	await say("첫 의뢰는 돌기둥마을의 지반 센서 점검이다. 책임자 단단에게 현장 조건을 확인해 보렴. B를 누른 채 이동하면 달릴 수 있어.", o)
 	await say("나는 장비를 먼저 운반할게. 관측소에서 기록을 비교하자!", R)
 	await w.walk_npc(rv, ["down", "down", "down", "down", "down", "down"], 0.2)
 	Game.set_flag("rivalLeft")
@@ -273,8 +273,8 @@ func trig_city_0() -> void:
 	var g := w.npc_by_id("c_guard")
 	await g.face("down")
 	await w.emote(g, "!")
-	await say("잠깐! 이 앞 2번 도로 숲은 아주 위험해.", "경비원")
-	await say("바위시티 관측소의 관측 인증을 얻은 원정가만 지나갈 수 있단다.", "경비원")
+	await say("잠깐! 이 앞 이끼숲길은 아주 위험해.", "경비원")
+	await say("돌기둥마을 관측소의 관측 인증을 얻은 원정가만 지나갈 수 있단다.", "경비원")
 	await w.walk_player(["left"])
 
 
@@ -289,7 +289,7 @@ func talk_granny(_n: NPC) -> void:
 		await w.give_item("great", 3)
 		Game.set_flag("gift2")
 		return
-	await say("분광 공명등은 보통 캡슐보다 훨씬 잘 붙잡힌단다.", o)
+	await say("분광 공명등은 여러 파장을 함께 맞춰서 동행 연결이 더 잘 된단다.", o)
 
 
 func statue(i: int) -> void:
@@ -312,9 +312,9 @@ func talk_leader1(_n: NPC) -> void:
 	var o := "현장 책임자 단단"
 	if int(Game.g.badges[0]):
 		await say("다시 왔나. 너의 단단한 의지는 이미 증명되었다.", o)
-		await say("동쪽 물결마을의 현장 책임자 하라는 물 타입의 고수다. 방심하지 마라.", o)
+		await say("동쪽 물결마을의 현장 책임자 하라는 물 속성의 고수다. 방심하지 마라.", o)
 		return
-	await say("바위시티의 지반 관측소다. 나는 센서를 관리하는 단단. 복구 지원을 기다리고 있었다.", o)
+	await say("돌기둥마을의 지반 관측소다. 나는 센서를 관리하는 단단. 복구 지원을 기다리고 있었다.", o)
 	await say("무너진 지반 센서에 새 기준값이 필요하다. 내 동료와 현장 대응 훈련을 하고 진동 기록을 맞추자.", o)
 	var r := await w.battle({"kind": "trainer", "cls": "leader", "name": "단단", "look": "leaderRock", "team": [[23, 12], [24, 14]], "bg": "rock", "leader": true,
 		"lose": "훌륭하다... 너의 의지는 바위보다 단단하구나!"})
@@ -322,12 +322,12 @@ func talk_leader1(_n: NPC) -> void:
 		return
 	await say("기준값이 안정됐다. 지반 관측소를 다시 연결하고 네 현장 기록을 인증하마.", o)
 	await badge(0, "단단", "반석 관측 인증")
-	await say("반석 관측 인증은 원정가 카드에서 볼 수 있다. 이제 동쪽 2번 도로로 갈 수 있을 거다.", o)
-	await say("물결마을의 하라는 나보다 훨씬 까다로운 상대다. 몬스터를 잘 키워 두도록!", o)
+	await say("반석 관측 인증은 원정가 카드에서 볼 수 있다. 이제 동쪽 이끼숲길로 갈 수 있을 거다.", o)
+	await say("물결마을의 하라는 나보다 훨씬 까다로운 상대다. 생물을 잘 키워 두도록!", o)
 
 
 # =====================================================================
-# 2번 도로 · 물결마을
+# 이끼숲길 · 물결마을
 # =====================================================================
 func trig_cond_route2_0() -> bool:
 	return F("badge0") and not F("rival2")
@@ -386,13 +386,13 @@ func talk_wife(_n: NPC) -> void:
 		await w.give_item("revive", 1)
 		Game.set_flag("gift3")
 		return
-	await say("부활의깃털은 쓰러진 몬스터를 되살려 준단다. 아껴 쓰렴.", o)
+	await say("되살림 이슬은 쓰러진 생물을 되살려 준단다. 아껴 쓰렴.", o)
 
 
 func talk_leader2(_n: NPC) -> void:
 	var o := "현장 책임자 하라"
 	if int(Game.g.badges[1]):
-		await say("또 와 줬구나. 네 몬스터들은 정말 행복해 보여.", o)
+		await say("또 와 줬구나. 네 생물들은 정말 행복해 보여.", o)
 		await say("앞으로도 함께 넓은 세상을 원정하렴!", o)
 		return
 	await say("어서 와. 나는 물결마을 관측소 현장 책임자 하라.", o)
@@ -404,12 +404,12 @@ func talk_leader2(_n: NPC) -> void:
 	await say("수변 센서가 다시 신호를 보내고 있어. 이번 관측 기록을 인증할게.", o)
 	await badge(1, "하라", "물결 관측 인증")
 	await say("두 개의 관측 인증을 모은 너는 이제 어엿한 원정대원이야. 축하해!", o)
-	await say("남쪽에서 검은안개단이 관측 장비를 가져가고 있대. 기상 자료를 독점하려는 것 같아.", o)
-	await say("마을 남쪽 3번 도로는 이제 지나갈 수 있을 거야. 붉은재마을 현장 책임자 화련에게도 소식을 전해 주겠니?", o)
+	await say("남쪽에서 먹구름상회가 관측 장비를 가져가고 있대. 기상 자료를 독점하려는 것 같아.", o)
+	await say("마을 남쪽 잿빛 화산길은 이제 지나갈 수 있을 거야. 붉은재마을 현장 책임자 화련에게도 소식을 전해 주겠니?", o)
 
 
 # =====================================================================
-# 붉은재마을 · 번개도시 · 하늘봉마을
+# 붉은재마을 · 철탑마을 · 하늘봉마을
 # =====================================================================
 func cond_t3_gate() -> bool:
 	return not F("badge2")
@@ -426,11 +426,11 @@ func talk_rival4(_n: NPC) -> void:
 	var r := w.npc_by_id("rival4")
 	Sound.music("rival")
 	await say("%s! 열원 관측소가 연결됐다는 연락을 받았어!" % nm(), R)
-	await say("근데 들었어? 검은안개단이라는 녀석들이 번개도시 발전소를 점령했대. 그 전에 몸 좀 풀고 가자!", R)
+	await say("근데 들었어? 먹구름상회라는 녀석들이 철탑마을 발전소를 점령했대. 그 전에 몸 좀 풀고 가자!", R)
 	await w.battle({"kind": "trainer", "cls": "rival", "name": R, "team": Game.rival_team(4), "look": "rival", "bg": "rock", "lose": "쳇... 역시 넌 강하구나."})
 	if Game.g.map != "town3":
 		return
-	await say("나는 주민들에게 우회로를 알려 줄게. 통신 복구는 너에게 부탁해. 번개도시에서 만나자!", R)
+	await say("나는 주민들에게 우회로를 알려 줄게. 통신 복구는 너에게 부탁해. 철탑마을에서 만나자!", R)
 	if r:
 		r.gone = true
 	Sound.sfx("exit")
@@ -439,8 +439,8 @@ func talk_rival4(_n: NPC) -> void:
 func talk_leader3(_n: NPC) -> void:
 	var o := "현장 책임자 화련"
 	if int(Game.g.badges[2]):
-		await say("하하! 다시 왔구나. 네 몬스터들의 눈빛은 아직도 활활 타오르고 있어!", o)
-		await say("동쪽 번개도시에 검은안개단이 있다던데... 조심하라고!", o)
+		await say("하하! 다시 왔구나. 네 생물들의 눈빛은 아직도 활활 타오르고 있어!", o)
+		await say("동쪽 철탑마을에 먹구름상회가 있다던데... 조심하라고!", o)
 		return
 	await say("화산 열원 관측소에 잘 왔어. 여기 온도계를 관리하는 화련이야.", o)
 	await say("열원 센서를 안전하게 보정하려면 동료와 신호가 맞아야 해. 먼저 대응 훈련을 해 보자.", o)
@@ -450,7 +450,7 @@ func talk_leader3(_n: NPC) -> void:
 		return
 	await say("과열 구간의 값이 보정됐어. 열원 관측소 복구 기록을 전송할게.", o)
 	await badge(2, "화련", "불꽃 관측 인증")
-	await say("이제 동쪽 4번 도로로 갈 수 있을 거야. 그 너머 번개도시 발전소를 검은안개단이 점령했다는 소문이 있다.", o)
+	await say("이제 동쪽 갈대 들길로 갈 수 있을 거야. 그 너머 철탑마을 발전소를 먹구름상회가 점령했다는 소문이 있다.", o)
 	await say("도시 전체가 정전이라 관측소도 문을 닫았다더군. 네가 가서 해결해 주지 않겠어?", o)
 
 
@@ -475,7 +475,7 @@ func cond_t4_rival() -> bool:
 
 
 func talk_t4_rival(_n: NPC) -> void:
-	await say("%s! 발전소 입구는 여기야. 안에 검은안개단 두목이 있대." % nm(), R)
+	await say("%s! 발전소 입구는 여기야. 안에 먹구름상회 대표가 있대." % nm(), R)
 	await say("나는 밖에서 도망치는 단원들을 막고 있을게. 안은 너한테 맡긴다!", R)
 
 
@@ -484,12 +484,12 @@ func cond_boss() -> bool:
 
 
 func talk_boss(_n: NPC) -> void:
-	var o := "검은안개단 두목 흑운"
+	var o := "먹구름상회 대표 흑운"
 	await say("호오... 여기까지 오다니 제법이구나, 꼬마 원정가.", o)
 	await say("통신망을 잠그면 기상 기록은 우리만 볼 수 있지. 안전한 길을 알고 싶다면 우리에게 통행료를 내야 한다!", o)
-	await say("방해꾼은 안개 속으로 사라져라!", o)
+	await say("방해꾼은 먹구름 속으로 사라져라!", o)
 	var r := await w.battle({"kind": "trainer", "cls": "boss", "name": "흑운", "look": "boss", "team": [[26, 30], [28, 31], [30, 32]], "bg": "lab",
-		"lose": "이럴 수가... 나의 안개가 걷히다니..."})
+		"lose": "이럴 수가... 나의 먹구름이 걷히다니..."})
 	if r != "win":
 		return
 	await say("암호화 장치가 멈췄군. 관측값을 공개하는 게 정말 옳은지 두고 보자!", o)
@@ -501,26 +501,26 @@ func talk_boss(_n: NPC) -> void:
 	w.refresh_npcs()
 	await w.sleep(0.4)
 	Sound.sfx("save")
-	await say("발전기가 다시 정상적으로 돌아가기 시작했다! 번개도시에 전기가 들어왔다!")
+	await say("발전기가 다시 정상적으로 돌아가기 시작했다! 철탑마을에 전기가 들어왔다!")
 	await w.give_item("lvup", 3)
-	await say("발전소 직원이 감사의 표시로 레벨업 물약을 주었다!")
+	await say("발전소 직원이 감사의 표시로 성장 열매를 주었다!")
 
 
 func talk_leader4(_n: NPC) -> void:
 	var o := "현장 책임자 찌나"
 	if int(Game.g.badges[3]):
 		await say("또 왔어? 발전소를 되찾아 준 거, 정말 고마워!", o)
-		await say("북쪽 5번 도로 끝 하늘봉마을에 마지막 관측소가 있어. 힘내!", o)
+		await say("북쪽 구름 능선길 끝 하늘봉마을에 마지막 관측소가 있어. 힘내!", o)
 		return
-	await say("네가 발전소를 되찾아 준 원정가구나! 고마워. 나는 번개도시 관측소 현장 책임자 찌나야.", o)
+	await say("네가 발전소를 되찾아 준 원정가구나! 고마워. 나는 철탑마을 관측소 현장 책임자 찌나야.", o)
 	await say("전기는 돌아왔지만 통신 장치의 잡음이 남았어. 우리 동료들과 신호를 맞추면 센서를 보정할 수 있어.", o)
 	var r := await w.battle({"kind": "trainer", "cls": "leader", "name": "찌나", "look": "leaderElec", "team": [[17, 31], [30, 32], [18, 34]], "bg": "city", "leader": true,
 		"lose": "와... 번개보다 빨랐어!"})
 	if r != "win":
 		return
-	await say("통신 신호가 선명해졌어. 번개도시 관측소 복구 완료!", o)
+	await say("통신 신호가 선명해졌어. 철탑마을 관측소 복구 완료!", o)
 	await badge(3, "찌나", "번개 관측 인증")
-	await say("이제 북쪽 5번 도로를 지나갈 수 있어. 산 정상의 하늘봉마을에 마지막 현장 책임자 하늬가 기다리고 있어!", o)
+	await say("이제 북쪽 구름 능선길을 지나갈 수 있어. 산 정상의 하늘봉마을에 마지막 현장 책임자 하늬가 기다리고 있어!", o)
 
 
 func cond_t5_gate() -> bool:
@@ -579,32 +579,32 @@ func talk_t5_summit(_n: NPC) -> void:
 
 
 # =====================================================================
-# 엔딩 이후: 전설의 몬스터
+# 엔딩 이후: 전설의 생물
 # =====================================================================
 func talk_t5_elder(_n: NPC) -> void:
 	var o := "하늘봉 장로"
 	if not F("legendQuest"):
 		await say("오오, 정상에서의 승부, 잘 보았네. 자네라면 이 이야기를 들려줘도 되겠군.", o)
-		await say("먼 옛날, 하늘의 신 천공신이 이 지방을 만들고 세 수호신에게 땅을 맡겼다네.", o)
-		await say("불의 염화룡, 물의 심해왕, 번개의 자계수... 세 수호신은 지금도 깊은 동굴에서 잠들어 있지.", o)
-		await say("세 수호신을 모두 깨우면, 천공신이 이 정상에 다시 모습을 드러낸다고 전해진다네.", o)
+		await say("옛 관측 기록에는 세 마리 큰 생물이 땅속 열기와 물길과 자기장을 다스렸다고 적혀 있다네.", o)
+		await say("불의 염화룡, 물의 심해왕, 번개의 자계수... 세 생물은 지금도 깊은 동굴에서 쉬고 있지.", o)
+		await say("세 생물의 기운이 다시 움직이면, 구름 바다를 건너는 운해마가 정상에 내려와 바람길을 살핀다고 하네.", o)
 		for L in LEGENDS:
 			await say("%s: %s" % [Game.sp(L.sid).n, L.where], o)
-		await say("동굴 입구는 이제 자네에게 열릴 걸세. 수호신들은 아주 강하니, 심층 공명등을 넉넉히 챙겨 가게.", o)
+		await say("동굴 입구는 이제 자네에게 열릴 걸세. 그 생물들은 아주 강하니, 심층 공명등을 넉넉히 챙겨 가게.", o)
 		Game.set_flag("legendQuest")
 		await w.give_item("hyper", 3)
 		Sound.sfx("sparkle")
 		return
 	var left := LEGENDS.filter(func(L: Dictionary) -> bool: return not F("awake%d" % L.sid))
 	if left.size():
-		await say("아직 깨어나지 않은 수호신이 %d마리 남았네." % left.size(), o)
+		await say("아직 만나지 못한 큰 생물이 %d마리 남았네." % left.size(), o)
 		for L in left:
 			await say("%s: %s" % [Game.sp(L.sid).n, L.where], o)
 		return
 	if not F("cap34"):
-		await say("세 수호신이 모두 깨어났군! 하늘이 울리고 있어... 정상으로 가 보게!", o)
+		await say("세 생물의 기운이 모두 움직였군! 바람이 달라졌어... 정상으로 가 보게!", o)
 		return
-	await say("천공신과 함께하는 원정가라니... 살아서 이런 날을 보게 될 줄이야.", o)
+	await say("운해마와 함께하는 원정가라니... 살아서 이런 날을 보게 될 줄이야.", o)
 	await say("남쪽 무한의 탑에서 자네의 힘을 더 시험해 보는 것도 좋겠지.", o)
 
 
@@ -633,7 +633,7 @@ func legend_battle(sid: int, lv: int, bg: String) -> void:
 		Sound.sfx("shake")
 		FX.shake(w, 16.0, 0.6)
 		await say("...!")
-		await say("멀리 하늘봉 쪽에서 천둥 같은 울림이 들려왔다! 세 수호신이 모두 깨어났다!")
+		await say("멀리 하늘봉 쪽에서 천둥 같은 울림이 들려왔다! 세 생물의 기운이 모두 깨어났다!")
 
 
 # =====================================================================
@@ -687,8 +687,8 @@ func talk_tw_rec(_n: NPC) -> void:
 	if not F("towerIntro"):
 		Game.set_flag("towerIntro")
 		await say("무한의 탑에 오신 걸 환영합니다! 이 탑은 100층까지 이어져 있어요.", o)
-		await say("층마다 수호자가 기다리고, 수호자의 몬스터 레벨은 층수와 같아요. 100층은 레벨 100이랍니다!", o)
-		await say("10층을 돌파할 때마다 몬스터가 회복되고 보상을 받아요. 다음에는 돌파한 10층 단위부터 다시 도전할 수 있어요.", o)
+		await say("층마다 수호자가 기다리고, 수호자의 생물 레벨은 층수와 같아요. 100층은 레벨 100이랍니다!", o)
+		await say("10층을 돌파할 때마다 생물이 회복되고 보상을 받아요. 다음에는 돌파한 10층 단위부터 다시 도전할 수 있어요.", o)
 		await say("도중에 지면 이 로비로 돌아오게 되지만, 돈을 잃지는 않으니 안심하세요!", o)
 	var top := mini(91, int(t.best) / 10 * 10 + 1)
 	var cps: Array = []
@@ -705,9 +705,9 @@ func talk_tw_rec(_n: NPC) -> void:
 		await say("또 오세요!", o)
 		return
 	if Game.alive().is_empty():
-		await say("먼저 몬스터를 회복시켜 주세요.", o)
+		await say("먼저 생물을 회복시켜 주세요.", o)
 		return
-	await say("도전 전에 몬스터들을 회복시켜 드릴게요.", o)
+	await say("도전 전에 생물들을 회복시켜 드릴게요.", o)
 	w.heal_party()
 	Sound.sfx("heal")
 	await say("그럼 %d층으로 안내할게요. 행운을 빌어요!" % cps[r], o)
@@ -748,7 +748,7 @@ func talk_tw_guard(n: NPC) -> void:
 	if f % 10 == 0:
 		w.heal_party()
 		Sound.sfx("heal")
-		await say("%d층 돌파! 몬스터들이 회복되었다." % f)
+		await say("%d층 돌파! 생물들이 회복되었다." % f)
 		var prize := f * 40
 		Game.g.money = int(Game.g.money) + prize
 		await say("%s 보상으로 %s 받았다!" % [Game.josa(nm(), "은"), Game.josa(Game.money(prize), "을")])
@@ -830,7 +830,7 @@ func subst_talk(n: NPC) -> void:
 		await Sound.jingle("heal")
 		await w.fade(0.0)
 		Game.g.heal = {"map": "home", "x": 4, "y": 6}
-		await say("몬스터들이 기운을 되찾았다!")
+		await say("생물들이 기운을 되찾았다!")
 		await say("네 엄마 몫까지 아줌마가 응원할게!", s.name)
 		return
 	await talk(n)
