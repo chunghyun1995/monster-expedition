@@ -99,8 +99,47 @@ func read_save() -> Dictionary:
 
 func load_save(s: Dictionary) -> void:
 	g = s
+	update_recovery(str(g.map))
 	for m in g.party + g.box:
 		m.hp = mini(int(m.hp), max_hp(m))
+
+
+## 마을 도착만으로 병원 복귀를 등록한다. 기존 일지의 집/연구소 지점도 보정한다.
+func update_recovery(map_id: String) -> void:
+	var mp: Dictionary = Data.map(map_id)
+	var hospital := str(mp.get("hospital", ""))
+	if hospital == "":
+		return
+	# 길에서는 마지막으로 방문한 마을을 유지한다. 옛 일지에는 지역 병원을 사용한다.
+	if map_id.begins_with("route") and _valid_hospital(str(g.get("hospital_map", ""))):
+		hospital = str(g.hospital_map)
+	if _valid_hospital(hospital):
+		g.hospital_map = hospital
+		g.heal = _hospital_point(hospital)
+
+
+func _valid_hospital(map_id: String) -> bool:
+	return Data.D.maps.has(map_id) and Data.map(map_id).get("hospital", "") == map_id
+
+
+func _hospital_point(map_id: String) -> Dictionary:
+	var xy: Array = Data.map(map_id).recovery
+	return {"map": map_id, "x": int(xy[0]), "y": int(xy[1])}
+
+
+func recovery_point() -> Dictionary:
+	update_recovery(str(g.map))
+	var hospital := str(g.get("hospital_map", ""))
+	if not _valid_hospital(hospital):
+		# 옛 일지가 초기 마을에 있어도 관측 인증을 이미 얻었다면 병원으로 복귀한다.
+		for i in range(4, -1, -1):
+			if int(g.badges[i]):
+				hospital = "center%d" % (i + 1)
+				break
+	if _valid_hospital(hospital):
+		g.hospital_map = hospital
+		g.heal = _hospital_point(hospital)
+	return g.heal.duplicate()
 
 
 func _load_settings() -> void:

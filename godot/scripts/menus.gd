@@ -890,7 +890,7 @@ func license_notice() -> void:
 
 
 # =====================================================================
-# 시설: 상점 · 관측 캠프 · PC · 합성
+# 시설: 상점 · 병원 · PC · 합성
 # =====================================================================
 func shop_stock() -> Array:
 	var s := ["ball", "lvup", "potion", "antidote", "burnheal", "parheal", "awake"]
@@ -985,8 +985,8 @@ func shop_sell() -> void:
 
 
 func nurse(w: World, n: NPC) -> void:
-	var o := "캠프 의무원"
-	await Msg.say("관측 캠프 의무실입니다. 동료들 상태를 볼까요?", o)
+	var o := "병원 의무원"
+	await Msg.say("병원입니다. 동료들 상태를 볼까요?", o)
 	var r := await Msg.ask("치료를 진행할까요?", ["예", "아니오"], o)
 	if r != 0:
 		await Msg.say("무리하지 말고 다녀오세요!", o)
@@ -996,9 +996,7 @@ func nurse(w: World, n: NPC) -> void:
 	await w.heal_anim()
 	Game.heal_party()
 	await n.face("down")
-	var wp: Array = w.m.warps.get("6,9", [])
-	if wp.size():
-		Game.g.heal = {"map": wp[0], "x": int(wp[1]), "y": int(wp[2])}
+	Game.update_recovery(str(w.m.id))
 	await Msg.say("치료가 끝났어요. 모두 기운을 되찾았어요.", o)
 	await n.bow()
 	await Msg.say("무리하지 말고 다녀오세요!", o)
