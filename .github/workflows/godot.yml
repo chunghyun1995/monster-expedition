@@ -249,6 +249,7 @@ jobs:
           "KIT=$($kit.FullName)" | Out-File -Append $env:GITHUB_ENV
           Get-ChildItem dist | Format-Table Name, Length
           "### Windows`n- MSIX $v · $env:MSIX_NAME · $env:MSIX_PUBLISHER" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          if ($env:MSIX_PUBLISHER -eq 'CN=VeloriaFieldnotesDev') { "::warning::저장소 Variables에 MSIX_IDENTITY_NAME·MSIX_PUBLISHER·MSIX_PUBLISHER_DISPLAY_NAME가 없어 임시 ID로 만들었습니다(스토어 업로드 불가)." }
 
       - name: MSIX 설치 확인 (임시 인증서로 서명한 사본)
         run: |
