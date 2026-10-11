@@ -40,6 +40,7 @@ var _foot := false
 var _cam_y := 0.0
 var _turn_at := 0.0
 var _chain := false
+var _discovery_cooldown := 0
 
 
 func _ready() -> void:
@@ -242,7 +243,10 @@ func _make_prop(x: int, y: int, c: String) -> void:
 			"#":
 				spec = {"i": 1 if (m.bg == "forest" and (x + y) % 2) or (x * 7 + y * 3) % 5 == 0 else 0, "h": 124.0, "sway": 0.7, "shadow": true, "dy": -2}
 			",":
-				spec = {"i": 2, "h": 58.0, "sway": 1.0, "dy": 7}
+				# Alternating trees leave visible paths; retain walkable habitat cells.
+				if (x + y) % 2 != 0:
+					return
+				spec = {"i": (x + y) % 3 % 2, "h": 106.0, "sway": 0.6, "shadow": true, "dy": -4}
 			"f":
 				spec = {"i": 3, "h": 40.0, "sway": 1.6, "dy": -10}
 			"r":
@@ -338,6 +342,26 @@ func _make_buildings() -> void:
 		s.scale = Vector2((w + 8) / 192.0, (h + 28) / 192.0)
 		s.position = Vector2(-w / 2.0 - 4, -h - 26)
 		root.add_child(s)
+		var title := building_name(b)
+		var label := UI.label(root, title, Vector2(-w / 2 - 20, -h - 72), 24, Color("#f2f5f7"))
+		label.name = "BuildingName"
+		label.size = Vector2(w + 40, 42)
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.add_theme_stylebox_override("normal", UI.box(Color("#172932"), Color("#638b96"), 8, 2))
+		label.add_theme_constant_override("outline_size", 3)
+		label.add_theme_color_override("font_outline_color", Color("#172932"))
+		label.z_index = 20
+
+
+func building_name(building: Dictionary) -> String:
+	for key in m.warps:
+		var coordinates := str(key).split(",")
+		var door := Vector2i(int(coordinates[0]), int(coordinates[1]))
+		if Rect2i(building.pos, building.size).has_point(door):
+			var destination := str(m.warps[key][0])
+			if Data.D.maps.has(destination):
+				return str(Data.D.maps[destination].name)
+	return str({"H":"숙소", "K":"회복소", "B":"현장통신소", "C":"교류회관", "M":"현장상점", "G":"관측소", "T":"기록의 탑"}.get(building.code, "건물"))
 
 
 func _make_tables() -> void:
@@ -583,6 +607,7 @@ func _on_step() -> void:
 	Game.g.y = P.y
 	Game.g.dir = player.dir
 	Game.g.steps = int(Game.g.steps) + 1
+	_discovery_cooldown = maxi(0, _discovery_cooldown - 1)
 	var key := "%d,%d" % [P.x, P.y]
 	if m.warps.has(key):
 		var destination: Array = m.warps[key]
@@ -597,8 +622,15 @@ func _on_step() -> void:
 	if tr:
 		await run_script(func() -> void: await _trainer_spot(tr))
 		return
-	if tile(P.x, P.y) == "," and not m.enc.is_empty() and not Game.alive().is_empty() and randf() < 0.11:
-		await run_script(_wild)
+	if _discovery_cooldown == 0 and tile(P.x, P.y) == "," and not m.enc.is_empty() and not Game.alive().is_empty() and randf() < 0.11:
+		await run_script(discover)
+
+
+func discover() -> void:
+	_discovery_cooldown = 5
+	var answer := await Msg.ask("무언가 발견했다. 확인해볼까?", ["확인해보자", "그냥 가자"])
+	if answer == 0:
+		await _wild()
 
 
 func do_warp(w: Array, door: bool) -> void:

@@ -100,7 +100,7 @@ func trig_cond_town_0() -> bool:
 
 
 func trig_town_0() -> void:
-	await say("앗, 풀숲에서 무언가 바스락거린다...")
+	await say("앗, 나무 사이에서 무언가 바스락거린다...")
 	await say("몬스터 없이 가는 건 위험할 것 같다. 먼저 연구소에 들르자!")
 	await w.walk_player(["down"])
 
@@ -190,23 +190,24 @@ func mon_card(sid: int) -> Control:
 	bg.color = Color(0.06, 0.08, 0.14, 0.5)
 	bg.size = vs
 	root.add_child(bg)
-	var card := UI.panel(root, Rect2(40, 140, vs.x - 80, 560), Color(1.0, 0.99, 0.93))
+	var card_height := minf(480.0, TouchPad.reserved_top(vs) - 16 - 332 - 60 - 116)
+	var card := UI.panel(root, Rect2(40, 116, vs.x - 80, card_height), Color("#1b2934"), Color("#638b96"))
 	var stage := Node2D.new()
-	stage.position = Vector2(card.size.x / 2, 330)
+	stage.position = Vector2(card.size.x / 2, card_height * 0.52)
 	card.add_child(stage)
 	var p := Puppet.new()
 	stage.add_child(p)
-	p.setup_mon(sid, false, 260.0)
+	p.setup_mon(sid, false, minf(240.0, card_height * 0.5))
 	p.scale = Vector2(0.2, 0.2)
 	p.create_tween().tween_property(p, "scale", Vector2.ONE, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	FX.burst(stage, Vector2(0, -120), Color(1, 1, 0.8), Color(1, 0.85, 0.4), 18, 260.0, Vector2.ZERO, 0.6, 1.0, 180.0)
 	var types: Array = []
 	for t in s.t:
 		types.append(Data.type_name(t))
-	UI.label(card, "%s  ·  %s 타입  ·  %s 몬스터" % [s.n, "/".join(types), s.cat], Vector2(28, 360), 30)
-	var d := UI.label(card, s.d, Vector2(28, 410), 26, Color(0.3, 0.33, 0.42))
-	d.size.x = card.size.x - 56
-	d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var info := UI.label(card, "%s  ·  %s 타입\n%s 몬스터" % [s.n, "/".join(types), s.cat], Vector2(24, card_height * 0.55), 26, Color("#f2f5f7"))
+	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info.size = Vector2(card.size.x - 48, 84)
+	UI.scroll_text(card, s.d, Rect2(24, card_height * 0.55 + 90, card.size.x - 48, card_height * 0.45 - 108), 24, Color("#bacdd4"))
 	return root
 
 

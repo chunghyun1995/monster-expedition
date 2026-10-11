@@ -192,11 +192,11 @@ func _intro() -> void:
 	add_child(bg)
 	var card := UI.panel(self, Rect2(36, 110, vs.x - 72, vs.y * 0.46), Color("#f0ead6"), Color("#b69055"))
 	var heading := UI.label(card, "벨로리아 현장통신", Vector2(28, 24), 38)
-	heading.size.x = card.size.x - 56
 	heading.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	heading.size.x = card.size.x - 56
 	var log := UI.label(card, "새벽 폭풍으로 관측망이 끊겼습니다.\n다섯 지역의 센서를 다시 연결하고\n야생 생물의 변화 기록을 회수해 주세요.", Vector2(28, 100), 28)
-	log.size = Vector2(card.size.x - 56, 170)
 	log.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	log.size = Vector2(card.size.x - 56, 170)
 	# Original incident map: five linked monitoring nodes, no professor demonstration.
 	var chart := Node2D.new()
 	chart.position = Vector2(card.size.x * 0.5, card.size.y - 100)

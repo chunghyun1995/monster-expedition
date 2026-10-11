@@ -115,6 +115,10 @@ jobs:
           cat new-survey.log
           grep -q NEW_SURVEY_PASS new-survey.log
           ! grep -E 'SCRIPT ERROR:|Shader compilation failed' new-survey.log
+          "$GODOT" --headless --path . res://tests/layout_discovery.tscn > layout-discovery.log 2>&1
+          cat layout-discovery.log
+          grep -q LAYOUT_DISCOVERY_PASS layout-discovery.log
+          ! grep -E 'SCRIPT ERROR:|Shader compilation failed' layout-discovery.log
           "$GODOT" --headless --path . --export-release "Web" build/web/index.html
           "$GODOT" --headless --path . --install-android-build-template --export-release "Android APK" build/android/monster-expedition-godot.apk
           "$GODOT" --headless --path . --export-release "Android AAB" build/android/monster-expedition-godot.aab
@@ -210,7 +214,7 @@ jobs:
 
   release:
     needs: [build, emulator-test]
-    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/fix/original-expedition-release') && github.event_name != 'pull_request'
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/fix/original-expedition-release' || github.ref == 'refs/heads/build/windows-store') && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: write
