@@ -22,7 +22,7 @@
 
 ## 빌드
 
-`.github/workflows/godot.yml`이 웹·APK·AAB를 만들고(targetSdk 36, 16KB 정렬 검사, 저장소 서명 키), main이면 `godot-번호` 사전 출시로 올립니다.
+`.github/workflows/godot.yml`이 웹·APK·AAB를 만들고(targetSdk 36, 16KB 정렬 검사, 저장소 서명 키), main이면 `v1.0.N` 릴리스로 올립니다(첫 빌드 v1.0.0, 이후 하나씩 증가 · APK·MSIX·exe 버전도 같은 번호).
 패키지 이름은 `io.github.chunghyun1995.monsterexpedition.godot`라 기존 앱과 따로 설치됩니다.
 
 로컬: Godot 4.7.2 편집기로 `godot/project.godot`을 열고 실행.

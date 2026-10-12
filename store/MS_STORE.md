@@ -29,7 +29,7 @@ GitHub 저장소 **Settings → Secrets and variables → Actions → Variables*
 값을 넣은 뒤 main 빌드(또는 Actions에서 Godot 워크플로 수동 실행)가 만든 MSIX여야 업로드가 통과합니다. 값이 없으면 임시 ID로 만들어져 업로드 단계에서 거부됩니다.
 
 ## 3. 제출
-- **패키지**: 릴리스의 `VeloriaFieldnotes.msix` 업로드. 버전은 `4.0.(빌드 번호).0`이라 매번 커집니다.
+- **패키지**: 릴리스의 `VeloriaFieldnotes.msix` 업로드. 버전은 릴리스 번호와 같은 `1.0.N.0`(v1.0.0 → 1.0.0.0)이라 매번 커집니다.
 - **속성**: 범주 게임 › 롤플레잉, 개인정보처리방침 `https://chunghyun1995.github.io/monster-expedition/privacy.html`
 - **연령 등급**: IARC 설문 — 플레이 스토어와 같은 답(만화풍 판타지 폭력, 피 없음, 비속어·구매·소통 없음)
 - **스토어 목록**: 설명 문구는 `store/README.md`의 스토어 등록정보 문구를 그대로 쓰면 됩니다. 스크린샷은 Windows 화면 크기를 요구하므로 zip판을 PC에서 실행해 찍거나 `store/screenshots/`의 세로 화면을 사용합니다.
