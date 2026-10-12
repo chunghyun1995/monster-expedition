@@ -4,6 +4,7 @@
 #  - emulator-test: Android 16 에뮬레이터에 설치해 실행 확인
 #  - windows-package: 윈도우 러너에서 실행 확인(헤드리스) 후 Microsoft Store용 MSIX와 zip 만들기
 #             MSIX 패키지 ID는 저장소 Variables(MSIX_IDENTITY_NAME·MSIX_PUBLISHER·MSIX_PUBLISHER_DISPLAY_NAME)로 정함
+#  - pages: main 브랜치면 웹판을 GitHub Pages에 배포 (/ 새 게임, /classic/ 예전 웹 게임, /privacy.html)
 #  - release: main 브랜치면 "godot-번호" 사전 출시(prerelease)로 게시 (기존 WebView 앱 릴리스는 그대로 최신 유지)
 #             수동 실행(workflow_dispatch)에서 tag를 주면 그 릴리스의 설명문과 파일을 새로 고친다
 name: Godot
@@ -377,3 +378,42 @@ jobs:
             확인된 유사 표현을 수정한 빌드이며 법적 비침해 보증은 아닙니다.
             변경 및 출처 확인 범위: docs/ASSET_RECORD_2026-10-11.md, docs/SIMILARITY_AUDIT_2026-10-11.md
             커밋: ${{ github.sha }}
+
+  # 웹판: main 빌드마다 GitHub Pages에 올린다 (저장소 Settings › Pages › Source를 "GitHub Actions"로 한 번 바꿔 둬야 함)
+  #   /             새 Godot 웹 게임 (단일 스레드라 특별한 서버 헤더 없이 동작)
+  #   /classic/     예전 웹 게임 (저장 코드를 꺼내 새 게임의 "웹 게임 저장 코드로 불러오기"로 옮길 수 있게 남겨 둠)
+  #   /privacy.html 개인정보처리방침 (앱과 스토어에 등록된 주소라 그대로 유지)
+  pages:
+    needs: [build, emulator-test]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            index.html
+            privacy.html
+          sparse-checkout-cone-mode: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: godot-web
+          path: site
+      - name: 사이트 구성
+        run: |
+          mkdir -p site/classic
+          cp index.html site/classic/index.html
+          cp privacy.html site/privacy.html
+          touch site/.nojekyll
+          test -s site/index.html && test -s site/index.wasm && test -s site/index.pck
+          du -sh site site/*
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4
