@@ -1,6 +1,6 @@
 extends Node2D
 ## 타이틀: 배경 위에서 생물들이 저마다의 움직임으로 숨 쉬고, 주인공이 걸어 들어온다.
-## 이어하기 / 처음부터(오프닝) / 설정 / 웹 게임 저장 코드로 불러오기
+## 이어하기 / 처음부터(오프닝) / 설정 / 저장 코드로 불러오기(이 게임 VF1·예전 웹 게임 ME3)
 
 var _busy := false
 
@@ -74,7 +74,7 @@ func _menu() -> void:
 				"rect": Rect2(60, vs.y - 520, vs.x - 120, 130), "color": Color(0.3, 0.5, 0.8), "disabled": sv.is_empty(), "size": 30},
 			{"text": "처음부터 시작", "rect": Rect2(60, vs.y - 375, vs.x - 120, 100), "color": Color(0.86, 0.36, 0.42), "size": 34},
 			{"text": "설정", "rect": Rect2(60, vs.y - 260, vs.x - 120, 90), "color": Color(0.42, 0.45, 0.52), "size": 30},
-			{"text": "웹 게임 저장 코드로 불러오기", "rect": Rect2(60, vs.y - 155, vs.x - 120, 80), "color": Color(0.3, 0.55, 0.5), "size": 28}]
+			{"text": "저장 코드로 불러오기", "rect": Rect2(60, vs.y - 155, vs.x - 120, 80), "color": Color(0.3, 0.55, 0.5), "size": 28}]
 		var i := await Msg.buttons(btns, -2, 0 if not sv.is_empty() else 1)
 		if i == 3:
 			if await _import_code(sv):
@@ -107,16 +107,16 @@ func _import_code(sv: Dictionary) -> bool:
 	bg.size = vs
 	layer.add_child(bg)
 	var p := UI.panel(layer, Rect2(24, 90, vs.x - 48, 690))
-	var title := UI.label(p, "웹 게임 저장 코드로 불러오기", Vector2(24, 20), 32)
+	var title := UI.label(p, "저장 코드로 불러오기", Vector2(24, 20), 32)
 	title.size.x = p.size.x - 48
-	var help := UI.label(p, "웹 게임의 [리포트 → 기록하고 저장 코드 만들기]에서 복사한 코드(ME3-…)나 링크를 붙여 넣으세요.", Vector2(24, 70), 24, Color(0.3, 0.33, 0.42))
+	var help := UI.label(p, "다른 기기의 [메뉴 → 일지 저장 → 저장 코드 만들기]에서 복사한 코드(VF1-…)나, 예전 웹 게임의 저장 코드(ME3-…)·링크를 붙여 넣으세요.", Vector2(24, 66), 21, Color(0.3, 0.33, 0.42))
 	help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	help.custom_minimum_size = Vector2(p.size.x - 48, 80)
 	help.size = Vector2(p.size.x - 48, 80)
 	var te := TextEdit.new()
 	te.position = Vector2(24, 160)
 	te.size = Vector2(p.size.x - 48, 300)
-	te.placeholder_text = "ME3-XXXX-..."
+	te.placeholder_text = "VF1-XXXX-... 또는 ME3-XXXX-..."
 	te.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
 	te.add_theme_font_size_override("font_size", 22)
 	te.add_theme_stylebox_override("normal", UI.box(Color(1, 1, 1), Color(0.55, 0.6, 0.7), 10, 3))

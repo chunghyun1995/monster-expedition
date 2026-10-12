@@ -806,12 +806,16 @@ func map_screen(w: World) -> void:
 # =====================================================================
 func save_menu(w: World) -> bool:
 	var r := await Msg.ask("%s · 관측 인증 %d · 생태기록 %d · %s\n지금까지의 조사를 현장 일지에 저장할까요?" % [w.m.name, Game.badge_count(), Game.g.caught.size(), Game.fmt_time(float(Game.g.play_ms))],
-		["일지 저장", "그만두기"])
-	if r != 0:
+		["일지 저장", "저장 코드 만들기", "그만두기"])
+	if r < 0 or r > 1:
 		return false
 	Game.g.x = w.P.x
 	Game.g.y = w.P.y
 	Game.g.dir = w.player.dir
+	if r == 1:
+		Game.save_game()
+		await export_code()
+		return true
 	await Msg.say("현장 일지를 저장하는 중...", "", {"auto": 0.8})
 	if Game.save_game():
 		Sound.jingle("save")
@@ -819,6 +823,57 @@ func save_menu(w: World) -> bool:
 		return true
 	await Msg.say("현장 일지를 저장하지 못했습니다...")
 	return false
+
+
+## 저장 코드 만들기: 지금 현장 일지를 코드(VF1-…)로 보여 주고 복사할 수 있게 한다.
+## 다른 기기에서 타이틀의 [저장 코드로 불러오기]에 붙여 넣으면 이어서 할 수 있다 (서버 없이)
+func export_code() -> void:
+	var code := SaveCode.make(Game.g)
+	var vs := get_viewport().get_visible_rect().size
+	var layer := CanvasLayer.new()
+	layer.layer = 60
+	add_child(layer)
+	var bg := ColorRect.new()
+	bg.color = Color(0.06, 0.08, 0.14, 0.85)
+	bg.size = vs
+	layer.add_child(bg)
+	var p := UI.panel(layer, Rect2(24, 90, vs.x - 48, 690))
+	var title := UI.label(p, "저장 코드", Vector2(24, 20), 32)
+	title.size.x = p.size.x - 48
+	var help := UI.label(p, "다른 기기(휴대폰·PC·웹)의 타이틀 화면 [저장 코드로 불러오기]에 붙여 넣으면 지금 일지에서 이어서 할 수 있어요.", Vector2(24, 70), 22, Color(0.3, 0.33, 0.42))
+	help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	help.custom_minimum_size = Vector2(p.size.x - 48, 100)
+	help.size = Vector2(p.size.x - 48, 100)
+	var te := TextEdit.new()
+	te.position = Vector2(24, 180)
+	te.size = Vector2(p.size.x - 48, 300)
+	te.text = code
+	te.editable = false
+	te.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+	te.add_theme_font_size_override("font_size", 18)
+	te.add_theme_stylebox_override("normal", UI.box(Color(1, 1, 1), Color(0.55, 0.6, 0.7), 10, 3))
+	te.add_theme_stylebox_override("read_only", UI.box(Color(1, 1, 1), Color(0.55, 0.6, 0.7), 10, 3))
+	te.add_theme_color_override("font_readonly_color", UI.INK)
+	p.add_child(te)
+	var note := UI.label(p, "%d자 · 전체 선택 후 복사해도 돼요" % code.length(), Vector2(24, 490), 22, Color(0.3, 0.33, 0.42))
+	note.size.x = p.size.x - 48
+	var bw := (p.size.x - 48 - 12) / 2.0
+	var done := [false]
+	var copy := UI.button(p, "복사하기", Rect2(24, 560, bw, 90), Color(0.3, 0.6, 0.4), 28)
+	copy.pressed.connect(func() -> void:
+		DisplayServer.clipboard_set(code)
+		te.select_all()
+		note.text = "복사했어요. 다른 기기에 붙여 넣어 주세요."
+		Sound.sfx("sel"))
+	var close := UI.button(p, "닫기", Rect2(36 + bw, 560, bw, 90), Color(0.4, 0.42, 0.5), 28)
+	close.pressed.connect(func() -> void: done[0] = true)
+	copy.grab_focus()
+	while not done[0]:
+		if Input.is_action_just_pressed("ui_cancel"):
+			done[0] = true
+		await get_tree().process_frame
+	Sound.sfx("back")
+	layer.queue_free()
 
 
 func options_menu() -> void:

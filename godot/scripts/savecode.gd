@@ -1,4 +1,5 @@
 class_name SaveCode
+## 이 게임의 저장 코드(VF1-…, make로 만듦)와
 ## 웹 게임의 저장 코드(ME3·ME2, 무압축 ME3U·ME2U, 또는 "…#c=코드" 링크)를 읽어 Godot 리포트로 바꾼다.
 ## 형식(src/menus.js): <태그>-<체크섬4>-<base64url(deflate-raw(JSON))>
 ##   ME3 = 짧게 압축한 배열 표현(packSave), ME2 = 게임 상태 JSON 그대로
@@ -8,12 +9,37 @@ const B32 := "0123456789abcdefghijklmnopqrstuv"
 const B36 := "0123456789abcdefghijklmnopqrstuvwxyz"
 
 
+## 이 게임(Godot 판)의 저장 코드: VF1-체크4자리-본문 (본문 = 리포트를 var_to_bytes → gzip → base64url)
+## 다른 기기(폰·PC·웹)로 현장 일지를 옮길 때 쓴다. 서버 없이 복사·붙여넣기만으로 옮긴다
+static func make(g: Dictionary) -> String:
+	var packed := var_to_bytes(g).compress(FileAccess.COMPRESSION_GZIP)
+	var body := Marshalls.raw_to_base64(packed).replace("+", "-").replace("/", "_").replace("=", "")
+	return "VF1-%s-%s" % [ck4(body), body]
+
+
+static func _read_vf(t: String) -> Dictionary:
+	var m := RegEx.create_from_string("^VF1-([0-9A-Z]{4})-([A-Za-z0-9_-]+)$").search(t)
+	if m == null:
+		return _err("코드 형식이 올바르지 않아요.")
+	if ck4(m.get_string(2)) != m.get_string(1):
+		return _err("코드 일부가 빠졌거나 잘못 입력됐어요.")
+	var bytes := b64u_dec(m.get_string(2)).decompress_dynamic(16 * 1024 * 1024, FileAccess.COMPRESSION_GZIP)
+	if bytes.is_empty():
+		return _err("코드의 압축을 풀 수 없어요.")
+	var g = bytes_to_var(bytes)   # 객체는 풀지 않는다 (데이터만)
+	if not g is Dictionary or not g.has("party") or not g.has("name") or not g.party is Array:
+		return _err("저장 데이터를 읽을 수 없어요.")
+	return {"ok": true, "g": g}
+
+
 static func read(text: String) -> Dictionary:
 	var t := text.strip_edges()
 	var hi := t.find("#c=")
 	if hi >= 0:
 		t = t.substr(hi + 3).uri_decode()
 	t = t.replace(" ", "").replace("\n", "").replace("\r", "").replace("\t", "")
+	if t.begins_with("VF1-"):
+		return _read_vf(t)
 	var re := RegEx.create_from_string("^(ME[23]U?)-([0-9A-Z]{4})-([A-Za-z0-9_-]+)$")
 	var m := re.search(t)
 	if m == null:

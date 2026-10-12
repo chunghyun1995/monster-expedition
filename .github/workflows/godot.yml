@@ -381,7 +381,7 @@ jobs:
 
   # 웹판: main 빌드마다 GitHub Pages에 올린다 (저장소 Settings › Pages › Source를 "GitHub Actions"로 한 번 바꿔 둬야 함)
   #   /             새 Godot 웹 게임 (단일 스레드라 특별한 서버 헤더 없이 동작)
-  #   /classic/     예전 웹 게임 (저장 코드를 꺼내 새 게임의 "웹 게임 저장 코드로 불러오기"로 옮길 수 있게 남겨 둠)
+  #   /classic/     예전 웹 게임 (저장 코드를 꺼내 새 게임의 "저장 코드로 불러오기"로 옮길 수 있게 남겨 둠)
   #   /privacy.html 개인정보처리방침 (앱과 스토어에 등록된 주소라 그대로 유지)
   pages:
     needs: [build, emulator-test]
