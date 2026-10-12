@@ -8,6 +8,10 @@ Godot에서 `godot/project.godot`을 열어 실행합니다. Android 패키지 I
 
 기능: 지도 40곳, 전투·공명 동행·진화·상점·보관함·합성, 사람 동료의 자발적 합류, 무한의 탑 100층, 자동전투·자동진행, 최초 사용 안내, 리포트 저장.
 
+## 웹판
+
+main 빌드마다 GitHub Pages에 배포됩니다: <https://chunghyun1995.github.io/monster-expedition/> (예전 웹 게임은 `/classic/`, 개인정보처리방침은 `/privacy.html`). 처음 한 번 저장소 Settings › Pages › Source를 "GitHub Actions"로 바꿔야 합니다. 웹판 저장은 브라우저(IndexedDB)에 남습니다.
+
 ## 출처와 확인 범위
 
 [2026-10-11 표현 개정 및 에셋 기록](docs/ASSET_RECORD_2026-10-11.md). 법률 검토나 비침해 보증을 대신하지 않습니다. Godot·Galmuri·Android 의존성 라이선스는 앱 설정의 라이선스 화면과 `godot/licenses`에 포함합니다.
