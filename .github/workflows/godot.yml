@@ -5,8 +5,10 @@
 #  - windows-package: 윈도우 러너에서 실행 확인(헤드리스) 후 Microsoft Store용 MSIX와 zip 만들기
 #             MSIX 패키지 ID는 저장소 Variables(MSIX_IDENTITY_NAME·MSIX_PUBLISHER·MSIX_PUBLISHER_DISPLAY_NAME)로 정함
 #  - pages: main 브랜치면 웹판을 GitHub Pages에 배포 (/ 새 게임, /classic/ 예전 웹 게임, /privacy.html)
-#  - release: main 브랜치면 "godot-번호" 사전 출시(prerelease)로 게시 (기존 WebView 앱 릴리스는 그대로 최신 유지)
+#  - release: main 브랜치면 "v1.0.N" 릴리스로 게시 (최신 릴리스로 표시)
 #             수동 실행(workflow_dispatch)에서 tag를 주면 그 릴리스의 설명문과 파일을 새로 고친다
+#  버전: APP_VERSION(주.부) + 이미 있는 v주.부.* 태그 다음 번호. 첫 빌드는 1.0.0
+#        APK versionName·MSIX(1.0.0.0)·exe 파일 버전이 모두 같은 번호, versionCode = 주×10000 + 부×100 + 수(1.0.0 → 10000)
 name: Godot
 
 on:
@@ -23,7 +25,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: '고쳐 쓸 기존 릴리스 태그 (예: godot-9). 비우면 새 godot-번호 릴리스'
+        description: '고쳐 쓸 기존 릴리스 태그 (예: v1.0.0). 비우면 새 v1.0.N 릴리스'
         required: false
         default: ''
 
@@ -33,12 +35,34 @@ concurrency:
 
 env:
   GODOT_VERSION: 4.7.2
+  APP_VERSION: '1.0'
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: 버전 정하기
+        id: ver
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          if [ -n "$TAG" ]; then
+            V="${TAG#v}"
+          else
+            LAST=$(git ls-remote --tags origin "refs/tags/v$APP_VERSION.*" | sed -n "s#.*refs/tags/v$APP_VERSION\.\([0-9]*\)\$#\1#p" | sort -n | tail -1)
+            V="$APP_VERSION.$(( ${LAST:--1} + 1 ))"
+          fi
+          echo "$V" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "::error::버전 형식이 아닙니다: $V (태그는 v1.0.0 꼴)"; exit 1; }
+          IFS=. read -r MA MI PA <<< "$V"
+          [ "$PA" -lt 100 ] && [ "$MI" -lt 100 ] || { echo "::error::수·부 번호는 99까지 (APP_VERSION을 올리세요)"; exit 1; }
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "APP_V=$V" >> "$GITHUB_ENV"
+          echo "APP_CODE=$(( MA * 10000 + MI * 100 + PA ))" >> "$GITHUB_ENV"
+          echo "### 버전 $V (versionCode $(( MA * 10000 + MI * 100 + PA )))" >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/setup-java@v4
         with:
@@ -107,9 +131,7 @@ jobs:
       - name: 내보내기 (웹·APK·AAB·Windows)
         run: |
           cd godot
-          # 버전 코드: 빌드 시각(분) — 매번 커진다
-          CODE=$(( ($(date +%s) - 1700000000) / 60 ))
-          sed -i "s/^version\/code=.*/version\/code=$CODE/; s/^version\/name=.*/version\/name=\"4.0 ($(git rev-parse --short HEAD))\"/" export_presets.cfg
+          sed -i "s/^version\/code=.*/version\/code=$APP_CODE/; s/^version\/name=.*/version\/name=\"$APP_V\"/" export_presets.cfg
           mkdir -p build/web build/android
           "$GODOT" --headless --path . --import > /dev/null 2>&1 || true
           "$GODOT" --headless --path . res://tests/regression.tscn > regression.log 2>&1
@@ -127,7 +149,7 @@ jobs:
           "$GODOT" --headless --path . --export-release "Android APK Test" build/android/test-x86_64.apk
           # Windows(Microsoft Store용): exe에 데이터 내장. 아이콘 넣기가 실패하면 아이콘 없이 다시 내보낸다
           mkdir -p build/windows
-          sed -i "s/^application\/file_version=.*/application\/file_version=\"4.0.$GITHUB_RUN_NUMBER.0\"/; s/^application\/product_version=.*/application\/product_version=\"4.0.$GITHUB_RUN_NUMBER.0\"/" export_presets.cfg
+          sed -i "s/^application\/file_version=.*/application\/file_version=\"$APP_V.0\"/; s/^application\/product_version=.*/application\/product_version=\"$APP_V.0\"/" export_presets.cfg
           if ! "$GODOT" --headless --path . --export-release "Windows Desktop" build/windows/VeloriaFieldnotes.exe; then
             echo "::warning::exe 아이콘 넣기 실패 — 아이콘 없이 다시 내보냄"
             sed -i 's/^application\/modify_resources=true/application\/modify_resources=false/' export_presets.cfg
@@ -185,6 +207,7 @@ jobs:
       MSIX_NAME: ${{ vars.MSIX_IDENTITY_NAME || 'chunghyun1995.VeloriaFieldnotes' }}
       MSIX_PUBLISHER: ${{ vars.MSIX_PUBLISHER || 'CN=VeloriaFieldnotesDev' }}
       MSIX_PUBLISHER_NAME: ${{ vars.MSIX_PUBLISHER_DISPLAY_NAME || 'chunghyun1995' }}
+      APP_V: ${{ needs.build.outputs.version }}
     defaults:
       run:
         shell: pwsh
@@ -208,7 +231,7 @@ jobs:
 
       - name: zip · MSIX 만들기
         run: |
-          $v = "4.0.$env:GITHUB_RUN_NUMBER.0"
+          $v = "$env:APP_V.0"
           New-Item -ItemType Directory -Force dist, layout, layout\Assets | Out-Null
           Get-ChildItem win -File | Where-Object { $_.Name -notlike '*.console.exe' } | Copy-Item -Destination layout
           Copy-Item store\msix\*.png layout\Assets
@@ -342,38 +365,32 @@ jobs:
           path: dist
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.tag || format('veloria-{0}', github.run_number) }}
-          name: 벨로리아 생태기록 ${{ inputs.tag || format('veloria-{0}', github.run_number) }}
+          tag_name: v${{ needs.build.outputs.version }}
+          name: 벨로리아 생태기록 v${{ needs.build.outputs.version }}
           target_commitish: ${{ github.sha }}
-          prerelease: true
-          make_latest: false
+          prerelease: false
+          make_latest: true
           files: |
             dist/monster-expedition-godot.apk
             dist/monster-expedition-godot.aab
             dist/VeloriaFieldnotes.msix
             dist/VeloriaFieldnotes-windows-x64.zip
           body: |
-            **벨로리아 생태기록 / VELORIA FIELDNOTES** — Godot 판 (Android · Windows)
+            **벨로리아 생태기록 / VELORIA FIELDNOTES** v${{ needs.build.outputs.version }} — Android · Windows · 웹
 
-            이번 빌드
-            - 대화 창 정리: 전투 진행 문장 대신 머리 위 효과 토스트(기술·빗나감·상성·상태·능력치·회복), 승패·보상은 가운데 배너
-            - 전투 밖 "~했다" 서술은 위쪽 알림으로, 물건 받기 효과음·대사 제거, 연구소 첫 장비 3종은 한 번에
-            - 획득·회복·레벨업 음악 제거: 물건 받기·첫 동료·관측 인증 효과음, 회복 음악(엄마·관측 캠프·탑), 레벨업 음악(레벨 달성·새 기술·보관함 훈련)
-            - 첫 동료는 새 게임 시작 직후 마을에서 고르기, 애칭은 동료 메뉴의 "이름 바꾸기"
-            - 전투 체력·레벨은 생물·사람 머리 위 체력바
-            - 걸으면 나오던 조우 대신 '조사' 팻말 나무를 조사해 생물과 만나기, 한쪽 통행 턱 제거
-            - 원정가는 말을 걸 때만 기록 비교(강제 대결 없음), 직업명·보상 방식 변경
-            - 관측 캠프·보급소 건물 색과 문양 변경, 마을 건물 이름판
-            - 자동전투는 전투마다 꺼진 상태로 시작(설정에서 켤 수 있음), Windows 창 크기 고정
-
-            기본 구성
-            - 폭풍 이후 관측망 복구 이야기, 생물 34종·인물 27종, 다섯 관측소와 무한의 탑
-            - 새 악보의 BGM·효과음, 자동전투·자동 사냥·탑 자동 등반, 처음 쓰는 기능 안내
+            v1.0.0 첫 정식 빌드
+            - 폭풍 이후 끊긴 관측망을 잇는 생태 조사 RPG: 생물 34종·인물 27종, 다섯 관측소와 무한의 탑
+            - 새 게임을 시작하면 마을에서 첫 동료 고르기, 애칭은 동료 메뉴의 "이름 바꾸기"
+            - '조사' 팻말 나무를 살펴 생물과 만나기, 원정가와는 말을 걸 때만 기록 비교
+            - 전투: 머리 위 체력바와 효과 토스트, 승패·보상은 가운데 배너, 자동전투(설정에서 시작 시 켜기)·자동 사냥·탑 자동 등반
+            - 저장 코드: 메뉴 › 일지 저장 › 저장 코드 만들기 → 다른 기기 타이틀의 "저장 코드로 불러오기" (예전 웹판 코드도 읽음)
+            - 웹판: https://chunghyun1995.github.io/monster-expedition/ (예전 웹 게임은 /classic/)
 
             APK는 휴대폰 설치용(arm64), AAB는 Google Play 콘솔 업로드용입니다.
             Windows: `VeloriaFieldnotes.msix`는 Microsoft Store(Partner Center) 업로드용, `VeloriaFieldnotes-windows-x64.zip`은 압축을 풀어 바로 실행하는 PC판입니다.
             Android 7.0 이상 · targetSdk 36 · 16KB 정렬·서명 검사·Android 16 실행 검증.
             기존 Android 패키지 ID와 업데이트 서명 키를 유지합니다.
+            예전 시험 빌드(veloria-·godot-)가 깔린 기기는 버전 번호가 1.0.0으로 낮아져 덮어 설치가 안 됩니다. 저장 코드를 만들어 둔 뒤 지우고 설치하세요.
 
             확인된 유사 표현을 수정한 빌드이며 법적 비침해 보증은 아닙니다.
             변경 및 출처 확인 범위: docs/ASSET_RECORD_2026-10-11.md, docs/SIMILARITY_AUDIT_2026-10-11.md

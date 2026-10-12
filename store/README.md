@@ -7,10 +7,10 @@ Google Play Console에 그대로 올릴 수 있는 그림·문구와 등록 순�
 | `icon-512.png` | 앱 아이콘 | 512×512 PNG (32비트, 알파 포함) |
 | `feature-graphic.png` | 그래픽 이미지 | 1024×500 PNG (투명 없음) |
 | `screenshots/*.png` | 휴대전화 스크린샷 6장(Godot 판, 파일 이름 순서대로 올리기) | 1080×1920 PNG (9:16) |
-| AAB 파일 | 앱 업로드 파일 | [Releases](https://github.com/chunghyun1995/monster-expedition/releases/latest)의 `monster-expedition.aab` |
+| AAB 파일 | 앱 업로드 파일 | [최신 릴리스](https://github.com/chunghyun1995/monster-expedition/releases/latest)의 `monster-expedition-godot.aab` |
 
 - 개인정보처리방침 주소: <https://chunghyun1995.github.io/monster-expedition/privacy.html> (`privacy.html`, 게임 설정 메뉴에서도 열 수 있음)
-- 앱 서명: 저장소 시크릿의 개인 키로 서명된 AAB가 main 브랜치 빌드마다 Releases에 올라갑니다. 버전 코드는 빌드 시각(분)이라 매번 자동으로 커집니다.
+- 앱 서명: 저장소 시크릿의 개인 키로 서명된 AAB가 main 브랜치 빌드마다 Releases에 올라갑니다. 버전은 v1.0.0부터 빌드마다 1.0.1, 1.0.2…로 커지고 버전 코드는 주×10000 + 부×100 + 수(1.0.0 → 10000)입니다.
 - 대상 Android: targetSdk 36(Android 16), minSdk 24(Android 7.0). 앱 권한 없음(인터넷 권한도 없음).
 
 ---
