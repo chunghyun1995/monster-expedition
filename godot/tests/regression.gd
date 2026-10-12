@@ -12,6 +12,15 @@ func _ready() -> void:
 		get_tree().quit(1))
 	await get_tree().process_frame
 	Game.new_game("별")
+	# 저장 코드(VF1): 만들고 읽으면 같은 일지, 한 글자라도 바뀌면 거절
+	Game.g.party = [Game.make_mon(10, 12)]
+	Game.g.money = 4321
+	var vf := SaveCode.make(Game.g)
+	var back := SaveCode.read(vf)
+	check(back.ok and back.g.name == "별" and int(back.g.money) == 4321 and int(back.g.party[0].sid) == 10, "VF1 save code did not round-trip")
+	var mid := vf.length() / 2
+	check(not SaveCode.read(vf.substr(0, mid) + ("B" if vf[mid] != "B" else "C") + vf.substr(mid + 1)).ok, "Tampered VF1 save code was accepted")
+	Game.new_game("별")
 	var world := World.new()
 	add_child(world)
 	world.set_process(false)
